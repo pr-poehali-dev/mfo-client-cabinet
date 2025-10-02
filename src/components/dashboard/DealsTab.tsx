@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { Deal } from './types';
 
@@ -8,6 +10,8 @@ interface DealsTabProps {
 }
 
 const DealsTab = ({ deals }: DealsTabProps) => {
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
@@ -17,18 +21,53 @@ const DealsTab = ({ deals }: DealsTabProps) => {
     } : { r: 204, g: 204, b: 204 };
   };
 
+  const filteredDeals = deals.filter(deal => {
+    if (filter === 'all') return true;
+    return deal.status === filter;
+  });
+
+  const activeCount = deals.filter(d => d.status === 'active').length;
+  const completedCount = deals.filter(d => d.status === 'completed').length;
+
   return (
     <div className="space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold font-montserrat">Сделки из AmoCRM</h2>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-sm">
-            Всего: {deals.length}
-          </Badge>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold font-montserrat mb-4">Сделки из AmoCRM</h2>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('all')}
+            className={filter === 'all' ? 'bg-gradient-to-r from-primary to-secondary' : ''}
+          >
+            <Icon name="Briefcase" size={16} className="mr-2" />
+            Все ({deals.length})
+          </Button>
+          
+          <Button
+            variant={filter === 'active' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('active')}
+            className={filter === 'active' ? 'bg-gradient-to-r from-primary to-secondary' : ''}
+          >
+            <Icon name="Play" size={16} className="mr-2" />
+            Активные ({activeCount})
+          </Button>
+          
+          <Button
+            variant={filter === 'completed' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('completed')}
+            className={filter === 'completed' ? 'bg-gradient-to-r from-primary to-secondary' : ''}
+          >
+            <Icon name="CheckCircle" size={16} className="mr-2" />
+            Завершенные ({completedCount})
+          </Button>
         </div>
       </div>
 
-      {deals.length === 0 ? (
+      {filteredDeals.length === 0 ? (
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="p-12 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/30 flex items-center justify-center">
@@ -36,13 +75,15 @@ const DealsTab = ({ deals }: DealsTabProps) => {
             </div>
             <h3 className="text-lg font-semibold mb-2">Нет сделок</h3>
             <p className="text-muted-foreground">
-              Сделки из AmoCRM будут отображаться здесь
+              {deals.length === 0 
+                ? 'Сделки из AmoCRM будут отображаться здесь'
+                : `Нет ${filter === 'active' ? 'активных' : 'завершенных'} сделок`}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {deals.map((deal) => {
+          {filteredDeals.map((deal) => {
             const rgb = hexToRgb(deal.status_color);
             const bgColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`;
             const borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`;
