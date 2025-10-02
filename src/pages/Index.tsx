@@ -132,6 +132,52 @@ const Index = () => {
     fetchAmoCRMData();
   }, []);
 
+  const refreshData = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const phone = '79991234567';
+      const response = await fetch(
+        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${phone}`
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 500 && errorData.message?.includes('credentials')) {
+          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и AMOCRM_ACCESS_TOKEN в секреты проекта');
+        } else {
+          setError(errorData.error || 'Ошибка загрузки данных');
+        }
+        return;
+      }
+      
+      const data = await response.json();
+      
+      setClientName(data.name || 'Клиент');
+      setClientPhone(data.phone || '');
+      setClientEmail(data.email || '');
+      setLoans(data.loans || []);
+      setPayments(data.payments || []);
+      setNotifications(data.notifications || []);
+      
+      setNotifications(prev => [{
+        id: Date.now().toString(),
+        title: 'Данные обновлены',
+        message: 'Информация успешно синхронизирована из AmoCRM',
+        date: new Date().toLocaleDateString('ru-RU'),
+        read: false,
+        type: 'success'
+      }, ...prev]);
+      
+    } catch (err) {
+      console.error('Refresh error:', err);
+      setError('Не удалось обновить данные');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const activeLoan = loans.find(l => l.status === 'active');
   const progress = activeLoan ? (activeLoan.paid / activeLoan.amount) * 100 : 0;
 
@@ -173,9 +219,20 @@ const Index = () => {
             <h1 className="text-xl font-bold">МФО Личный Кабинет</h1>
           </div>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={refreshData}
+              disabled={loading}
+              title="Обновить данные из AmoCRM"
+            >
+              <Icon name={loading ? 'Loader2' : 'RefreshCw'} size={20} className={loading ? 'animate-spin' : ''} />
+            </Button>
             <Button variant="ghost" size="icon" className="relative">
               <Icon name="Bell" size={20} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
             </Button>
             <Avatar>
               <AvatarImage src="" />
