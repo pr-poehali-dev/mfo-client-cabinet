@@ -1,5 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import Icon from '@/components/ui/icon';
 import { Notification } from './types';
 
@@ -8,9 +16,10 @@ interface HeaderProps {
   loading: boolean;
   notifications: Notification[];
   onRefresh: () => void;
+  onLogout: () => void;
 }
 
-const Header = ({ lastUpdate, loading, notifications, onRefresh }: HeaderProps) => {
+const Header = ({ lastUpdate, loading, notifications, onRefresh, onLogout }: HeaderProps) => {
   return (
     <div className="sticky top-0 z-50 backdrop-blur-lg bg-background/80 border-b border-border">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -43,10 +52,29 @@ const Header = ({ lastUpdate, loading, notifications, onRefresh }: HeaderProps) 
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             )}
           </Button>
-          <Avatar>
-            <AvatarImage src="" />
-            <AvatarFallback className="bg-primary text-white font-semibold">АИ</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Avatar>
+                  <AvatarImage src="" />
+                  <AvatarFallback className="bg-primary text-white font-semibold">АИ</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Мой аккаунт</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onRefresh} disabled={loading}>
+                <Icon name="RefreshCw" size={16} className="mr-2" />
+                Обновить данные
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive">
+                <Icon name="LogOut" size={16} className="mr-2" />
+                Выйти
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
