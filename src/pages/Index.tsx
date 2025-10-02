@@ -2,9 +2,6 @@ import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import Header from '@/components/dashboard/Header';
-import DashboardTab from '@/components/dashboard/DashboardTab';
-import LoansTab from '@/components/dashboard/LoansTab';
-import PaymentsTab from '@/components/dashboard/PaymentsTab';
 import ProfileTab from '@/components/dashboard/ProfileTab';
 import DealsTab from '@/components/dashboard/DealsTab';
 import LoginPage from '@/components/auth/LoginPage';
@@ -13,7 +10,7 @@ import { Loan, Payment, Notification, Deal } from '@/components/dashboard/types'
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userPhone, setUserPhone] = useState('');
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('deals');
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -180,19 +177,7 @@ const Index = () => {
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
-              <Icon name="LayoutDashboard" size={18} />
-              <span className="hidden sm:inline">Дашборд</span>
-            </TabsTrigger>
-            <TabsTrigger value="loans" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
-              <Icon name="FileText" size={18} />
-              <span className="hidden sm:inline">Займы</span>
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
-              <Icon name="CreditCard" size={18} />
-              <span className="hidden sm:inline">Платежи</span>
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto">
             <TabsTrigger value="deals" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
               <Icon name="Briefcase" size={18} />
               <span className="hidden sm:inline">Сделки</span>
@@ -202,18 +187,6 @@ const Index = () => {
               <span className="hidden sm:inline">Профиль</span>
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="dashboard">
-            <DashboardTab loans={loans} notifications={notifications} />
-          </TabsContent>
-
-          <TabsContent value="loans">
-            <LoansTab loans={loans} />
-          </TabsContent>
-
-          <TabsContent value="payments">
-            <PaymentsTab payments={payments} />
-          </TabsContent>
 
           <TabsContent value="deals">
             <DealsTab deals={deals} />
