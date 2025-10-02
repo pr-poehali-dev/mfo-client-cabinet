@@ -10,7 +10,7 @@ import { Loan, Payment, Notification, Deal } from '@/components/dashboard/types'
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userPhone, setUserPhone] = useState('');
-  const [activeTab, setActiveTab] = useState('deals');
+  const [activeTab, setActiveTab] = useState('applications');
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);

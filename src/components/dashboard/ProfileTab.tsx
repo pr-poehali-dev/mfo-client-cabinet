@@ -37,57 +37,53 @@ const ProfileTab = ({
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <Avatar className="w-20 h-20">
+    <div className="space-y-5">
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-start gap-5">
+            <Avatar className="w-24 h-24 border-4 border-background shadow-xl">
               <AvatarImage src="" />
-              <AvatarFallback className="bg-gradient-to-r from-primary to-secondary text-white text-2xl font-bold">
+              <AvatarFallback className="bg-gradient-to-br from-primary via-primary/90 to-secondary text-white text-3xl font-bold">
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <CardTitle className="text-2xl font-montserrat">{clientName || 'Клиент'}</CardTitle>
-              <CardDescription>Данные из AmoCRM</CardDescription>
+            <div className="flex-1">
+              <CardTitle className="text-3xl font-bold tracking-tight mb-1">{clientName || 'Клиент'}</CardTitle>
+              <CardDescription className="flex items-center gap-1.5 text-base">
+                <Icon name="Database" size={14} />
+                Данные из AmoCRM
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pt-2">
           <Separator />
           
           <div>
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <Icon name="User" size={20} />
+            <h3 className="font-bold text-base mb-4 flex items-center gap-2 text-foreground/90">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Icon name="User" size={16} className="text-primary" />
+              </div>
               Личные данные
             </h3>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="lastName">Фамилия</Label>
-                <Input 
-                  id="lastName" 
-                  value={clientLastName || '-'} 
-                  readOnly 
-                  className="bg-muted/30"
-                />
+                <Label htmlFor="lastName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Фамилия</Label>
+                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border">
+                  <p className="font-semibold">{clientLastName || '—'}</p>
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="firstName">Имя</Label>
-                <Input 
-                  id="firstName" 
-                  value={clientFirstName || '-'} 
-                  readOnly 
-                  className="bg-muted/30"
-                />
+                <Label htmlFor="firstName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Имя</Label>
+                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border">
+                  <p className="font-semibold">{clientFirstName || '—'}</p>
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="middleName">Отчество</Label>
-                <Input 
-                  id="middleName" 
-                  value={clientMiddleName || '-'} 
-                  readOnly 
-                  className="bg-muted/30"
-                />
+                <Label htmlFor="middleName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Отчество</Label>
+                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border">
+                  <p className="font-semibold">{clientMiddleName || '—'}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -95,46 +91,45 @@ const ProfileTab = ({
           <Separator />
 
           <div>
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <Icon name="Contact" size={20} />
-              Контактная информация
+            <h3 className="font-bold text-base mb-4 flex items-center gap-2 text-foreground/90">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Icon name="Contact" size={16} className="text-primary" />
+              </div>
+              Контакты
             </h3>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Icon name="Phone" size={14} />
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <Icon name="Phone" size={13} />
                   Телефон
                 </Label>
-                <Input 
-                  id="phone" 
-                  value={clientPhone || '-'} 
-                  readOnly 
-                  className="bg-muted/30"
-                />
+                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border flex items-center gap-2">
+                  <Icon name="Phone" size={16} className="text-muted-foreground" />
+                  <p className="font-semibold">{clientPhone || '—'}</p>
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
-                  <Icon name="Mail" size={14} />
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <Icon name="Mail" size={13} />
                   Email
                 </Label>
-                <Input 
-                  id="email" 
-                  value={clientEmail || '-'} 
-                  readOnly 
-                  className="bg-muted/30"
-                />
+                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border flex items-center gap-2">
+                  <Icon name="Mail" size={16} className="text-muted-foreground" />
+                  <p className="font-semibold truncate">{clientEmail || '—'}</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+          <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
             <div className="flex items-start gap-3">
-              <Icon name="Info" size={20} className="text-primary mt-0.5 flex-shrink-0" />
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Icon name="Info" size={18} className="text-primary" />
+              </div>
               <div className="text-sm">
-                <p className="font-medium mb-1">Данные синхронизируются из AmoCRM</p>
-                <p className="text-muted-foreground">
-                  Информация обновляется автоматически каждые 5 минут. 
-                  Для изменения данных обратитесь к менеджеру.
+                <p className="font-semibold mb-1.5">Автоматическая синхронизация</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Данные обновляются каждые 5 минут из AmoCRM. Для изменения информации свяжитесь с менеджером.
                 </p>
               </div>
             </div>
