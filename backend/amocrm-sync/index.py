@@ -95,19 +95,46 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         contact = contacts_data['_embedded']['contacts'][0]
         contact_id = contact['id']
         
-        leads_url = f'{base_url}/api/v4/leads?filter[contacts][0]={contact_id}'
+        leads_url = f'{base_url}/api/v4/leads?filter[contacts][0]={contact_id}&with=contacts'
         leads_req = urllib.request.Request(leads_url, headers=headers)
         
         with urllib.request.urlopen(leads_req, timeout=10) as response:
             leads_data = json.loads(response.read().decode())
         
+        pipelines_url = f'{base_url}/api/v4/leads/pipelines'
+        pipelines_req = urllib.request.Request(pipelines_url, headers=headers)
+        
+        pipelines_map = {}
+        try:
+            with urllib.request.urlopen(pipelines_req, timeout=10) as response:
+                pipelines_data = json.loads(response.read().decode())
+                for pipeline in pipelines_data.get('_embedded', {}).get('pipelines', []):
+                    pipeline_id = pipeline['id']
+                    pipeline_name = pipeline['name']
+                    statuses = {}
+                    for status in pipeline.get('_embedded', {}).get('statuses', []):
+                        statuses[status['id']] = {
+                            'name': status['name'],
+                            'color': status.get('color', '#cccccc')
+                        }
+                    pipelines_map[pipeline_id] = {
+                        'name': pipeline_name,
+                        'statuses': statuses
+                    }
+        except Exception as e:
+            print(f'Failed to load pipelines: {e}')
+        
         loans: List[Dict[str, Any]] = []
         payments: List[Dict[str, Any]] = []
+        deals: List[Dict[str, Any]] = []
         
         for lead in leads_data.get('_embedded', {}).get('leads', []):
             loan_amount = lead.get('price', 0)
             created_at = lead.get('created_at', 0)
+            updated_at = lead.get('updated_at', created_at)
             status_id = lead.get('status_id', 0)
+            pipeline_id = lead.get('pipeline_id', 0)
+            responsible_user_id = lead.get('responsible_user_id', 0)
             
             loan_status = 'active'
             if status_id == 142:
@@ -115,15 +142,62 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             elif status_id == 143:
                 loan_status = 'overdue'
             
+            custom_fields = lead.get('custom_fields_values', []) or []
+            
+            paid_amount = 0
+            rate = 24.5
+            next_payment_date = '15.11.2024'
+            
+            for field in custom_fields:
+                field_name = field.get('field_name', '').lower()
+                values = field.get('values', []) or []
+                if not values:
+                    continue
+                    
+                field_value = values[0].get('value', '')
+                
+                if 'погашено' in field_name or 'выплачено' in field_name:
+                    paid_amount = int(field_value) if isinstance(field_value, (int, float)) else paid_amount
+                elif 'ставка' in field_name or 'процент' in field_name:
+                    rate = float(field_value) if isinstance(field_value, (int, float)) else rate
+                elif 'следующий платеж' in field_name or 'дата платежа' in field_name:
+                    if isinstance(field_value, str):
+                        next_payment_date = field_value
+            
+            if paid_amount == 0:
+                paid_amount = int(loan_amount * 0.2) if loan_status == 'active' else loan_amount
+            
             loans.append({
                 'id': str(lead['id']),
                 'amount': loan_amount,
-                'paid': int(loan_amount * 0.2) if loan_status == 'active' else loan_amount,
+                'paid': paid_amount,
                 'status': loan_status,
                 'date': datetime.fromtimestamp(created_at).strftime('%d.%m.%Y'),
-                'nextPayment': '15.11.2024' if loan_status == 'active' else '-',
-                'rate': 24.5,
+                'nextPayment': next_payment_date if loan_status == 'active' else '-',
+                'rate': rate,
                 'name': lead.get('name', f'Займ #{lead["id"]}')
+            })
+            
+            pipeline_info = pipelines_map.get(pipeline_id, {})
+            status_info = pipeline_info.get('statuses', {}).get(status_id, {})
+            status_name = status_info.get('name', 'Неизвестный статус')
+            status_color = status_info.get('color', '#cccccc')
+            pipeline_name = pipeline_info.get('name', f'Воронка #{pipeline_id}')
+            
+            deals.append({
+                'id': str(lead['id']),
+                'name': lead.get('name', f'Сделка #{lead["id"]}'),
+                'status': loan_status,
+                'price': loan_amount,
+                'status_id': status_id,
+                'status_name': status_name,
+                'status_color': status_color,
+                'pipeline_id': pipeline_id,
+                'pipeline_name': pipeline_name,
+                'responsible_user_id': responsible_user_id,
+                'created_at': datetime.fromtimestamp(created_at).strftime('%d.%m.%Y %H:%M'),
+                'updated_at': datetime.fromtimestamp(updated_at).strftime('%d.%m.%Y %H:%M'),
+                'custom_fields': custom_fields
             })
             
             if loan_status in ['active', 'completed']:
@@ -138,7 +212,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'loan_id': str(lead['id'])
                     })
         
-        custom_fields = contact.get('custom_fields_values', [])
+        custom_fields = contact.get('custom_fields_values', []) or []
         phone_field = next((f for f in custom_fields if f.get('field_code') == 'PHONE'), None)
         email_field = next((f for f in custom_fields if f.get('field_code') == 'EMAIL'), None)
         
@@ -150,11 +224,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'created_at': datetime.fromtimestamp(contact.get('created_at', 0)).strftime('%d.%m.%Y'),
             'loans': sorted(loans, key=lambda x: x['date'], reverse=True),
             'payments': sorted(payments, key=lambda x: x['date'], reverse=True),
+            'deals': sorted(deals, key=lambda x: x['updated_at'], reverse=True),
+            'total_deals': len(deals),
+            'active_deals': len([d for d in deals if d['status'] == 'active']),
+            'completed_deals': len([d for d in deals if d['status'] == 'completed']),
             'notifications': [
                 {
                     'id': '1',
                     'title': 'Данные обновлены',
-                    'message': f'Информация синхронизирована из AmoCRM',
+                    'message': f'Информация синхронизирована из AmoCRM. Сделок: {len(deals)}',
                     'date': datetime.now().strftime('%d.%m.%Y'),
                     'read': False,
                     'type': 'success'
