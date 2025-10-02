@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -39,61 +39,98 @@ interface Notification {
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [clientName, setClientName] = useState('Алексей Иванов');
+  const [clientPhone, setClientPhone] = useState('+7 (999) 123-45-67');
+  const [clientEmail, setClientEmail] = useState('alexey.ivanov@example.com');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const loans: Loan[] = [
-    {
-      id: '4500000',
-      amount: 4500000,
-      paid: 890000,
-      status: 'active',
-      date: '15.08.2024',
-      nextPayment: '15.10.2024',
-      rate: 24.5
-    },
-    {
-      id: '3250000',
-      amount: 3250000,
-      paid: 3250000,
-      status: 'completed',
-      date: '10.05.2022',
-      nextPayment: '-',
-      rate: 24.0
-    }
-  ];
+  useEffect(() => {
+    const fetchAmoCRMData = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        
+        const phone = '79991234567';
+        const response = await fetch(
+          `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${phone}`
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (response.status === 500 && errorData.message?.includes('credentials')) {
+            setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и AMOCRM_ACCESS_TOKEN в секреты проекта');
+          } else {
+            setError(errorData.error || 'Ошибка загрузки данных');
+          }
+          loadDemoData();
+          return;
+        }
+        
+        const data = await response.json();
+        
+        setClientName(data.name || 'Клиент');
+        setClientPhone(data.phone || '');
+        setClientEmail(data.email || '');
+        setLoans(data.loans || []);
+        setPayments(data.payments || []);
+        setNotifications(data.notifications || []);
+        
+      } catch (err) {
+        console.error('AmoCRM sync error:', err);
+        setError('Не удалось подключиться к AmoCRM');
+        loadDemoData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const payments: Payment[] = [
-    { id: '1', amount: 150000, date: '15.09.2024', type: 'payment', status: 'success' },
-    { id: '2', amount: 150000, date: '15.08.2024', type: 'payment', status: 'success' },
-    { id: '3', amount: 5000, date: '20.07.2024', type: 'fee', status: 'success' },
-    { id: '4', amount: 150000, date: '15.07.2024', type: 'payment', status: 'success' }
-  ];
+    const loadDemoData = () => {
+      setLoans([
+        {
+          id: '4500000',
+          amount: 4500000,
+          paid: 890000,
+          status: 'active',
+          date: '15.08.2024',
+          nextPayment: '15.10.2024',
+          rate: 24.5
+        },
+        {
+          id: '3250000',
+          amount: 3250000,
+          paid: 3250000,
+          status: 'completed',
+          date: '10.05.2022',
+          nextPayment: '-',
+          rate: 24.0
+        }
+      ]);
+      
+      setPayments([
+        { id: '1', amount: 150000, date: '15.09.2024', type: 'payment', status: 'success' },
+        { id: '2', amount: 150000, date: '15.08.2024', type: 'payment', status: 'success' },
+        { id: '3', amount: 5000, date: '20.07.2024', type: 'fee', status: 'success' },
+        { id: '4', amount: 150000, date: '15.07.2024', type: 'payment', status: 'success' }
+      ]);
+      
+      setNotifications([
+        {
+          id: '1',
+          title: 'Демо режим',
+          message: 'Показаны тестовые данные. Настройте AmoCRM для синхронизации.',
+          date: new Date().toLocaleDateString('ru-RU'),
+          read: false,
+          type: 'warning'
+        }
+      ]);
+    };
 
-  const notifications: Notification[] = [
-    {
-      id: '1',
-      title: 'Платеж принят',
-      message: 'Ваш платеж на сумму 150 000 ₽ успешно обработан',
-      date: '15.09.2024',
-      read: false,
-      type: 'success'
-    },
-    {
-      id: '2',
-      title: 'Приближается дата платежа',
-      message: 'Следующий платеж 150 000 ₽ необходимо внести до 15.10.2024',
-      date: '10.09.2024',
-      read: false,
-      type: 'warning'
-    },
-    {
-      id: '3',
-      title: 'Обновление условий',
-      message: 'Изменились условия предоставления займов',
-      date: '01.09.2024',
-      read: true,
-      type: 'info'
-    }
-  ];
+    fetchAmoCRMData();
+  }, []);
 
   const activeLoan = loans.find(l => l.status === 'active');
   const progress = activeLoan ? (activeLoan.paid / activeLoan.amount) * 100 : 0;
@@ -149,6 +186,21 @@ const Index = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {error && (
+          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-center gap-3">
+            <Icon name="AlertCircle" size={20} className="text-yellow-500" />
+            <p className="text-sm text-yellow-200">{error}</p>
+          </div>
+        )}
+        
+        {loading && (
+          <div className="mb-6 p-4 bg-secondary/10 border border-secondary/30 rounded-lg flex items-center gap-3">
+            <div className="animate-spin">
+              <Icon name="Loader2" size={20} className="text-secondary" />
+            </div>
+            <p className="text-sm text-muted-foreground">Загрузка данных из AmoCRM...</p>
+          </div>
+        )}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto">
             <TabsTrigger value="dashboard" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
@@ -422,7 +474,7 @@ const Index = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-2xl font-montserrat">Алексей Иванов</CardTitle>
+                    <CardTitle className="text-2xl font-montserrat">{clientName}</CardTitle>
                     <CardDescription>Клиент с 2022 года</CardDescription>
                   </div>
                 </div>
@@ -433,11 +485,11 @@ const Index = () => {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Телефон</Label>
-                    <Input id="phone" value="+7 (999) 123-45-67" readOnly />
+                    <Input id="phone" value={clientPhone} readOnly />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" value="alexey.ivanov@example.com" readOnly />
+                    <Input id="email" value={clientEmail} readOnly />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="passport">Паспорт</Label>

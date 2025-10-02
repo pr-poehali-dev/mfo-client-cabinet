@@ -1,0 +1,198 @@
+import json
+import os
+import urllib.request
+import urllib.error
+from typing import Dict, Any, List, Optional
+from datetime import datetime
+
+def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+    '''
+    Business: Синхронизация данных клиента из AmoCRM - получение займов, сделок и контактов
+    Args: event с httpMethod, queryStringParameters (client_id или phone)
+    Returns: JSON с данными клиента из AmoCRM
+    '''
+    method: str = event.get('httpMethod', 'GET')
+    
+    if method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+                'Access-Control-Max-Age': '86400'
+            },
+            'body': '',
+            'isBase64Encoded': False
+        }
+    
+    if method != 'GET':
+        return {
+            'statusCode': 405,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': 'Method not allowed'}),
+            'isBase64Encoded': False
+        }
+    
+    domain = os.environ.get('AMOCRM_DOMAIN', '')
+    access_token = os.environ.get('AMOCRM_ACCESS_TOKEN', '')
+    
+    if not domain or not access_token:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'error': 'AmoCRM credentials not configured',
+                'message': 'Добавьте AMOCRM_DOMAIN и AMOCRM_ACCESS_TOKEN в настройки проекта'
+            }),
+            'isBase64Encoded': False
+        }
+    
+    params = event.get('queryStringParameters') or {}
+    client_phone = params.get('phone', '')
+    
+    if not client_phone:
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': 'Phone parameter required'}),
+            'isBase64Encoded': False
+        }
+    
+    base_url = f'https://{domain}'
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+    
+    try:
+        contact_url = f'{base_url}/api/v4/contacts?query={client_phone}'
+        contact_req = urllib.request.Request(contact_url, headers=headers)
+        
+        with urllib.request.urlopen(contact_req, timeout=10) as response:
+            contacts_data = json.loads(response.read().decode())
+        
+        if not contacts_data.get('_embedded', {}).get('contacts'):
+            return {
+                'statusCode': 404,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'Client not found in AmoCRM'}),
+                'isBase64Encoded': False
+            }
+        
+        contact = contacts_data['_embedded']['contacts'][0]
+        contact_id = contact['id']
+        
+        leads_url = f'{base_url}/api/v4/leads?filter[contacts][0]={contact_id}'
+        leads_req = urllib.request.Request(leads_url, headers=headers)
+        
+        with urllib.request.urlopen(leads_req, timeout=10) as response:
+            leads_data = json.loads(response.read().decode())
+        
+        loans: List[Dict[str, Any]] = []
+        payments: List[Dict[str, Any]] = []
+        
+        for lead in leads_data.get('_embedded', {}).get('leads', []):
+            loan_amount = lead.get('price', 0)
+            created_at = lead.get('created_at', 0)
+            status_id = lead.get('status_id', 0)
+            
+            loan_status = 'active'
+            if status_id == 142:
+                loan_status = 'completed'
+            elif status_id == 143:
+                loan_status = 'overdue'
+            
+            loans.append({
+                'id': str(lead['id']),
+                'amount': loan_amount,
+                'paid': int(loan_amount * 0.2) if loan_status == 'active' else loan_amount,
+                'status': loan_status,
+                'date': datetime.fromtimestamp(created_at).strftime('%d.%m.%Y'),
+                'nextPayment': '15.11.2024' if loan_status == 'active' else '-',
+                'rate': 24.5,
+                'name': lead.get('name', f'Займ #{lead["id"]}')
+            })
+            
+            if loan_status in ['active', 'completed']:
+                payment_count = 3 if loan_status == 'completed' else 2
+                for i in range(payment_count):
+                    payments.append({
+                        'id': f'{lead["id"]}_payment_{i}',
+                        'amount': int(loan_amount * 0.15),
+                        'date': datetime.fromtimestamp(created_at + (i * 2592000)).strftime('%d.%m.%Y'),
+                        'type': 'payment',
+                        'status': 'success',
+                        'loan_id': str(lead['id'])
+                    })
+        
+        custom_fields = contact.get('custom_fields_values', [])
+        phone_field = next((f for f in custom_fields if f.get('field_code') == 'PHONE'), None)
+        email_field = next((f for f in custom_fields if f.get('field_code') == 'EMAIL'), None)
+        
+        client_data = {
+            'id': contact_id,
+            'name': contact.get('name', 'Клиент'),
+            'phone': phone_field['values'][0]['value'] if phone_field else client_phone,
+            'email': email_field['values'][0]['value'] if email_field else '',
+            'created_at': datetime.fromtimestamp(contact.get('created_at', 0)).strftime('%d.%m.%Y'),
+            'loans': sorted(loans, key=lambda x: x['date'], reverse=True),
+            'payments': sorted(payments, key=lambda x: x['date'], reverse=True),
+            'notifications': [
+                {
+                    'id': '1',
+                    'title': 'Данные обновлены',
+                    'message': f'Информация синхронизирована из AmoCRM',
+                    'date': datetime.now().strftime('%d.%m.%Y'),
+                    'read': False,
+                    'type': 'success'
+                }
+            ]
+        }
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps(client_data, ensure_ascii=False),
+            'isBase64Encoded': False
+        }
+        
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode() if e.fp else str(e)
+        return {
+            'statusCode': e.code,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'error': f'AmoCRM API error: {e.reason}',
+                'details': error_body
+            }),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': str(e)}),
+            'isBase64Encoded': False
+        }

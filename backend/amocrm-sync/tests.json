@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "Test OPTIONS for CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Test credentials check",
+      "method": "GET",
+      "path": "/?phone=79991234567",
+      "expectedStatus": 500,
+      "expectedBody": {
+        "error": "AmoCRM credentials not configured"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
