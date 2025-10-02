@@ -21,16 +21,19 @@ const Header = ({ lastUpdate, loading, onRefresh, onLogout }: HeaderProps) => {
     <div className="sticky top-0 z-50 backdrop-blur-lg bg-background/80 border-b border-border">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-            <Icon name="Wallet" size={20} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold">МФО Личный Кабинет</h1>
-            {lastUpdate && (
-              <p className="text-xs text-muted-foreground">
-                Обновлено: {lastUpdate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            )}
+          <div className="flex items-center gap-2">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary via-primary/90 to-secondary flex items-center justify-center shadow-lg shadow-primary/30 border-2 border-background">
+              <Icon name="CheckCircle" size={28} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Личный кабинет</h1>
+              {lastUpdate && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Icon name="Clock" size={11} />
+                  {lastUpdate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
