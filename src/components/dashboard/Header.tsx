@@ -9,17 +9,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Icon from '@/components/ui/icon';
-import { Notification } from './types';
-
 interface HeaderProps {
   lastUpdate: Date | null;
   loading: boolean;
-  notifications: Notification[];
   onRefresh: () => void;
   onLogout: () => void;
 }
 
-const Header = ({ lastUpdate, loading, notifications, onRefresh, onLogout }: HeaderProps) => {
+const Header = ({ lastUpdate, loading, onRefresh, onLogout }: HeaderProps) => {
   return (
     <div className="sticky top-0 z-50 backdrop-blur-lg bg-background/80 border-b border-border">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -45,12 +42,6 @@ const Header = ({ lastUpdate, loading, notifications, onRefresh, onLogout }: Hea
             title="Обновить данные из AmoCRM"
           >
             <Icon name={loading ? 'Loader2' : 'RefreshCw'} size={20} className={loading ? 'animate-spin' : ''} />
-          </Button>
-          <Button variant="ghost" size="icon" className="relative">
-            <Icon name="Bell" size={20} />
-            {notifications.filter(n => !n.read).length > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            )}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

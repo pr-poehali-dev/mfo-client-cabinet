@@ -200,7 +200,6 @@ const Index = () => {
       <Header 
         lastUpdate={lastUpdate}
         loading={loading}
-        notifications={notifications}
         onRefresh={refreshData}
         onLogout={handleLogout}
       />
