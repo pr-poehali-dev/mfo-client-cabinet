@@ -4,6 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface LoginPageProps {
   onLogin: (phone: string) => void;
@@ -16,6 +24,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [storedCode, setStoredCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -226,9 +235,86 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Нет доступа к кабинету?{' '}
-              <a href="#" className="text-primary hover:underline">
-                Свяжитесь с менеджером
-              </a>
+              <Dialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen}>
+                <DialogTrigger asChild>
+                  <button className="text-primary hover:underline font-medium">
+                    Свяжитесь с поддержкой
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-xl">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+                        <Icon name="Headphones" size={20} className="text-white" />
+                      </div>
+                      Служба поддержки
+                    </DialogTitle>
+                    <DialogDescription>
+                      Свяжитесь с нами для получения доступа к личному кабинету
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Icon name="Phone" size={20} className="text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Телефон</p>
+                        <a href="tel:+78001234567" className="text-lg font-semibold hover:text-primary transition-colors">
+                          +7 (800) 123-45-67
+                        </a>
+                        <p className="text-xs text-muted-foreground mt-1">Круглосуточно</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                        <Icon name="Mail" size={20} className="text-secondary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Email</p>
+                        <a href="mailto:support@example.com" className="text-lg font-semibold hover:text-primary transition-colors break-all">
+                          support@example.com
+                        </a>
+                        <p className="text-xs text-muted-foreground mt-1">Ответ в течение 24 часов</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                        <Icon name="MessageCircle" size={20} className="text-green-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Telegram</p>
+                        <a href="https://t.me/support" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold hover:text-primary transition-colors">
+                          @support
+                        </a>
+                        <p className="text-xs text-muted-foreground mt-1">Быстрый ответ</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setSupportDialogOpen(false)}
+                    >
+                      Закрыть
+                    </Button>
+                    <Button
+                      className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                      onClick={() => {
+                        window.location.href = 'tel:+78001234567';
+                      }}
+                    >
+                      <Icon name="Phone" size={18} className="mr-2" />
+                      Позвонить
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </p>
           </div>
         </CardContent>
