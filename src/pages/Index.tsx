@@ -2,9 +2,6 @@ import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import Header from '@/components/dashboard/Header';
-import DashboardTab from '@/components/dashboard/DashboardTab';
-import LoansTab from '@/components/dashboard/LoansTab';
-import PaymentsTab from '@/components/dashboard/PaymentsTab';
 import ProfileTab from '@/components/dashboard/ProfileTab';
 import DealsTab from '@/components/dashboard/DealsTab';
 import LoginPage from '@/components/auth/LoginPage';
@@ -13,12 +10,15 @@ import { Loan, Payment, Notification, Deal } from '@/components/dashboard/types'
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userPhone, setUserPhone] = useState('');
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('deals');
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [clientName, setClientName] = useState('');
+  const [clientFirstName, setClientFirstName] = useState('');
+  const [clientLastName, setClientLastName] = useState('');
+  const [clientMiddleName, setClientMiddleName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,29 +30,50 @@ const Index = () => {
       setLoading(true);
       setError('');
       
+      const cleanPhone = phone.replace(/\D/g, '');
+      
       const response = await fetch(
-        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${phone}`
+        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
       );
       
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 500 && errorData.message?.includes('credentials')) {
-          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и AMOCRM_ACCESS_TOKEN в секреты проекта');
+          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
         } else if (response.status === 404) {
           setError('Клиент не найден в AmoCRM');
         } else {
           setError(errorData.error || 'Ошибка загрузки данных');
         }
+        setLoans([]);
+        setPayments([]);
+        setDeals([]);
+        setNotifications([]);
         return;
       }
       
       const data = await response.json();
       
       setClientName(data.name || 'Клиент');
-      setClientPhone(data.phone || '');
+      setClientFirstName(data.first_name || '');
+      setClientLastName(data.last_name || '');
+      setClientMiddleName(data.middle_name || '');
+      setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
-      setLoans(data.loans || []);
-      setPayments(data.payments || []);
+      
+      const uniqueDeals = Array.from(
+        new Map((data.deals || []).map((deal: Deal) => [deal.id, deal])).values()
+      );
+      const uniqueLoans = Array.from(
+        new Map((data.loans || []).map((loan: Loan) => [loan.id, loan])).values()
+      );
+      const uniquePayments = Array.from(
+        new Map((data.payments || []).map((payment: Payment) => [payment.id, payment])).values()
+      );
+      
+      setLoans(uniqueLoans);
+      setPayments(uniquePayments);
+      setDeals(uniqueDeals);
       setNotifications(data.notifications || []);
       setLastUpdate(new Date());
       
@@ -90,13 +111,19 @@ const Index = () => {
     setIsAuthenticated(false);
     setUserPhone('');
     localStorage.removeItem('userPhone');
+    
     setLoans([]);
     setPayments([]);
     setNotifications([]);
     setDeals([]);
     setClientName('');
+    setClientFirstName('');
+    setClientLastName('');
+    setClientMiddleName('');
     setClientPhone('');
     setClientEmail('');
+    setError('');
+    setLastUpdate(null);
   };
 
   const refreshData = async () => {
@@ -106,14 +133,18 @@ const Index = () => {
     setError('');
     
     try {
+      const cleanPhone = userPhone.replace(/\D/g, '');
+      
       const response = await fetch(
-        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${userPhone}`
+        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
       );
       
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 500 && errorData.message?.includes('credentials')) {
-          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и AMOCRM_ACCESS_TOKEN в секреты проекта');
+          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
+        } else if (response.status === 404) {
+          setError('Клиент не найден в AmoCRM');
         } else {
           setError(errorData.error || 'Ошибка загрузки данных');
         }
@@ -123,22 +154,34 @@ const Index = () => {
       const data = await response.json();
       
       setClientName(data.name || 'Клиент');
-      setClientPhone(data.phone || '');
+      setClientFirstName(data.first_name || '');
+      setClientLastName(data.last_name || '');
+      setClientMiddleName(data.middle_name || '');
+      setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
-      setLoans(data.loans || []);
-      setPayments(data.payments || []);
-      setDeals(data.deals || []);
-      setNotifications(data.notifications || []);
-      setLastUpdate(new Date());
       
-      setNotifications(prev => [{
+      const uniqueDeals = Array.from(
+        new Map((data.deals || []).map((deal: Deal) => [deal.id, deal])).values()
+      );
+      const uniqueLoans = Array.from(
+        new Map((data.loans || []).map((loan: Loan) => [loan.id, loan])).values()
+      );
+      const uniquePayments = Array.from(
+        new Map((data.payments || []).map((payment: Payment) => [payment.id, payment])).values()
+      );
+      
+      setLoans(uniqueLoans);
+      setPayments(uniquePayments);
+      setDeals(uniqueDeals);
+      setNotifications([{
         id: Date.now().toString(),
         title: 'Данные обновлены',
-        message: 'Информация успешно синхронизирована из AmoCRM',
+        message: `Загружено сделок: ${uniqueDeals.length}`,
         date: new Date().toLocaleDateString('ru-RU'),
         read: false,
         type: 'success'
-      }, ...prev]);
+      }, ...data.notifications || []]);
+      setLastUpdate(new Date());
       
     } catch (err) {
       console.error('Refresh error:', err);
@@ -180,19 +223,7 @@ const Index = () => {
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
-              <Icon name="LayoutDashboard" size={18} />
-              <span className="hidden sm:inline">Дашборд</span>
-            </TabsTrigger>
-            <TabsTrigger value="loans" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
-              <Icon name="FileText" size={18} />
-              <span className="hidden sm:inline">Займы</span>
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
-              <Icon name="CreditCard" size={18} />
-              <span className="hidden sm:inline">Платежи</span>
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto">
             <TabsTrigger value="deals" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
               <Icon name="Briefcase" size={18} />
               <span className="hidden sm:inline">Сделки</span>
@@ -203,18 +234,6 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard">
-            <DashboardTab loans={loans} notifications={notifications} />
-          </TabsContent>
-
-          <TabsContent value="loans">
-            <LoansTab loans={loans} />
-          </TabsContent>
-
-          <TabsContent value="payments">
-            <PaymentsTab payments={payments} />
-          </TabsContent>
-
           <TabsContent value="deals">
             <DealsTab deals={deals} />
           </TabsContent>
@@ -222,6 +241,9 @@ const Index = () => {
           <TabsContent value="profile">
             <ProfileTab 
               clientName={clientName}
+              clientFirstName={clientFirstName}
+              clientLastName={clientLastName}
+              clientMiddleName={clientMiddleName}
               clientPhone={clientPhone}
               clientEmail={clientEmail}
             />
