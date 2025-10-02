@@ -78,8 +78,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         contact_url = f'{base_url}/api/v4/contacts?query={client_phone}'
         contact_req = urllib.request.Request(contact_url, headers=headers)
         
+        print(f'[DEBUG] Searching contact with phone: {client_phone}')
+        print(f'[DEBUG] Request URL: {contact_url}')
+        
         with urllib.request.urlopen(contact_req, timeout=10) as response:
             contacts_data = json.loads(response.read().decode())
+        
+        print(f'[DEBUG] Found contacts: {len(contacts_data.get("_embedded", {}).get("contacts", []))}')
         
         if not contacts_data.get('_embedded', {}).get('contacts'):
             return {
@@ -88,7 +93,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 },
-                'body': json.dumps({'error': 'Client not found in AmoCRM'}),
+                'body': json.dumps({
+                    'error': 'Client not found in AmoCRM',
+                    'phone_searched': client_phone
+                }),
                 'isBase64Encoded': False
             }
         
@@ -261,6 +269,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
     except urllib.error.HTTPError as e:
         error_body = e.read().decode() if e.fp else str(e)
+        print(f'[ERROR] AmoCRM HTTP Error: {e.code} - {e.reason}')
+        print(f'[ERROR] Response body: {error_body}')
         return {
             'statusCode': e.code,
             'headers': {
@@ -269,17 +279,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             },
             'body': json.dumps({
                 'error': f'AmoCRM API error: {e.reason}',
-                'details': error_body
+                'details': error_body,
+                'phone': client_phone,
+                'domain': domain
             }),
             'isBase64Encoded': False
         }
     except Exception as e:
+        print(f'[ERROR] Unexpected error: {str(e)}')
+        import traceback
+        print(f'[ERROR] Traceback: {traceback.format_exc()}')
         return {
             'statusCode': 500,
             'headers': {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps({'error': str(e)}),
+            'body': json.dumps({
+                'error': str(e),
+                'type': type(e).__name__,
+                'phone': client_phone
+            }),
             'isBase64Encoded': False
         }
