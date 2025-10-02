@@ -14,6 +14,7 @@ const AmoCRMSetup = () => {
   const [code, setCode] = useState('');
   const [redirectUri, setRedirectUri] = useState('https://example.com');
   const [accessToken, setAccessToken] = useState('');
+  const [refreshToken, setRefreshToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -48,6 +49,7 @@ const AmoCRMSetup = () => {
 
       if (data.success) {
         setAccessToken(data.access_token);
+        setRefreshToken(data.refresh_token);
         setStep('token');
       } else {
         setError(data.error || 'Не удалось получить токен');
@@ -234,6 +236,27 @@ const AmoCRMSetup = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Refresh Token (AMOCRM_REFRESH_TOKEN)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={refreshToken}
+                      readOnly
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard(refreshToken)}
+                    >
+                      <Icon name="Copy" size={16} />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Используется для автоматического обновления токена
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label>Домен AmoCRM (AMOCRM_DOMAIN)</Label>
                   <div className="flex gap-2">
                     <Input
@@ -251,14 +274,69 @@ const AmoCRMSetup = () => {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Client ID (AMOCRM_CLIENT_ID)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={clientId}
+                      readOnly
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard(clientId)}
+                    >
+                      <Icon name="Copy" size={16} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Client Secret (AMOCRM_CLIENT_SECRET)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={clientSecret}
+                      readOnly
+                      className="font-mono text-xs"
+                      type="password"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard(clientSecret)}
+                    >
+                      <Icon name="Copy" size={16} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Redirect URI (AMOCRM_REDIRECT_URI)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={redirectUri}
+                      readOnly
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard(redirectUri)}
+                    >
+                      <Icon name="Copy" size={16} />
+                    </Button>
+                  </div>
+                </div>
+
                 <Alert>
                   <Icon name="Info" size={18} />
                   <AlertDescription>
                     <strong>Следующий шаг:</strong>
                     <ol className="list-decimal ml-4 mt-2 space-y-1 text-sm">
                       <li>Откройте <strong>Настройки → Секреты проекта</strong></li>
-                      <li>Найдите <strong>ACCESS_TOKEN</strong> → вставьте скопированный токен</li>
-                      <li>Найдите <strong>AMOCRM_DOMAIN</strong> → вставьте домен</li>
+                      <li>Скопируйте все значения выше в соответствующие секреты</li>
+                      <li><strong>ВАЖНО:</strong> Добавьте все 6 секретов для автообновления токена</li>
                       <li>Сохраните изменения</li>
                     </ol>
                   </AlertDescription>
