@@ -95,11 +95,34 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         contact = contacts_data['_embedded']['contacts'][0]
         contact_id = contact['id']
         
-        leads_url = f'{base_url}/api/v4/leads?filter[contacts][0]={contact_id}'
+        leads_url = f'{base_url}/api/v4/leads?filter[contacts][0]={contact_id}&with=contacts'
         leads_req = urllib.request.Request(leads_url, headers=headers)
         
         with urllib.request.urlopen(leads_req, timeout=10) as response:
             leads_data = json.loads(response.read().decode())
+        
+        pipelines_url = f'{base_url}/api/v4/leads/pipelines'
+        pipelines_req = urllib.request.Request(pipelines_url, headers=headers)
+        
+        pipelines_map = {}
+        try:
+            with urllib.request.urlopen(pipelines_req, timeout=10) as response:
+                pipelines_data = json.loads(response.read().decode())
+                for pipeline in pipelines_data.get('_embedded', {}).get('pipelines', []):
+                    pipeline_id = pipeline['id']
+                    pipeline_name = pipeline['name']
+                    statuses = {}
+                    for status in pipeline.get('_embedded', {}).get('statuses', []):
+                        statuses[status['id']] = {
+                            'name': status['name'],
+                            'color': status.get('color', '#cccccc')
+                        }
+                    pipelines_map[pipeline_id] = {
+                        'name': pipeline_name,
+                        'statuses': statuses
+                    }
+        except Exception as e:
+            print(f'Failed to load pipelines: {e}')
         
         loans: List[Dict[str, Any]] = []
         payments: List[Dict[str, Any]] = []
@@ -155,13 +178,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'name': lead.get('name', f'Займ #{lead["id"]}')
             })
             
+            pipeline_info = pipelines_map.get(pipeline_id, {})
+            status_info = pipeline_info.get('statuses', {}).get(status_id, {})
+            status_name = status_info.get('name', 'Неизвестный статус')
+            status_color = status_info.get('color', '#cccccc')
+            pipeline_name = pipeline_info.get('name', f'Воронка #{pipeline_id}')
+            
             deals.append({
                 'id': str(lead['id']),
                 'name': lead.get('name', f'Сделка #{lead["id"]}'),
                 'status': loan_status,
                 'price': loan_amount,
                 'status_id': status_id,
+                'status_name': status_name,
+                'status_color': status_color,
                 'pipeline_id': pipeline_id,
+                'pipeline_name': pipeline_name,
                 'responsible_user_id': responsible_user_id,
                 'created_at': datetime.fromtimestamp(created_at).strftime('%d.%m.%Y %H:%M'),
                 'updated_at': datetime.fromtimestamp(updated_at).strftime('%d.%m.%Y %H:%M'),

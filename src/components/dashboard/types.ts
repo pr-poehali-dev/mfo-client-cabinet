@@ -33,7 +33,10 @@ export interface Deal {
   status: string;
   price: number;
   status_id: number;
+  status_name: string;
+  status_color: string;
   pipeline_id: number;
+  pipeline_name: string;
   responsible_user_id: number;
   created_at: string;
   updated_at: string;
