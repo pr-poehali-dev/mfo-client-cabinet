@@ -68,10 +68,6 @@ const Header = ({ lastUpdate, loading, notifications, onRefresh, onLogout }: Hea
                 <Icon name="RefreshCw" size={16} className="mr-2" />
                 Обновить данные
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = '/amocrm-setup'}>
-                <Icon name="Settings" size={16} className="mr-2" />
-                Настроить AmoCRM
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive">
                 <Icon name="LogOut" size={16} className="mr-2" />
