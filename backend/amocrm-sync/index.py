@@ -216,9 +216,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         phone_field = next((f for f in custom_fields if f.get('field_code') == 'PHONE'), None)
         email_field = next((f for f in custom_fields if f.get('field_code') == 'EMAIL'), None)
         
+        full_name = contact.get('name', 'Клиент')
+        name_parts = full_name.split(' ', 2)
+        last_name = name_parts[0] if len(name_parts) > 0 else ''
+        first_name = name_parts[1] if len(name_parts) > 1 else ''
+        middle_name = name_parts[2] if len(name_parts) > 2 else ''
+        
         client_data = {
             'id': contact_id,
-            'name': contact.get('name', 'Клиент'),
+            'name': full_name,
+            'first_name': first_name,
+            'last_name': last_name,
+            'middle_name': middle_name,
             'phone': phone_field['values'][0]['value'] if phone_field else client_phone,
             'email': email_field['values'][0]['value'] if email_field else '',
             'created_at': datetime.fromtimestamp(contact.get('created_at', 0)).strftime('%d.%m.%Y'),

@@ -16,6 +16,9 @@ const Index = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [clientName, setClientName] = useState('');
+  const [clientFirstName, setClientFirstName] = useState('');
+  const [clientLastName, setClientLastName] = useState('');
+  const [clientMiddleName, setClientMiddleName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,11 +49,15 @@ const Index = () => {
       const data = await response.json();
       
       setClientName(data.name || 'Клиент');
+      setClientFirstName(data.first_name || '');
+      setClientLastName(data.last_name || '');
+      setClientMiddleName(data.middle_name || '');
       setClientPhone(data.phone || '');
       setClientEmail(data.email || '');
       setLoans(data.loans || []);
       setPayments(data.payments || []);
       setNotifications(data.notifications || []);
+      setDeals(data.deals || []);
       setLastUpdate(new Date());
       
     } catch (err) {
@@ -92,6 +99,9 @@ const Index = () => {
     setNotifications([]);
     setDeals([]);
     setClientName('');
+    setClientFirstName('');
+    setClientLastName('');
+    setClientMiddleName('');
     setClientPhone('');
     setClientEmail('');
   };
@@ -195,6 +205,9 @@ const Index = () => {
           <TabsContent value="profile">
             <ProfileTab 
               clientName={clientName}
+              clientFirstName={clientFirstName}
+              clientLastName={clientLastName}
+              clientMiddleName={clientMiddleName}
               clientPhone={clientPhone}
               clientEmail={clientEmail}
             />
