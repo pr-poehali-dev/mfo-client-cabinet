@@ -1,8 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
 
 interface ProfileTabProps {
@@ -37,99 +35,99 @@ const ProfileTab = ({
   };
 
   return (
-    <div className="space-y-5">
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-start gap-5">
-            <Avatar className="w-24 h-24 border-4 border-background shadow-xl">
+    <div className="space-y-6 animate-fade-in">
+      <Card className="border-border/30 bg-card/80 backdrop-blur-md overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" />
+        
+        <CardHeader className="relative pb-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <Avatar className="w-28 h-28 border-4 border-background shadow-2xl">
               <AvatarImage src="" />
-              <AvatarFallback className="bg-gradient-to-br from-primary via-primary/90 to-secondary text-white text-3xl font-bold">
+              <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-3xl font-bold">
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <CardTitle className="text-3xl font-bold tracking-tight mb-1">{clientName || 'Клиент'}</CardTitle>
-              <CardDescription className="flex items-center gap-1.5 text-base">
-                <Icon name="Database" size={14} />
-                Данные из AmoCRM
+            <div className="text-center sm:text-left flex-1">
+              <CardTitle className="text-3xl font-montserrat mb-2">{clientName || 'Клиент'}</CardTitle>
+              <CardDescription className="text-base flex items-center gap-2 justify-center sm:justify-start">
+                <Icon name="CheckCircle" size={16} className="text-accent" />
+                Данные синхронизированы с AmoCRM
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6 pt-2">
-          <Separator />
-          
-          <div>
-            <h3 className="font-bold text-base mb-4 flex items-center gap-2 text-foreground/90">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Icon name="User" size={16} className="text-primary" />
+        
+        <CardContent className="relative space-y-6">
+          <div className="p-5 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-xl border border-primary/20">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg">
+                <Icon name="User" size={20} className="text-primary" />
               </div>
               Личные данные
             </h3>
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="lastName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Фамилия</Label>
-                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border">
-                  <p className="font-semibold">{clientLastName || '—'}</p>
+                <div className="p-3 bg-background/60 rounded-lg border border-border/50">
+                  <p className="font-semibold">{clientLastName || '-'}</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Имя</Label>
-                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border">
-                  <p className="font-semibold">{clientFirstName || '—'}</p>
+                <div className="p-3 bg-background/60 rounded-lg border border-border/50">
+                  <p className="font-semibold">{clientFirstName || '-'}</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="middleName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Отчество</Label>
-                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border">
-                  <p className="font-semibold">{clientMiddleName || '—'}</p>
+                <div className="p-3 bg-background/60 rounded-lg border border-border/50">
+                  <p className="font-semibold">{clientMiddleName || '-'}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <Separator />
-
-          <div>
-            <h3 className="font-bold text-base mb-4 flex items-center gap-2 text-foreground/90">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Icon name="Contact" size={16} className="text-primary" />
+          <div className="p-5 bg-gradient-to-br from-secondary/5 to-primary/5 rounded-xl border border-secondary/20">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-br from-secondary/20 to-primary/20 rounded-lg">
+                <Icon name="Contact" size={20} className="text-secondary" />
               </div>
-              Контакты
+              Контактная информация
             </h3>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Icon name="Phone" size={13} />
+                <Label htmlFor="phone" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <Icon name="Phone" size={14} />
                   Телефон
                 </Label>
-                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border flex items-center gap-2">
-                  <Icon name="Phone" size={16} className="text-muted-foreground" />
-                  <p className="font-semibold">{clientPhone || '—'}</p>
+                <div className="p-3 bg-background/60 rounded-lg border border-border/50 flex items-center gap-3">
+                  <Icon name="Phone" size={18} className="text-accent" />
+                  <p className="font-semibold">{clientPhone || '-'}</p>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Icon name="Mail" size={13} />
+                <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <Icon name="Mail" size={14} />
                   Email
                 </Label>
-                <div className="px-3 py-2.5 bg-muted/40 rounded-lg border flex items-center gap-2">
-                  <Icon name="Mail" size={16} className="text-muted-foreground" />
-                  <p className="font-semibold truncate">{clientEmail || '—'}</p>
+                <div className="p-3 bg-background/60 rounded-lg border border-border/50 flex items-center gap-3">
+                  <Icon name="Mail" size={18} className="text-accent" />
+                  <p className="font-semibold truncate">{clientEmail || '-'}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
+          <div className="p-4 bg-accent/10 border-2 border-accent/30 rounded-xl">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Icon name="Info" size={18} className="text-primary" />
+              <div className="p-2 bg-accent/20 rounded-lg">
+                <Icon name="Info" size={20} className="text-accent" />
               </div>
-              <div className="text-sm">
-                <p className="font-semibold mb-1.5">Автоматическая синхронизация</p>
+              <div className="text-sm flex-1">
+                <p className="font-bold mb-1.5 text-base">Автоматическая синхронизация</p>
                 <p className="text-muted-foreground leading-relaxed">
-                  Данные обновляются каждые 5 минут из AmoCRM. Для изменения информации свяжитесь с менеджером.
+                  Информация обновляется автоматически каждые 5 минут из AmoCRM. 
+                  Для изменения данных обратитесь к менеджеру.
                 </p>
               </div>
             </div>

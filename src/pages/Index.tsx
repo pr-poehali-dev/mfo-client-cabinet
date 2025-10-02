@@ -176,7 +176,7 @@ const Index = () => {
       setNotifications([{
         id: Date.now().toString(),
         title: 'Данные обновлены',
-        message: `Загружено сделок: ${uniqueDeals.length}`,
+        message: `Загружено заявок: ${uniqueDeals.length}`,
         date: new Date().toLocaleDateString('ru-RU'),
         read: false,
         type: 'success'
@@ -223,18 +223,18 @@ const Index = () => {
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto">
-            <TabsTrigger value="deals" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
-              <Icon name="Briefcase" size={18} />
-              <span className="hidden sm:inline">Сделки</span>
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto rounded-xl">
+            <TabsTrigger value="applications" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
+              <Icon name="FileText" size={18} />
+              <span className="hidden sm:inline">Заявки</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
+            <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="User" size={18} />
               <span className="hidden sm:inline">Профиль</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="deals">
+          <TabsContent value="applications">
             <DealsTab deals={deals} />
           </TabsContent>
 
