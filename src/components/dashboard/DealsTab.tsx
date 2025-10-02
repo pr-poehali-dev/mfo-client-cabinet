@@ -61,8 +61,8 @@ const DealsTab = ({ deals }: DealsTabProps) => {
             onClick={() => setFilter('completed')}
             className={filter === 'completed' ? 'bg-gradient-to-r from-primary to-secondary' : ''}
           >
-            <Icon name="CheckCircle" size={16} className="mr-2" />
-            Завершенные ({completedCount})
+            <Icon name="XCircle" size={16} className="mr-2" />
+            Отклонены ({completedCount})
           </Button>
         </div>
       </div>
@@ -77,7 +77,7 @@ const DealsTab = ({ deals }: DealsTabProps) => {
             <p className="text-muted-foreground">
               {deals.length === 0 
                 ? 'Ваши заявки будут отображаться здесь'
-                : `Нет ${filter === 'active' ? 'активных' : 'завершенных'} заявок`}
+                : `Нет ${filter === 'active' ? 'активных' : 'отклоненных'} заявок`}
             </p>
           </CardContent>
         </Card>
