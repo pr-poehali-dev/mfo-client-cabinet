@@ -36,7 +36,6 @@ const Index = () => {
         const errorData = await response.json();
         if (response.status === 500 && errorData.message?.includes('credentials')) {
           setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и AMOCRM_ACCESS_TOKEN в секреты проекта');
-          loadDemoData();
         } else if (response.status === 404) {
           setError('Клиент не найден в AmoCRM');
         } else {
@@ -58,51 +57,9 @@ const Index = () => {
     } catch (err) {
       console.error('AmoCRM sync error:', err);
       setError('Не удалось подключиться к AmoCRM');
-      loadDemoData();
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadDemoData = () => {
-    setLoans([
-      {
-        id: '4500000',
-        amount: 4500000,
-        paid: 890000,
-        status: 'active',
-        date: '15.08.2024',
-        nextPayment: '15.10.2024',
-        rate: 24.5
-      },
-      {
-        id: '3250000',
-        amount: 3250000,
-        paid: 3250000,
-        status: 'completed',
-        date: '10.05.2022',
-        nextPayment: '-',
-        rate: 24.0
-      }
-    ]);
-    
-    setPayments([
-      { id: '1', amount: 150000, date: '15.09.2024', type: 'payment', status: 'success' },
-      { id: '2', amount: 150000, date: '15.08.2024', type: 'payment', status: 'success' },
-      { id: '3', amount: 5000, date: '20.07.2024', type: 'fee', status: 'success' },
-      { id: '4', amount: 150000, date: '15.07.2024', type: 'payment', status: 'success' }
-    ]);
-    
-    setNotifications([
-      {
-        id: '1',
-        title: 'Демо режим',
-        message: 'Показаны тестовые данные. Настройте AmoCRM для синхронизации.',
-        date: new Date().toLocaleDateString('ru-RU'),
-        read: false,
-        type: 'warning'
-      }
-    ]);
   };
 
   useEffect(() => {

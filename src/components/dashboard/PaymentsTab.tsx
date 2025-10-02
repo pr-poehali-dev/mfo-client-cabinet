@@ -13,7 +13,7 @@ const PaymentsTab = ({ payments }: PaymentsTabProps) => {
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold font-montserrat">История платежей</h2>
-        <Button variant="outline">
+        <Button variant="outline" onClick={() => alert('Экспорт платежей в PDF/Excel будет доступен в ближайшее время')}>
           <Icon name="Download" size={18} className="mr-2" />
           Экспорт
         </Button>

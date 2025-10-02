@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,13 @@ interface ProfileTabProps {
 }
 
 const ProfileTab = ({ clientName, clientPhone, clientEmail }: ProfileTabProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedEmail, setEditedEmail] = useState(clientEmail);
+
+  const handleSave = () => {
+    alert('Изменения сохранены!');
+    setIsEditing(false);
+  };
   return (
     <div className="space-y-6 animate-fade-in">
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
@@ -41,7 +49,12 @@ const ProfileTab = ({ clientName, clientPhone, clientEmail }: ProfileTabProps) =
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" value={clientEmail} readOnly />
+              <Input 
+                id="email" 
+                value={isEditing ? editedEmail : clientEmail} 
+                onChange={(e) => setEditedEmail(e.target.value)}
+                readOnly={!isEditing} 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="passport">Паспорт</Label>
@@ -89,14 +102,23 @@ const ProfileTab = ({ clientName, clientPhone, clientEmail }: ProfileTabProps) =
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button variant="outline" className="flex-1">
-              <Icon name="Edit" size={18} className="mr-2" />
-              Редактировать
-            </Button>
-            <Button className="flex-1 bg-gradient-to-r from-primary to-secondary">
-              <Icon name="Save" size={18} className="mr-2" />
-              Сохранить
-            </Button>
+            {!isEditing ? (
+              <Button variant="outline" className="flex-1" onClick={() => setIsEditing(true)}>
+                <Icon name="Edit" size={18} className="mr-2" />
+                Редактировать
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" className="flex-1" onClick={() => setIsEditing(false)}>
+                  <Icon name="X" size={18} className="mr-2" />
+                  Отмена
+                </Button>
+                <Button className="flex-1 bg-gradient-to-r from-primary to-secondary" onClick={handleSave}>
+                  <Icon name="Save" size={18} className="mr-2" />
+                  Сохранить
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -55,7 +55,7 @@ const DashboardTab = ({ loans, notifications }: DashboardTabProps) => {
                 <p className="text-xs opacity-75">Следующий платеж</p>
                 <p className="font-semibold">{activeLoan.nextPayment}</p>
               </div>
-              <Button className="bg-white text-primary hover:bg-white/90">
+              <Button className="bg-white text-primary hover:bg-white/90" onClick={() => window.open('https://your-payment-link.com', '_blank')}>
                 Оплатить
               </Button>
             </div>

@@ -32,7 +32,7 @@ const LoansTab = ({ loans }: LoansTabProps) => {
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold font-montserrat">Мои займы</h2>
-        <Button className="bg-gradient-to-r from-primary to-secondary">
+        <Button className="bg-gradient-to-r from-primary to-secondary" onClick={() => window.open('https://your-loan-application-link.com', '_blank')}>
           <Icon name="Plus" size={18} className="mr-2" />
           Новый займ
         </Button>
@@ -77,12 +77,12 @@ const LoansTab = ({ loans }: LoansTabProps) => {
               </div>
 
               <div className="flex md:flex-col gap-2">
-                <Button variant="outline" size="sm" className="flex-1 md:flex-none">
+                <Button variant="outline" size="sm" className="flex-1 md:flex-none" onClick={() => alert(`Детали займа №${loan.id}`)}>
                   <Icon name="FileText" size={16} className="mr-2" />
                   Детали
                 </Button>
                 {loan.status === 'active' && (
-                  <Button size="sm" className="flex-1 md:flex-none bg-gradient-to-r from-primary to-secondary">
+                  <Button size="sm" className="flex-1 md:flex-none bg-gradient-to-r from-primary to-secondary" onClick={() => window.open('https://your-payment-link.com', '_blank')}>
                     <Icon name="CreditCard" size={16} className="mr-2" />
                     Оплатить
                   </Button>
