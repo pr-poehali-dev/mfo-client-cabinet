@@ -17,6 +17,8 @@ const AmoCRMSetup = () => {
   const [refreshToken, setRefreshToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null);
+  const [testLoading, setTestLoading] = useState(false);
 
   const handleGetToken = async () => {
     if (!subdomain || !clientId || !clientSecret || !code || !redirectUri) {
@@ -66,6 +68,54 @@ const AmoCRMSetup = () => {
     navigator.clipboard.writeText(text);
   };
 
+  const handleTestConnection = async () => {
+    setTestLoading(true);
+    setTestResult(null);
+
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=79991234567`
+      );
+      
+      const data = await response.json();
+
+      if (response.ok) {
+        setTestResult({
+          success: true,
+          message: `Подключение успешно! Найдено сделок: ${data.total_deals || 0}`
+        });
+      } else if (response.status === 404) {
+        setTestResult({
+          success: true,
+          message: 'Подключение работает! (Тестовый клиент не найден, но это нормально)'
+        });
+      } else if (response.status === 401) {
+        setTestResult({
+          success: false,
+          message: 'Токен недействителен. Пройдите настройку заново или обновите токен.'
+        });
+      } else if (data.error?.includes('credentials')) {
+        setTestResult({
+          success: false,
+          message: 'Секреты не настроены. Добавьте ACCESS_TOKEN и AMOCRM_DOMAIN в настройки проекта.'
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: data.error || 'Ошибка подключения к AmoCRM'
+        });
+      }
+    } catch (err) {
+      console.error('Test connection error:', err);
+      setTestResult({
+        success: false,
+        message: 'Не удалось проверить подключение'
+      });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl border-border/50 bg-card/50 backdrop-blur-sm">
@@ -81,6 +131,36 @@ const AmoCRMSetup = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-6">
+            <Button
+              onClick={handleTestConnection}
+              disabled={testLoading}
+              variant="outline"
+              className="w-full"
+            >
+              {testLoading ? (
+                <>
+                  <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                  Проверка подключения...
+                </>
+              ) : (
+                <>
+                  <Icon name="Wifi" size={20} className="mr-2" />
+                  Проверить подключение к AmoCRM
+                </>
+              )}
+            </Button>
+            
+            {testResult && (
+              <Alert className={`mt-4 ${testResult.success ? 'bg-accent/10 border-accent/30' : 'bg-destructive/10 border-destructive/30'}`}>
+                <Icon name={testResult.success ? 'CheckCircle' : 'AlertCircle'} size={18} className={testResult.success ? 'text-accent' : 'text-destructive'} />
+                <AlertDescription className={testResult.success ? 'text-accent' : 'text-destructive'}>
+                  {testResult.message}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
           {step === 'info' ? (
             <div className="space-y-6">
               <Alert>
