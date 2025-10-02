@@ -47,6 +47,7 @@ const Index = () => {
   const [clientEmail, setClientEmail] = useState('alexey.ivanov@example.com');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   useEffect(() => {
     const fetchAmoCRMData = async () => {
@@ -78,6 +79,7 @@ const Index = () => {
         setLoans(data.loans || []);
         setPayments(data.payments || []);
         setNotifications(data.notifications || []);
+        setLastUpdate(new Date());
         
       } catch (err) {
         console.error('AmoCRM sync error:', err);
@@ -130,6 +132,12 @@ const Index = () => {
     };
 
     fetchAmoCRMData();
+    
+    const intervalId = setInterval(() => {
+      fetchAmoCRMData();
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(intervalId);
   }, []);
 
   const refreshData = async () => {
@@ -160,6 +168,7 @@ const Index = () => {
       setLoans(data.loans || []);
       setPayments(data.payments || []);
       setNotifications(data.notifications || []);
+      setLastUpdate(new Date());
       
       setNotifications(prev => [{
         id: Date.now().toString(),
@@ -216,7 +225,14 @@ const Index = () => {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
               <Icon name="Wallet" size={20} className="text-white" />
             </div>
-            <h1 className="text-xl font-bold">МФО Личный Кабинет</h1>
+            <div>
+              <h1 className="text-xl font-bold">МФО Личный Кабинет</h1>
+              {lastUpdate && (
+                <p className="text-xs text-muted-foreground">
+                  Обновлено: {lastUpdate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <Button 
