@@ -38,7 +38,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     domain = os.environ.get('AMOCRM_DOMAIN', '')
-    access_token = os.environ.get('AMOCRM_ACCESS_TOKEN', '')
+    access_token = os.environ.get('ACCESS_TOKEN', '')
     
     if not domain or not access_token:
         return {
@@ -49,7 +49,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             },
             'body': json.dumps({
                 'error': 'AmoCRM credentials not configured',
-                'message': 'Добавьте AMOCRM_DOMAIN и AMOCRM_ACCESS_TOKEN в настройки проекта'
+                'message': 'Добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в настройки проекта'
             }),
             'isBase64Encoded': False
         }

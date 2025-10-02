@@ -37,7 +37,7 @@ const Index = () => {
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 500 && errorData.message?.includes('credentials')) {
-          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и AMOCRM_ACCESS_TOKEN в секреты проекта');
+          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
         } else if (response.status === 404) {
           setError('Клиент не найден в AmoCRM');
         } else {
@@ -120,7 +120,7 @@ const Index = () => {
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 500 && errorData.message?.includes('credentials')) {
-          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и AMOCRM_ACCESS_TOKEN в секреты проекта');
+          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
         } else {
           setError(errorData.error || 'Ошибка загрузки данных');
         }
