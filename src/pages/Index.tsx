@@ -6,8 +6,9 @@ import DashboardTab from '@/components/dashboard/DashboardTab';
 import LoansTab from '@/components/dashboard/LoansTab';
 import PaymentsTab from '@/components/dashboard/PaymentsTab';
 import ProfileTab from '@/components/dashboard/ProfileTab';
+import DealsTab from '@/components/dashboard/DealsTab';
 import LoginPage from '@/components/auth/LoginPage';
-import { Loan, Payment, Notification } from '@/components/dashboard/types';
+import { Loan, Payment, Notification, Deal } from '@/components/dashboard/types';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,6 +17,7 @@ const Index = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -91,6 +93,7 @@ const Index = () => {
     setLoans([]);
     setPayments([]);
     setNotifications([]);
+    setDeals([]);
     setClientName('');
     setClientPhone('');
     setClientEmail('');
@@ -124,6 +127,7 @@ const Index = () => {
       setClientEmail(data.email || '');
       setLoans(data.loans || []);
       setPayments(data.payments || []);
+      setDeals(data.deals || []);
       setNotifications(data.notifications || []);
       setLastUpdate(new Date());
       
@@ -176,7 +180,7 @@ const Index = () => {
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto">
+          <TabsList className="grid w-full grid-cols-5 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto">
             <TabsTrigger value="dashboard" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
               <Icon name="LayoutDashboard" size={18} />
               <span className="hidden sm:inline">Дашборд</span>
@@ -188,6 +192,10 @@ const Index = () => {
             <TabsTrigger value="payments" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
               <Icon name="CreditCard" size={18} />
               <span className="hidden sm:inline">Платежи</span>
+            </TabsTrigger>
+            <TabsTrigger value="deals" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
+              <Icon name="Briefcase" size={18} />
+              <span className="hidden sm:inline">Сделки</span>
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3">
               <Icon name="User" size={18} />
@@ -205,6 +213,10 @@ const Index = () => {
 
           <TabsContent value="payments">
             <PaymentsTab payments={payments} />
+          </TabsContent>
+
+          <TabsContent value="deals">
+            <DealsTab deals={deals} />
           </TabsContent>
 
           <TabsContent value="profile">
