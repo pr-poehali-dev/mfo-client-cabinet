@@ -6,7 +6,6 @@ export interface Loan {
   date: string;
   nextPayment: string;
   rate: number;
-  name?: string;
 }
 
 export interface Payment {
@@ -15,7 +14,6 @@ export interface Payment {
   date: string;
   type: 'payment' | 'fee' | 'penalty';
   status: 'success' | 'pending';
-  loan_id?: string;
 }
 
 export interface Notification {
@@ -25,27 +23,4 @@ export interface Notification {
   date: string;
   read: boolean;
   type: 'info' | 'warning' | 'success';
-}
-
-export interface Deal {
-  id: string;
-  name: string;
-  status: string;
-  price: number;
-  status_id: number;
-  status_name: string;
-  status_color: string;
-  pipeline_id: number;
-  pipeline_name: string;
-  responsible_user_id: number;
-  created_at: string;
-  updated_at: string;
-  custom_fields: Array<{
-    field_id: number;
-    field_name: string;
-    field_code: string;
-    values: Array<{
-      value: string | number;
-    }>;
-  }>;
 }
