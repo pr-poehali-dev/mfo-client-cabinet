@@ -47,22 +47,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setError('');
 
     try {
-      const checkResponse = await fetch(
-        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${digits}`
-      );
-
-      if (checkResponse.status === 404) {
-        setError('Номер телефона не найден в системе. Обратитесь к менеджеру.');
-        setLoading(false);
-        return;
-      }
-
-      if (!checkResponse.ok) {
-        setError('Ошибка проверки номера. Попробуйте позже.');
-        setLoading(false);
-        return;
-      }
-
       const smsResponse = await fetch(
         'https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e',
         {
