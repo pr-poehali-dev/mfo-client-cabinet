@@ -469,6 +469,19 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         deals: List[Dict[str, Any]] = []
         
         for lead in leads_data.get('_embedded', {}).get('leads', []):
+            lead_id = lead.get('id')
+            lead_name = lead.get('name', f'Сделка #{lead_id}')
+            
+            lead_contacts = lead.get('_embedded', {}).get('contacts', [])
+            lead_contact_ids = [c.get('id') for c in lead_contacts] if lead_contacts else []
+            
+            print(f'[CHECK] Сделка {lead_id} "{lead_name}": привязана к контактам {lead_contact_ids}')
+            
+            if lead_contacts and contact_id not in lead_contact_ids:
+                print(f'[WARNING] Сделка {lead_id} НЕ принадлежит контакту {contact_id}! Пропускаем.')
+                continue
+            
+            print(f'[OK] Сделка {lead_id} принадлежит клиенту {contact_id}')
             
             loan_amount = lead.get('price', 0)
             created_at = lead.get('created_at', 0)
