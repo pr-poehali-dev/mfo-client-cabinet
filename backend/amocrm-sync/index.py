@@ -525,52 +525,33 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                     for note in notes_list:
                         note_type = note.get('note_type', '')
                         note_id = note.get('id', 0)
-                        
-                        print(f'[DEBUG] Note {note_id}: type={note_type}')
-                        
                         params = note.get('params', {})
                         
-                        if 'file' in params or 'attachment' in params:
-                            file_info = params.get('file') or params.get('attachment')
-                            
-                            if file_info:
-                                file_name = file_info.get('name') or file_info.get('file_name') or params.get('text', 'Документ')
-                                file_url = file_info.get('url') or file_info.get('link', '')
-                                file_size = file_info.get('size', 0)
-                                
-                                if file_url:
-                                    documents.append({
-                                        'id': str(note_id),
-                                        'name': file_name,
-                                        'file_url': file_url,
-                                        'file_name': file_name,
-                                        'file_size': file_size,
-                                        'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
-                                        'type': 'contract' if 'договор' in file_name.lower() else 'other',
-                                        'lead_id': str(lead_id),
-                                        'lead_name': lead_name
-                                    })
-                                    print(f'[DEBUG] Added document: {file_name} from lead {lead_id}')
+                        print(f'[DEBUG] Note {note_id}: type={note_type}, params keys={list(params.keys())}')
                         
-                        if note_type == 'file_attachment' or note_type == 'attachment':
-                            attachment = params.get('attachment')
-                            if attachment:
-                                file_name = attachment.get('file_name', 'Документ')
-                                file_url = attachment.get('link', '')
+                        if note_type == 'attachment':
+                            is_drive = params.get('is_drive_attachment', False)
+                            file_name = params.get('file_name') or params.get('original_name') or params.get('text', 'Документ')
+                            
+                            if is_drive:
+                                file_uuid = params.get('file_uuid')
+                                version_uuid = params.get('version_uuid')
                                 
-                                if file_url:
+                                if file_uuid and version_uuid:
+                                    file_url = f'https://drive.amocrm.ru/v1.0/files/{file_uuid}/versions/{version_uuid}/download'
+                                    
                                     documents.append({
                                         'id': str(note_id),
                                         'name': file_name,
                                         'file_url': file_url,
                                         'file_name': file_name,
-                                        'file_size': attachment.get('size', 0),
+                                        'file_size': 0,
                                         'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
                                         'type': 'contract' if 'договор' in file_name.lower() else 'other',
                                         'lead_id': str(lead_id),
                                         'lead_name': lead_name
                                     })
-                                    print(f'[DEBUG] Added attachment: {file_name} from lead {lead_id}')
+                                    print(f'[DEBUG] Added drive document: {file_name} from lead {lead_id}')
                 
                 except Exception as note_err:
                     print(f'[WARNING] Failed to load notes for lead {lead_id}: {note_err}')
