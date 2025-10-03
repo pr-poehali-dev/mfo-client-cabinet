@@ -107,11 +107,14 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setLoading(true);
     setError('');
 
-    const testCode = '1234';
-    setStoredCode(testCode);
-    setStep('code');
-    setResendTimer(0);
-    setLoading(false);
+    try {
+      await sendSMS(digits);
+    } catch (err: any) {
+      console.error('SMS error:', err);
+      setError(err.message || 'Не удалось отправить СМС. Попробуйте позже.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCodeSubmit = async (e: React.FormEvent) => {
