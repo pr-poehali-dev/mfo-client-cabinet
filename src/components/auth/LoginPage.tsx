@@ -44,21 +44,16 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   };
 
   const sendSMS = async (phoneDigits: string) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-    
     try {
       const response = await fetch('https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e', {
         method: 'POST',
+        mode: 'cors',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ phone: phoneDigits, action: 'send' }),
-        signal: controller.signal
+        body: JSON.stringify({ phone: phoneDigits, action: 'send' })
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
@@ -66,6 +61,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       }
 
       const result = await response.json();
+      console.log('SMS response:', result);
+      
       setStoredCode(result.code);
       setStep('code');
       setResendTimer(60);
@@ -81,15 +78,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       }, 1000);
       
     } catch (err: any) {
-      clearTimeout(timeoutId);
       console.error('SMS Send Error:', err);
-      
-      if (err.name === 'AbortError') {
-        throw new Error('Превышено время ожидания. Попробуйте еще раз.');
-      }
-      if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
-        throw new Error('Не удалось подключиться к серверу SMS. Попробуйте позже или обратитесь в поддержку.');
-      }
       throw new Error(err.message || 'Ошибка отправки SMS');
     }
   };
