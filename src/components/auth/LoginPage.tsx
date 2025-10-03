@@ -60,29 +60,54 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   };
 
   const sendSMS = async (phoneDigits: string) => {
-    console.log('Generating test SMS code for:', phoneDigits);
+    console.log('Sending SMS to:', phoneDigits);
     
-    const testCode = Math.floor(1000 + Math.random() * 9000).toString();
-    console.log('Generated code:', testCode);
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    setStoredCode(testCode);
-    setStep('code');
-    refreshCaptcha();
-    setResendTimer(60);
-    
-    const interval = setInterval(() => {
-      setResendTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
+    try {
+      const response = await fetch('https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e', {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ phone: phoneDigits, action: 'send' })
       });
-    }, 1000);
-    
-    setError(`📱 Тестовый режим. Ваш код: ${testCode}`);
+
+      console.log('Response received:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
+        console.error('Error response:', errorData);
+        throw new Error(errorData.error || 'Ошибка отправки SMS');
+      }
+
+      const result = await response.json();
+      console.log('SMS result:', result);
+      
+      if (!result.code) {
+        throw new Error('Код не получен от сервера');
+      }
+      
+      setStoredCode(result.code);
+      setStep('code');
+      refreshCaptcha();
+      setResendTimer(1200);
+      
+      const interval = setInterval(() => {
+        setResendTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+    } catch (err: any) {
+      console.error('SMS Send Full Error:', err, err.stack);
+      throw new Error(err.message || 'Ошибка отправки SMS');
+    }
   };
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
@@ -328,7 +353,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                   disabled={loading || resendTimer > 0}
                 >
                   {resendTimer > 0 ? (
-                    `Повторить через ${resendTimer}с`
+                    `Повторить через ${Math.floor(resendTimer / 60)}:${(resendTimer % 60).toString().padStart(2, '0')}`
                   ) : (
                     <>
                       <Icon name="RefreshCw" size={16} className="mr-1" />
