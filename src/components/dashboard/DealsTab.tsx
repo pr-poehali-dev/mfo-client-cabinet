@@ -126,6 +126,27 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
 
   const interestRate = 1.0;
   const totalReturn = amount + (amount * (interestRate / 100) * termDays);
+  const dailyPayment = totalReturn / termDays;
+
+  const generatePaymentSchedule = () => {
+    const schedule = [];
+    const today = new Date();
+    
+    for (let i = 1; i <= Math.min(termDays, 7); i++) {
+      const paymentDate = new Date(today);
+      paymentDate.setDate(today.getDate() + i);
+      
+      schedule.push({
+        day: i,
+        date: paymentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+        amount: Math.round(dailyPayment)
+      });
+    }
+    
+    return schedule;
+  };
+
+  const paymentSchedule = generatePaymentSchedule();
 
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -236,6 +257,41 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
                       <span className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                         {Math.round(totalReturn).toLocaleString('ru-RU')} ₽
                       </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Icon name="Calendar" size={18} className="text-primary" />
+                      <Label className="text-base font-semibold">График платежей</Label>
+                    </div>
+                    <div className="p-4 bg-card/50 rounded-xl border border-border/50 space-y-2 max-h-48 overflow-y-auto">
+                      {paymentSchedule.map((payment) => (
+                        <div 
+                          key={payment.day}
+                          className="flex items-center justify-between p-3 bg-background/80 rounded-lg hover:bg-background transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                              <span className="text-sm font-bold">{payment.day}</span>
+                            </div>
+                            <div>
+                              <div className="font-semibold">День {payment.day}</div>
+                              <div className="text-xs text-muted-foreground">{payment.date}</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-accent">{payment.amount.toLocaleString('ru-RU')} ₽</div>
+                            <div className="text-xs text-muted-foreground">платёж</div>
+                          </div>
+                        </div>
+                      ))}
+                      {termDays > 7 && (
+                        <div className="text-center text-sm text-muted-foreground pt-2">
+                          <Icon name="MoreHorizontal" size={16} className="inline mr-1" />
+                          Ещё {termDays - 7} {termDays - 7 === 1 ? 'день' : termDays - 7 < 5 ? 'дня' : 'дней'} по {Math.round(dailyPayment).toLocaleString('ru-RU')} ₽
+                        </div>
+                      )}
                     </div>
                   </div>
 
