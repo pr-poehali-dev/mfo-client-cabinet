@@ -492,36 +492,44 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         
         documents: List[Dict[str, Any]] = []
         try:
-            notes_url = f'{base_url}/api/v4/contacts/{contact_id}/notes'
-            notes_req = urllib.request.Request(notes_url, headers=headers)
+            print(f'[DEBUG] Loading documents from leads...')
             
-            print(f'[DEBUG] Loading notes from: {notes_url}')
-            
-            with urllib.request.urlopen(notes_req, timeout=10) as response:
-                notes_data = json.loads(response.read().decode())
-            
-            notes_list = notes_data.get('_embedded', {}).get('notes', [])
-            print(f'[DEBUG] Found {len(notes_list)} notes for contact {contact_id}')
-            
-            for note in notes_list:
-                note_type = note.get('note_type')
-                print(f'[DEBUG] Note {note.get("id")}: type={note_type}, params={note.get("params", {})}')
+            for lead in all_leads:
+                lead_id = lead['id']
                 
-                if note_type == 'attachment':
-                    params = note.get('params', {})
-                    attachment = params.get('attachment')
-                    if attachment:
-                        doc_name = params.get('text', attachment.get('file_name', 'Документ'))
-                        documents.append({
-                            'id': str(note['id']),
-                            'name': doc_name,
-                            'file_url': attachment.get('link', ''),
-                            'file_name': attachment.get('file_name', 'file'),
-                            'file_size': attachment.get('size', 0),
-                            'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
-                            'type': 'contract' if 'договор' in doc_name.lower() else 'other'
-                        })
-                        print(f'[DEBUG] Added document: {doc_name}')
+                try:
+                    notes_url = f'{base_url}/api/v4/leads/{lead_id}/notes'
+                    notes_req = urllib.request.Request(notes_url, headers=headers)
+                    
+                    with urllib.request.urlopen(notes_req, timeout=10) as response:
+                        notes_data = json.loads(response.read().decode())
+                    
+                    notes_list = notes_data.get('_embedded', {}).get('notes', [])
+                    
+                    for note in notes_list:
+                        note_type = note.get('note_type')
+                        
+                        if note_type == 'file_attachment' or note_type == 'attachment':
+                            params = note.get('params', {})
+                            
+                            if 'attachment' in params:
+                                attachment = params['attachment']
+                                file_name = attachment.get('file_name', 'Документ')
+                                
+                                documents.append({
+                                    'id': str(note['id']),
+                                    'name': params.get('text', file_name),
+                                    'file_url': attachment.get('link', ''),
+                                    'file_name': file_name,
+                                    'file_size': attachment.get('size', 0),
+                                    'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
+                                    'type': 'contract' if 'договор' in file_name.lower() else 'other',
+                                    'lead_id': str(lead_id)
+                                })
+                                print(f'[DEBUG] Added document from lead {lead_id}: {file_name}')
+                except Exception as lead_err:
+                    print(f'[WARNING] Failed to load notes for lead {lead_id}: {lead_err}')
+                    continue
             
             print(f'[DEBUG] Total documents loaded: {len(documents)}')
         except Exception as e:
