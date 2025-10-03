@@ -26,6 +26,22 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [code, setCode] = useState('');
   const [storedCode, setStoredCode] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
+  const [captchaText, setCaptchaText] = useState('');
+  const [captchaInput, setCaptchaInput] = useState('');
+
+  const generateCaptcha = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  const refreshCaptcha = () => {
+    setCaptchaText(generateCaptcha());
+    setCaptchaInput('');
+  };
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -46,15 +62,14 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const sendSMS = async (phoneDigits: string) => {
     console.log('Generating test SMS code for:', phoneDigits);
     
-    // Генерируем код локально (временное решение)
     const testCode = Math.floor(1000 + Math.random() * 9000).toString();
     console.log('Generated code:', testCode);
     
-    // Имитация задержки сети
     await new Promise(resolve => setTimeout(resolve, 500));
     
     setStoredCode(testCode);
     setStep('code');
+    refreshCaptcha();
     setResendTimer(60);
     
     const interval = setInterval(() => {
@@ -67,7 +82,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       });
     }, 1000);
     
-    // Показываем код пользователю (только для теста!)
     setError(`📱 Тестовый режим. Ваш код: ${testCode}`);
   };
 
@@ -99,6 +113,12 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     
     if (code.length !== 4) {
       setError('Введите 4-значный код');
+      return;
+    }
+
+    if (captchaInput.toUpperCase() !== captchaText) {
+      setError('Неверная капча. Попробуйте снова.');
+      refreshCaptcha();
       return;
     }
 
@@ -194,28 +214,68 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 />
               </div>
             ) : (
-              <div className="space-y-2">
-                <Label htmlFor="code">Код из СМС</Label>
-                <Input
-                  id="code"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={4}
-                  placeholder="0000"
-                  value={code}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
-                    setCode(value);
-                    setError('');
-                  }}
-                  disabled={loading}
-                  className="text-lg text-center tracking-widest"
-                  autoFocus
-                />
-                <p className="text-sm text-muted-foreground text-center">
-                  Код отправлен на номер {phone}
-                </p>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code">Код из СМС</Label>
+                  <Input
+                    id="code"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    placeholder="0000"
+                    value={code}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      setCode(value);
+                      setError('');
+                    }}
+                    disabled={loading}
+                    className="text-lg text-center tracking-widest"
+                    autoFocus
+                  />
+                  <p className="text-sm text-muted-foreground text-center">
+                    Код отправлен на номер {phone}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="captcha">Введите код с картинки</Label>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg p-4 border border-primary/30 select-none">
+                      <div className="text-2xl font-bold text-center tracking-widest font-mono" style={{ 
+                        transform: 'skew(-5deg)', 
+                        letterSpacing: '0.3em',
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+                      }}>
+                        {captchaText}
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={refreshCaptcha}
+                      disabled={loading}
+                      className="shrink-0"
+                    >
+                      <Icon name="RefreshCw" size={18} />
+                    </Button>
+                  </div>
+                  <Input
+                    id="captcha"
+                    type="text"
+                    maxLength={6}
+                    placeholder="Введите код"
+                    value={captchaInput}
+                    onChange={(e) => {
+                      setCaptchaInput(e.target.value.toUpperCase());
+                      setError('');
+                    }}
+                    disabled={loading}
+                    className="text-lg text-center tracking-widest uppercase"
+                  />
+                </div>
               </div>
             )}
 
