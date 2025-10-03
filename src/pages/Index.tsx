@@ -56,6 +56,10 @@ const Index = () => {
       
       const data = await response.json();
       
+      console.log('[DEBUG] AmoCRM Response:', data);
+      console.log('[DEBUG] Deals from response:', data.deals);
+      console.log('[DEBUG] Deals count:', data.deals?.length || 0);
+      
       setClientName(data.name || 'Клиент');
       setClientFirstName(data.first_name || '');
       setClientLastName(data.last_name || '');
@@ -72,6 +76,9 @@ const Index = () => {
       const uniquePayments = Array.from(
         new Map((data.payments || []).map((payment: Payment) => [payment.id, payment])).values()
       );
+      
+      console.log('[DEBUG] Unique deals:', uniqueDeals);
+      console.log('[DEBUG] Deals with status_name:', uniqueDeals.map(d => ({ id: d.id, name: d.name, status_name: d.status_name })));
       
       setLoans(uniqueLoans);
       setPayments(uniquePayments);
