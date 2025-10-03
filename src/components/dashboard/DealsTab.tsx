@@ -122,7 +122,8 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   const [submitting, setSubmitting] = useState(false);
 
   const hasRejectedDeal = deals.some(deal => deal.status_name === 'Заявка отклонена');
-  const canSubmitNewApplication = !hasRejectedDeal;
+  const hasApprovedDeal = deals.some(deal => deal.status_name === 'Заявка одобрена');
+  const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
 
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -134,12 +135,17 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   };
 
   const filteredDeals = deals.filter(deal => {
+    const isRejected = deal.status_name === 'Заявка отклонена';
+    const isApproved = deal.status_name === 'Заявка одобрена';
+    
     if (filter === 'all') return true;
+    if (filter === 'completed') return !isRejected;
+    if (filter === 'active') return !isApproved;
     return deal.status === filter;
   });
 
-  const activeCount = deals.filter(d => d.status === 'active').length;
-  const completedCount = deals.filter(d => d.status === 'completed').length;
+  const activeCount = deals.filter(d => d.status === 'active' && d.status_name !== 'Заявка одобрена').length;
+  const completedCount = deals.filter(d => d.status === 'completed' && d.status_name !== 'Заявка отклонена').length;
 
   const handleSubmitApplication = async () => {
     if (!newAmount || !newTerm) {
