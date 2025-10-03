@@ -138,14 +138,14 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
     const isRejected = deal.status_name === 'Заявка отклонена';
     const isApproved = deal.status_name === 'Заявка одобрена';
     
-    if (filter === 'all') return true;
-    if (filter === 'completed') return !isRejected;
-    if (filter === 'active') return !isApproved;
+    if (filter === 'all') return !isRejected;
+    if (filter === 'completed') return isRejected;
+    if (filter === 'active') return !isRejected && !isApproved;
     return deal.status === filter;
   });
 
-  const activeCount = deals.filter(d => d.status === 'active' && d.status_name !== 'Заявка одобрена').length;
-  const completedCount = deals.filter(d => d.status === 'completed' && d.status_name !== 'Заявка отклонена').length;
+  const activeCount = deals.filter(d => d.status_name !== 'Заявка одобрена' && d.status_name !== 'Заявка отклонена').length;
+  const completedCount = deals.filter(d => d.status_name === 'Заявка отклонена').length;
 
   const handleSubmitApplication = async () => {
     if (!newAmount || !newTerm) {
