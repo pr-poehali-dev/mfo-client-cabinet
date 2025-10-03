@@ -96,7 +96,7 @@ const Index = () => {
       
       const intervalId = setInterval(() => {
         fetchAmoCRMData(savedPhone);
-      }, 5 * 60 * 1000);
+      }, 15 * 1000);
       
       return () => clearInterval(intervalId);
     }
