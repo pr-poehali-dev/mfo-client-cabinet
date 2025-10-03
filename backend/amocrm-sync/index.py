@@ -172,11 +172,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         contact = contacts_data['_embedded']['contacts'][0]
         contact_id = contact['id']
         
+        print(f'[DEBUG] Contact ID: {contact_id}, Name: {contact.get("name")}')
+        
         leads_url = f'{base_url}/api/v4/leads?filter[contacts][0]={contact_id}&with=contacts'
         leads_req = urllib.request.Request(leads_url, headers=headers)
         
         with urllib.request.urlopen(leads_req, timeout=10) as response:
-            leads_data = json.loads(response.read().decode())
+            response_text = response.read().decode()
+            leads_data = json.loads(response_text)
+        
+        print(f'[DEBUG] Found leads: {len(leads_data.get("_embedded", {}).get("leads", []))}')
         
         pipelines_url = f'{base_url}/api/v4/leads/pipelines'
         pipelines_req = urllib.request.Request(pipelines_url, headers=headers)
@@ -206,6 +211,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         deals: List[Dict[str, Any]] = []
         
         for lead in leads_data.get('_embedded', {}).get('leads', []):
+            lead_contacts = lead.get('_embedded', {}).get('contacts', [])
+            if lead_contacts:
+                lead_contact_ids = [c.get('id') for c in lead_contacts]
+                if contact_id not in lead_contact_ids:
+                    print(f'[WARNING] Skipping lead {lead.get("id")} - not linked to contact {contact_id}')
+                    continue
+            
             loan_amount = lead.get('price', 0)
             created_at = lead.get('created_at', 0)
             updated_at = lead.get('updated_at', created_at)
