@@ -90,27 +90,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setError('');
 
     try {
-      const response = await fetch(
-        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${digits}`
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 404) {
-          setError('Клиент не найден в AmoCRM. Обратитесь в службу поддержки для получения доступа.');
-        } else if (response.status === 401) {
-          setError('Ошибка авторизации в AmoCRM. Обратитесь в службу поддержки.');
-        } else {
-          setError(errorData.error || 'Ошибка входа. Попробуйте позже.');
-        }
-        return;
-      }
-
       await sendSMS(digits);
-      
     } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || 'Не удалось подключиться к серверу. Проверьте интернет-соединение.');
+      console.error('SMS error:', err);
+      setError(err.message || 'Не удалось отправить СМС. Попробуйте позже.');
     } finally {
       setLoading(false);
     }
