@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +8,19 @@ import Icon from '@/components/ui/icon';
 
 const AmoCRMSetup = () => {
   const [step, setStep] = useState<'info' | 'token'>('info');
-  const [subdomain, setSubdomain] = useState('');
-  const [clientId, setClientId] = useState('');
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCode = urlParams.get('code');
+    if (authCode) {
+      setCode(authCode);
+    }
+  }, []);
+  const [subdomain, setSubdomain] = useState('stepanmalik88');
+  const [clientId, setClientId] = useState('31cf6e60-2cd4-4adb-9be2-ae60c1e67bb3');
   const [clientSecret, setClientSecret] = useState('');
   const [code, setCode] = useState('');
-  const [redirectUri, setRedirectUri] = useState('https://example.com');
+  const [redirectUri, setRedirectUri] = useState('https://poehali.dev/amocrm-setup');
   const [accessToken, setAccessToken] = useState('');
   const [refreshToken, setRefreshToken] = useState('');
   const [loading, setLoading] = useState(false);
