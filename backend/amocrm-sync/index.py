@@ -466,12 +466,6 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         deals: List[Dict[str, Any]] = []
         
         for lead in leads_data.get('_embedded', {}).get('leads', []):
-            lead_contacts = lead.get('_embedded', {}).get('contacts', [])
-            if lead_contacts:
-                lead_contact_ids = [c.get('id') for c in lead_contacts]
-                if contact_id not in lead_contact_ids:
-                    print(f'[WARNING] Skipping lead {lead.get("id")} - not linked to contact {contact_id}')
-                    continue
             
             loan_amount = lead.get('price', 0)
             created_at = lead.get('created_at', 0)
@@ -583,12 +577,6 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             for lead in leads_data.get('_embedded', {}).get('leads', []):
                 lead_id = lead['id']
                 lead_name = lead.get('name', f'Сделка #{lead_id}')
-                
-                lead_contacts = lead.get('_embedded', {}).get('contacts', [])
-                if lead_contacts:
-                    lead_contact_ids = [c.get('id') for c in lead_contacts]
-                    if contact_id not in lead_contact_ids:
-                        continue
                 
                 print(f'[DEBUG] Loading notes for lead {lead_id}...')
                 
