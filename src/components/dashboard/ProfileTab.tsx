@@ -34,6 +34,23 @@ const ProfileTab = ({
     return 'КЛ';
   };
 
+  const maskPhone = (phone: string) => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 11) {
+      return `+7 (${digits.slice(1, 4)}) ***-**-${digits.slice(9, 11)}`;
+    }
+    return phone;
+  };
+
+  const maskEmail = (email: string) => {
+    if (!email || !email.includes('@')) return email;
+    const [localPart, domain] = email.split('@');
+    if (localPart.length <= 2) return email;
+    const visibleStart = localPart.slice(0, 2);
+    const visibleEnd = localPart.slice(-1);
+    return `${visibleStart}***${visibleEnd}@${domain}`;
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <Card className="border-border/30 bg-card/80 backdrop-blur-md overflow-hidden">
@@ -102,7 +119,7 @@ const ProfileTab = ({
                 </Label>
                 <div className="p-3 bg-background/60 rounded-lg border border-border/50 flex items-center gap-3">
                   <Icon name="Phone" size={18} className="text-accent" />
-                  <p className="font-semibold">{clientPhone || '-'}</p>
+                  <p className="font-semibold">{maskPhone(clientPhone) || '-'}</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -112,7 +129,7 @@ const ProfileTab = ({
                 </Label>
                 <div className="p-3 bg-background/60 rounded-lg border border-border/50 flex items-center gap-3">
                   <Icon name="Mail" size={18} className="text-accent" />
-                  <p className="font-semibold truncate">{clientEmail || '-'}</p>
+                  <p className="font-semibold truncate">{maskEmail(clientEmail) || '-'}</p>
                 </div>
               </div>
             </div>
