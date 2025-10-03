@@ -199,10 +199,16 @@ const DealsTab = ({ deals }: DealsTabProps) => {
                       </div>
                       
                       <div>
-                        <h3 className="text-2xl font-bold text-red-400 mb-2">Заявка не одобрена</h3>
-                        <p className="text-lg text-muted-foreground mb-4">
-                          Запрошенная сумма: <span className="font-bold text-white">{deal.price.toLocaleString('ru-RU')} ₽</span>
-                        </p>
+                        <h3 className="text-2xl font-bold text-red-400 mb-3">Заявка не одобрена</h3>
+                        <div className="space-y-2">
+                          <p className="text-lg text-muted-foreground">
+                            Запрошенная сумма: <span className="font-bold text-white">{deal.price.toLocaleString('ru-RU')} ₽</span>
+                          </p>
+                          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                            <Icon name="Calendar" size={16} />
+                            Создана: <span className="font-semibold text-white">{deal.created_at}</span>
+                          </p>
+                        </div>
                       </div>
 
                       <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
