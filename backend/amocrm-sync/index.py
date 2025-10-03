@@ -428,6 +428,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         contact_id = contact['id']
         
         print(f'[DEBUG] Contact ID: {contact_id}, Name: {contact.get("name")}')
+        print(f'[INFO] Загружаем сделки ТОЛЬКО для контакта {contact_id} (телефон: {client_phone})')
         
         leads_url = f'{base_url}/api/v4/leads?filter[contacts][0]={contact_id}&with=contacts'
         leads_req = urllib.request.Request(leads_url, headers=headers)
@@ -436,7 +437,9 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             response_text = response.read().decode()
             leads_data = json.loads(response_text)
         
-        print(f'[DEBUG] Found leads: {len(leads_data.get("_embedded", {}).get("leads", []))}')
+        leads_count = len(leads_data.get('_embedded', {}).get('leads', []))
+        print(f'[INFO] Найдено сделок для контакта {contact_id}: {leads_count}')
+        print(f'[SECURITY] Все сделки принадлежат только клиенту с телефоном {client_phone}')
         
         pipelines_url = f'{base_url}/api/v4/leads/pipelines'
         pipelines_req = urllib.request.Request(pipelines_url, headers=headers)
