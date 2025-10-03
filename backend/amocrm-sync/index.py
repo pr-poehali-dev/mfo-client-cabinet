@@ -5,10 +5,12 @@ import urllib.error
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
-def refresh_access_token() -> Optional[str]:
+TOKEN_CACHE = {}
+
+def refresh_access_token() -> Optional[Dict[str, str]]:
     '''
     Обновляет access token используя refresh token
-    Returns: Новый access token или None при ошибке
+    Returns: Dict с новыми токенами или None при ошибке
     '''
     domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
     client_id = os.environ.get('AMOCRM_CLIENT_ID', '')
@@ -16,8 +18,11 @@ def refresh_access_token() -> Optional[str]:
     refresh_token = os.environ.get('AMOCRM_REFRESH_TOKEN', '')
     redirect_uri = os.environ.get('AMOCRM_REDIRECT_URI', '')
     
-    if not all([domain, client_id, client_secret, refresh_token, redirect_uri]):
+    if not all([client_id, client_secret, refresh_token]):
         print('[ERROR] Missing credentials for token refresh')
+        print(f'[DEBUG] client_id: {"set" if client_id else "missing"}')
+        print(f'[DEBUG] client_secret: {"set" if client_secret else "missing"}')
+        print(f'[DEBUG] refresh_token: {"set" if refresh_token else "missing"}')
         return None
     
     try:
@@ -29,6 +34,8 @@ def refresh_access_token() -> Optional[str]:
             'refresh_token': refresh_token,
             'redirect_uri': redirect_uri
         }).encode('utf-8')
+        
+        print(f'[INFO] Refreshing token at: {token_url}')
         
         token_req = urllib.request.Request(
             token_url,
@@ -42,19 +49,35 @@ def refresh_access_token() -> Optional[str]:
         new_access_token = token_response.get('access_token')
         new_refresh_token = token_response.get('refresh_token')
         
-        print(f'[INFO] Token refreshed successfully')
-        print(f'[INFO] New access token: {new_access_token[:20]}...')
-        print(f'[INFO] New refresh token: {new_refresh_token[:20]}...')
-        print(f'[WARNING] Update AMOCRM_REFRESH_TOKEN secret with: {new_refresh_token}')
-        print(f'[WARNING] Update ACCESS_TOKEN secret with: {new_access_token}')
+        if new_access_token:
+            TOKEN_CACHE['access_token'] = new_access_token
+            TOKEN_CACHE['refresh_token'] = new_refresh_token
+            
+            print(f'[SUCCESS] Token refreshed successfully!')
+            print(f'[INFO] New access token: {new_access_token[:30]}...')
+            print(f'[INFO] New refresh token: {new_refresh_token[:30]}...')
+            print(f'')
+            print(f'[ACTION REQUIRED] Обновите секреты проекта:')
+            print(f'ACCESS_TOKEN={new_access_token}')
+            print(f'AMOCRM_REFRESH_TOKEN={new_refresh_token}')
+            
+            return {
+                'access_token': new_access_token,
+                'refresh_token': new_refresh_token
+            }
         
-        return new_access_token
+        return None
         
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode() if e.fp else str(e)
+        print(f'[ERROR] Token refresh HTTP error: {e.code} - {e.reason}')
+        print(f'[ERROR] Response: {error_body}')
+        return None
     except Exception as e:
         print(f'[ERROR] Token refresh failed: {str(e)}')
         return None
 
-def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[str, Any]:
     '''
     Business: Синхронизация данных клиента из AmoCRM - получение займов, сделок и контактов
     Args: event с httpMethod, queryStringParameters (client_id или phone)
@@ -86,27 +109,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    domain = os.environ.get('AMOCRM_DOMAIN', '')
-    access_token = os.environ.get('ACCESS_TOKEN', '')
-    
-    if not domain:
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({
-                'error': 'AmoCRM credentials not configured',
-                'message': 'Добавьте AMOCRM_DOMAIN в настройки проекта'
-            }),
-            'isBase64Encoded': False
-        }
+    domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
+    access_token = TOKEN_CACHE.get('access_token') or os.environ.get('ACCESS_TOKEN', '')
     
     if not access_token:
-        print('[WARNING] ACCESS_TOKEN not set, trying to refresh')
-        access_token = refresh_access_token()
-        if not access_token:
+        print('[WARNING] ACCESS_TOKEN not set, trying to refresh from AMOCRM_REFRESH_TOKEN')
+        tokens = refresh_access_token()
+        if tokens:
+            access_token = tokens['access_token']
+        else:
             return {
                 'statusCode': 500,
                 'headers': {
@@ -114,8 +125,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'Access-Control-Allow-Origin': '*'
                 },
                 'body': json.dumps({
-                    'error': 'AmoCRM credentials not configured',
-                    'message': 'Добавьте ACCESS_TOKEN или настройте refresh token в секретах проекта'
+                    'error': 'AmoCRM token refresh failed',
+                    'message': 'Обновите токены через /amocrm-setup или добавьте ACCESS_TOKEN в секреты'
                 }),
                 'isBase64Encoded': False
             }
@@ -146,11 +157,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         print(f'[DEBUG] Searching contact with phone: {client_phone}')
         print(f'[DEBUG] Request URL: {contact_url}')
-        print(f'[DEBUG] Using token: {access_token[:20]}...')
+        print(f'[DEBUG] Using token: {access_token[:30]}...')
+        print(f'[DEBUG] Retry count: {_retry_count}')
         
         with urllib.request.urlopen(contact_req, timeout=10) as response:
             response_text = response.read().decode()
-            print(f'[DEBUG] Response: {response_text[:200]}')
+            print(f'[DEBUG] Response status: {response.status}')
+            print(f'[DEBUG] Response length: {len(response_text)}')
+            if response_text:
+                print(f'[DEBUG] Response preview: {response_text[:200]}')
             contacts_data = json.loads(response_text)
         
         print(f'[DEBUG] Found contacts: {len(contacts_data.get("_embedded", {}).get("contacts", []))}')
@@ -353,24 +368,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         print(f'[ERROR] AmoCRM HTTP Error: {e.code} - {e.reason}')
         print(f'[ERROR] Response body: {error_body}')
         
-        if e.code == 401:
-            print('[INFO] Got 401, trying to refresh token...')
-            new_token = refresh_access_token()
-            if new_token:
-                print('[INFO] Token refreshed, retrying request...')
-                return {
-                    'statusCode': 401,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'body': json.dumps({
-                        'error': 'Token expired and refreshed',
-                        'message': 'Обновите секрет ACCESS_TOKEN с новым токеном из логов',
-                        'action': 'token_refreshed'
-                    }),
-                    'isBase64Encoded': False
-                }
+        if e.code == 401 and _retry_count == 0:
+            print('[INFO] Got 401 Unauthorized - token expired, trying to refresh...')
+            tokens = refresh_access_token()
+            if tokens:
+                print('[INFO] Token refreshed successfully! Retrying request with new token...')
+                return handler(event, context, _retry_count=1)
+            
+            return {
+                'statusCode': 401,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({
+                    'error': 'Token refresh failed',
+                    'message': 'Не удалось обновить токен. Обновите вручную через /amocrm-setup',
+                    'details': 'Проверьте AMOCRM_REFRESH_TOKEN в секретах проекта'
+                }),
+                'isBase64Encoded': False
+            }
         
         return {
             'statusCode': e.code,
