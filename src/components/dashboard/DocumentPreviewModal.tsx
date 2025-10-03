@@ -9,9 +9,10 @@ interface DocumentPreviewModalProps {
   title: string;
   content: React.ReactNode;
   onDownload?: () => void;
+  documentId?: string;
 }
 
-const DocumentPreviewModal = ({ open, onClose, title, content, onDownload }: DocumentPreviewModalProps) => {
+const DocumentPreviewModal = ({ open, onClose, title, content, onDownload, documentId }: DocumentPreviewModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
@@ -22,7 +23,7 @@ const DocumentPreviewModal = ({ open, onClose, title, content, onDownload }: Doc
               {onDownload && (
                 <Button onClick={onDownload} size="sm" variant="outline">
                   <Icon name="Download" size={16} className="mr-2" />
-                  Скачать
+                  Скачать PDF
                 </Button>
               )}
               <Button onClick={onClose} size="sm" variant="ghost">
@@ -33,7 +34,7 @@ const DocumentPreviewModal = ({ open, onClose, title, content, onDownload }: Doc
         </DialogHeader>
         
         <ScrollArea className="flex-1 pr-4">
-          <div className="prose prose-sm max-w-none">
+          <div id={documentId} className="prose prose-sm max-w-none">
             {content}
           </div>
         </ScrollArea>

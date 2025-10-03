@@ -6,6 +6,7 @@ import { Document } from './types';
 import DocumentPreviewModal from './DocumentPreviewModal';
 import LoanAgreementTemplate from './documents/LoanAgreementTemplate';
 import PersonalDataConsentTemplate from './documents/PersonalDataConsentTemplate';
+import { generatePDF } from '@/utils/pdfGenerator';
 
 interface DocumentsTabProps {
   documents: Document[];
@@ -14,7 +15,7 @@ interface DocumentsTabProps {
 }
 
 const DocumentsTab = ({ documents, clientName, clientPhone }: DocumentsTabProps) => {
-  const [previewDoc, setPreviewDoc] = useState<{ title: string; content: React.ReactNode } | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; content: React.ReactNode; id: string; filename: string } | null>(null);
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
     if (ext === 'pdf') return 'FileText';
@@ -91,15 +92,25 @@ const DocumentsTab = ({ documents, clientName, clientPhone }: DocumentsTabProps)
   const handlePreviewLoanAgreement = () => {
     setPreviewDoc({
       title: 'Договор займа',
-      content: <LoanAgreementTemplate clientName={clientName} clientPhone={clientPhone} />
+      content: <LoanAgreementTemplate clientName={clientName} clientPhone={clientPhone} />,
+      id: 'loan-agreement-doc',
+      filename: 'договор_займа.pdf'
     });
   };
 
   const handlePreviewPersonalDataConsent = () => {
     setPreviewDoc({
       title: 'Согласие на обработку персональных данных',
-      content: <PersonalDataConsentTemplate clientName={clientName} clientPhone={clientPhone} />
+      content: <PersonalDataConsentTemplate clientName={clientName} clientPhone={clientPhone} />,
+      id: 'personal-data-consent-doc',
+      filename: 'согласие_на_обработку_ПД.pdf'
     });
+  };
+
+  const handleDownloadPDF = async () => {
+    if (previewDoc) {
+      await generatePDF(previewDoc.id, previewDoc.filename);
+    }
   };
 
   return (
@@ -226,7 +237,8 @@ const DocumentsTab = ({ documents, clientName, clientPhone }: DocumentsTabProps)
           onClose={() => setPreviewDoc(null)}
           title={previewDoc.title}
           content={previewDoc.content}
-          onDownload={() => window.print()}
+          documentId={previewDoc.id}
+          onDownload={handleDownloadPDF}
         />
       )}
     </div>
