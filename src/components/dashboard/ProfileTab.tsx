@@ -5,6 +5,13 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface ProfileTabProps {
   clientName: string;
@@ -28,6 +35,29 @@ const ProfileTab = ({
   const [passportPhoto, setPassportPhoto] = useState<File | null>(null);
   const [selfiePhoto, setSelfiePhoto] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [customAvatar, setCustomAvatar] = useState<string | null>(null);
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+
+  const defaultMaleAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=male&backgroundColor=c0aede';
+  const defaultFemaleAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=female&backgroundColor=b6e3f4';
+  
+  const avatarOptions = clientGender === 'female' ? [
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=female1&backgroundColor=ffd5dc',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=female2&backgroundColor=b6e3f4',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=female3&backgroundColor=e0c3fc',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=female4&backgroundColor=ffeaa7',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=female5&backgroundColor=fab1a0',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=female6&backgroundColor=a29bfe',
+  ] : [
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=male1&backgroundColor=c0aede',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=male2&backgroundColor=74b9ff',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=male3&backgroundColor=81ecec',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=male4&backgroundColor=a8e6cf',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=male5&backgroundColor=dfe6e9',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=male6&backgroundColor=ffeaa7',
+  ];
+
+  const currentAvatar = customAvatar || (clientGender === 'female' ? defaultFemaleAvatar : defaultMaleAvatar);
 
   const getInitials = () => {
     if (clientFirstName && clientLastName) {
@@ -156,12 +186,22 @@ const ProfileTab = ({
         
         <CardHeader className="relative pb-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <Avatar className="w-28 h-28 border-4 border-background shadow-2xl">
-              <AvatarImage src={clientGender === 'female' ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=female&backgroundColor=b6e3f4' : 'https://api.dicebear.com/7.x/avataaars/svg?seed=male&backgroundColor=c0aede'} />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-3xl font-bold">
-                {getInitials()}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="w-28 h-28 border-4 border-background shadow-2xl cursor-pointer transition-transform hover:scale-105" onClick={() => setIsAvatarDialogOpen(true)}>
+                <AvatarImage src={currentAvatar} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-3xl font-bold">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full p-0 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => setIsAvatarDialogOpen(true)}
+              >
+                <Icon name="Camera" size={18} />
+              </Button>
+            </div>
             <div className="text-center sm:text-left flex-1">
               <CardTitle className="text-3xl font-montserrat mb-2">{clientName || 'Клиент'}</CardTitle>
               <CardDescription className="text-base flex items-center gap-2 justify-center sm:justify-start">
@@ -371,6 +411,58 @@ const ProfileTab = ({
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="ImageIcon" size={24} className="text-primary" />
+              Выберите аватар
+            </DialogTitle>
+            <DialogDescription>
+              Выберите один из предложенных вариантов
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-4 py-4">
+            {avatarOptions.map((avatarUrl, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setCustomAvatar(avatarUrl);
+                  setIsAvatarDialogOpen(false);
+                  toast.success('Аватар обновлён!');
+                }}
+                className={`relative group rounded-full overflow-hidden border-4 transition-all hover:scale-110 ${
+                  customAvatar === avatarUrl 
+                    ? 'border-primary shadow-lg shadow-primary/50' 
+                    : 'border-border/50 hover:border-primary/50'
+                }`}
+              >
+                <img src={avatarUrl} alt={`Avatar ${index + 1}`} className="w-full h-full" />
+                {customAvatar === avatarUrl && (
+                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                    <Icon name="Check" size={24} className="text-primary" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+          {customAvatar && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCustomAvatar(null);
+                setIsAvatarDialogOpen(false);
+                toast.success('Аватар сброшен по умолчанию');
+              }}
+              className="w-full"
+            >
+              <Icon name="RotateCcw" size={16} className="mr-2" />
+              Сбросить по умолчанию
+            </Button>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
