@@ -179,16 +179,28 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
     
     if method == 'PUT':
         try:
+            print('[PUT] Handling document upload request')
             body = event.get('body', '')
+            print(f'[PUT] Body type: {type(body)}, length: {len(body) if body else 0}')
+            print(f'[PUT] isBase64Encoded: {event.get("isBase64Encoded")}')
+            
             if event.get('isBase64Encoded'):
                 body = base64.b64decode(body).decode('utf-8')
+                print('[PUT] Decoded base64 body')
             
             body_data = json.loads(body) if isinstance(body, str) and body.startswith('{') else {}
+            print(f'[PUT] Parsed body data keys: {list(body_data.keys())}')
+            
             phone = body_data.get('phone', '')
             passport_b64 = body_data.get('passport', '')
             selfie_b64 = body_data.get('selfie', '')
             
+            print(f'[PUT] Phone: {phone}')
+            print(f'[PUT] Passport base64 length: {len(passport_b64) if passport_b64 else 0}')
+            print(f'[PUT] Selfie base64 length: {len(selfie_b64) if selfie_b64 else 0}')
+            
             if not phone or not passport_b64 or not selfie_b64:
+                print(f'[PUT] Missing required fields - phone: {bool(phone)}, passport: {bool(passport_b64)}, selfie: {bool(selfie_b64)}')
                 return {
                     'statusCode': 400,
                     'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
@@ -198,6 +210,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             
             access_token = TOKEN_CACHE.get('access_token') or os.environ.get('ACCESS_TOKEN', '')
             if not access_token:
+                print('[PUT] ACCESS_TOKEN not configured')
                 return {
                     'statusCode': 500,
                     'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
@@ -205,9 +218,12 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                     'isBase64Encoded': False
                 }
             
+            print('[PUT] Decoding base64 files...')
             passport_bytes = base64.b64decode(passport_b64)
             selfie_bytes = base64.b64decode(selfie_b64)
+            print(f'[PUT] Decoded file sizes - passport: {len(passport_bytes)} bytes, selfie: {len(selfie_bytes)} bytes')
             
+            print('[PUT] Uploading to AmoCRM...')
             success = upload_documents_to_amocrm(phone, passport_bytes, selfie_bytes, access_token)
             
             if success:
@@ -226,6 +242,9 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                 }
                 
         except Exception as e:
+            print(f'[PUT] Exception occurred: {type(e).__name__}: {str(e)}')
+            import traceback
+            print(f'[PUT] Traceback: {traceback.format_exc()}')
             return {
                 'statusCode': 500,
                 'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
