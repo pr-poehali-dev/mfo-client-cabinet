@@ -2,11 +2,17 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { Deal } from './types';
+import { toast } from 'sonner';
 
 interface DealsTabProps {
   deals: Deal[];
+  clientPhone: string;
+  onApplicationSubmit: () => void;
 }
 
 interface ReviewTimerProps {
@@ -108,8 +114,15 @@ const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
   );
 };
 
-const DealsTab = ({ deals }: DealsTabProps) => {
+const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) => {
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newAmount, setNewAmount] = useState('');
+  const [newTerm, setNewTerm] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const hasRejectedDeal = deals.some(deal => deal.status_name === 'Заявка отклонена');
+  const canSubmitNewApplication = !hasRejectedDeal;
 
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -128,10 +141,88 @@ const DealsTab = ({ deals }: DealsTabProps) => {
   const activeCount = deals.filter(d => d.status === 'active').length;
   const completedCount = deals.filter(d => d.status === 'completed').length;
 
+  const handleSubmitApplication = async () => {
+    if (!newAmount || !newTerm) {
+      toast.error('Заполните все поля');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch('https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: clientPhone,
+          amount: parseFloat(newAmount),
+          term: newTerm
+        })
+      });
+
+      if (!response.ok) throw new Error('Ошибка отправки');
+
+      toast.success('Заявка успешно отправлена!');
+      setIsDialogOpen(false);
+      setNewAmount('');
+      setNewTerm('');
+      onApplicationSubmit();
+    } catch (error) {
+      toast.error('Не удалось отправить заявку');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold font-montserrat mb-4">Ваши заявки</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold font-montserrat">Ваши заявки</h2>
+          
+          {canSubmitNewApplication && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-to-r from-primary to-secondary">
+                  <Icon name="Plus" size={18} className="mr-2" />
+                  Подать заявку
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Новая заявка на займ</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Сумма займа (₽)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="Например: 50000"
+                      value={newAmount}
+                      onChange={(e) => setNewAmount(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="term">Срок займа</Label>
+                    <Input
+                      id="term"
+                      placeholder="Например: 30 дней"
+                      value={newTerm}
+                      onChange={(e) => setNewTerm(e.target.value)}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleSubmitApplication} 
+                    disabled={submitting}
+                    className="w-full bg-gradient-to-r from-primary to-secondary"
+                  >
+                    {submitting ? 'Отправка...' : 'Отправить заявку'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
         
         <div className="flex flex-wrap items-center gap-3">
           <Button

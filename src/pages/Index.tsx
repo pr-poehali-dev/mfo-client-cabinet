@@ -238,7 +238,11 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="applications">
-            <DealsTab deals={deals} />
+            <DealsTab 
+              deals={deals} 
+              clientPhone={clientPhone}
+              onApplicationSubmit={() => fetchAmoCRMData(userPhone)}
+            />
           </TabsContent>
 
           <TabsContent value="profile">

@@ -77,6 +77,81 @@ def refresh_access_token() -> Optional[Dict[str, str]]:
         print(f'[ERROR] Token refresh failed: {str(e)}')
         return None
 
+def handle_create_deal(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+    '''Создаёт новую сделку в AmoCRM'''
+    try:
+        body_data = json.loads(event.get('body', '{}'))
+        phone = body_data.get('phone', '').replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+        amount = body_data.get('amount')
+        term = body_data.get('term', '')
+        
+        if not phone or not amount:
+            return {
+                'statusCode': 400,
+                'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                'body': json.dumps({'error': 'Phone and amount are required'}),
+                'isBase64Encoded': False
+            }
+        
+        domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
+        access_token = TOKEN_CACHE.get('access_token') or os.environ.get('ACCESS_TOKEN', '')
+        
+        if not access_token:
+            return {
+                'statusCode': 500,
+                'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                'body': json.dumps({'error': 'ACCESS_TOKEN not configured'}),
+                'isBase64Encoded': False
+            }
+        
+        base_url = f'https://{domain}'
+        headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
+        
+        contact_url = f'{base_url}/api/v4/contacts?query={phone}'
+        contact_req = urllib.request.Request(contact_url, headers=headers)
+        
+        with urllib.request.urlopen(contact_req, timeout=10) as response:
+            contacts_data = json.loads(response.read().decode())
+        
+        if '_embedded' not in contacts_data or not contacts_data['_embedded'].get('contacts'):
+            return {
+                'statusCode': 404,
+                'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                'body': json.dumps({'error': 'Contact not found'}),
+                'isBase64Encoded': False
+            }
+        
+        contact_id = contacts_data['_embedded']['contacts'][0]['id']
+        
+        deal_data = [{
+            'name': f'Повторная заявка - {amount} руб',
+            'price': int(amount),
+            '_embedded': {'contacts': [{'id': contact_id}]}
+        }]
+        
+        deal_url = f'{base_url}/api/v4/leads'
+        deal_body = json.dumps(deal_data).encode('utf-8')
+        deal_req = urllib.request.Request(deal_url, data=deal_body, headers=headers, method='POST')
+        
+        with urllib.request.urlopen(deal_req, timeout=10) as response:
+            result = json.loads(response.read().decode())
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'success': True, 'deal_id': result['_embedded']['leads'][0]['id']}),
+            'isBase64Encoded': False
+        }
+        
+    except Exception as e:
+        print(f'[ERROR] Create deal error: {str(e)}')
+        return {
+            'statusCode': 500,
+            'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+            'body': json.dumps({'error': str(e)}),
+            'isBase64Encoded': False
+        }
+
 def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[str, Any]:
     '''
     Business: Синхронизация данных клиента из AmoCRM - получение займов, сделок и контактов
@@ -97,6 +172,9 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             'body': '',
             'isBase64Encoded': False
         }
+    
+    if method == 'POST':
+        return handle_create_deal(event, context)
     
     if method != 'GET':
         return {
