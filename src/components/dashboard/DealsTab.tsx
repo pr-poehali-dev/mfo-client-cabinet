@@ -20,8 +20,31 @@ const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
+    const parseCreatedDate = () => {
+      try {
+        const parts = createdAt.split(' ');
+        const datePart = parts[0];
+        const timePart = parts[1] || '00:00:00';
+        
+        const [day, month, year] = datePart.split('.');
+        const [hours, minutes, seconds] = timePart.split(':');
+        
+        return new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+          parseInt(day),
+          parseInt(hours || '0'),
+          parseInt(minutes || '0'),
+          parseInt(seconds || '0')
+        );
+      } catch (e) {
+        console.error('Date parse error:', e);
+        return new Date();
+      }
+    };
+
     const calculateTimeLeft = () => {
-      const created = new Date(createdAt.split('.').reverse().join('-') + 'T00:00:00');
+      const created = parseCreatedDate();
       const now = new Date();
       const elapsed = Math.floor((now.getTime() - created.getTime()) / 1000);
       const remaining = Math.max(0, 600 - elapsed);
