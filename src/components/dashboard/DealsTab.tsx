@@ -246,19 +246,21 @@ const DealsTab = ({ deals }: DealsTabProps) => {
                 <Card key={deal.id} className="border-red-500/30 bg-red-950/20 backdrop-blur-md overflow-hidden">
                   <CardContent className="p-8">
                     <div className="text-center space-y-6">
-                      <div className="w-20 h-20 mx-auto rounded-full bg-red-500/20 flex items-center justify-center border-4 border-red-500/30">
-                        <Icon name="X" size={40} className="text-red-500" />
+                      <div className="w-32 h-32 mx-auto relative">
+                        <img 
+                          src="/img/6c48b6b5-6279-4336-b7cd-e14f0bd52e47.jpg" 
+                          alt="Заявка отклонена" 
+                          className="w-full h-full object-cover rounded-2xl opacity-90"
+                        />
                       </div>
                       
                       <div>
-                        <h3 className="text-2xl font-bold text-red-400 mb-3">Заявка не одобрена</h3>
-                        <div className="space-y-2">
-                          <p className="text-lg text-muted-foreground">
-                            Запрошенная сумма: <span className="font-bold text-white">{deal.price.toLocaleString('ru-RU')} ₽</span>
-                          </p>
-                          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                            <Icon name="Calendar" size={16} />
-                            Создана: <span className="font-semibold text-white">{deal.created_at}</span>
+                        <h3 className="text-2xl font-bold text-red-400 mb-4">Заявка не одобрена</h3>
+                        
+                        <div className="p-4 bg-muted/20 rounded-lg border border-border/30 max-w-xs mx-auto">
+                          <p className="text-xs text-muted-foreground mb-1">Запрошенная сумма</p>
+                          <p className="text-3xl font-bold font-montserrat text-white">
+                            {deal.price.toLocaleString('ru-RU')} ₽
                           </p>
                         </div>
                       </div>
