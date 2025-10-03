@@ -490,6 +490,30 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         first_name = name_parts[1] if len(name_parts) > 1 else ''
         middle_name = name_parts[2] if len(name_parts) > 2 else ''
         
+        documents: List[Dict[str, Any]] = []
+        try:
+            notes_url = f'{base_url}/api/v4/contacts/{contact_id}/notes'
+            notes_req = urllib.request.Request(notes_url, headers=headers)
+            
+            with urllib.request.urlopen(notes_req, timeout=10) as response:
+                notes_data = json.loads(response.read().decode())
+            
+            for note in notes_data.get('_embedded', {}).get('notes', []):
+                if note.get('note_type') == 'file' or note.get('params', {}).get('attachment'):
+                    attachment = note.get('params', {}).get('attachment')
+                    if attachment:
+                        documents.append({
+                            'id': str(note['id']),
+                            'name': note.get('params', {}).get('text', 'Документ'),
+                            'file_url': attachment.get('link', ''),
+                            'file_name': attachment.get('name', 'file'),
+                            'file_size': attachment.get('size', 0),
+                            'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
+                            'type': 'contract' if 'договор' in attachment.get('name', '').lower() else 'other'
+                        })
+        except Exception as e:
+            print(f'Failed to load documents: {e}')
+        
         client_data = {
             'id': contact_id,
             'name': full_name,
@@ -506,6 +530,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             'total_deals': len(deals),
             'active_deals': len([d for d in deals if d['status'] == 'active']),
             'completed_deals': len([d for d in deals if d['status'] == 'completed']),
+            'documents': documents,
             'notifications': [
                 {
                     'id': '1',
