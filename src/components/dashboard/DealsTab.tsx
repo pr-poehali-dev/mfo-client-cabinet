@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { Deal } from './types';
@@ -116,13 +116,16 @@ const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
 
 const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newAmount, setNewAmount] = useState('');
-  const [newTerm, setNewTerm] = useState('');
+  const [amount, setAmount] = useState(50000);
+  const [termDays, setTermDays] = useState(30);
   const [submitting, setSubmitting] = useState(false);
 
   const hasRejectedDeal = deals.some(deal => deal.status_name === 'Заявка отклонена');
   const hasApprovedDeal = deals.some(deal => deal.status_name === 'Заявка одобрена');
   const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
+
+  const interestRate = 1.0;
+  const totalReturn = amount + (amount * (interestRate / 100) * termDays);
 
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -136,11 +139,6 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   const filteredDeals = deals.filter(deal => deal.status_name !== 'Заявка отклонена');
 
   const handleSubmitApplication = async () => {
-    if (!newAmount || !newTerm) {
-      toast.error('Заполните все поля');
-      return;
-    }
-
     setSubmitting(true);
     try {
       const response = await fetch('https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5', {
@@ -148,8 +146,8 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: clientPhone,
-          amount: parseFloat(newAmount),
-          term: newTerm
+          amount: amount,
+          term: `${termDays} дней`
         })
       });
 
@@ -157,8 +155,8 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
 
       toast.success('Заявка успешно отправлена!');
       setIsDialogOpen(false);
-      setNewAmount('');
-      setNewTerm('');
+      setAmount(50000);
+      setTermDays(30);
       onApplicationSubmit();
     } catch (error) {
       toast.error('Не удалось отправить заявку');
@@ -181,36 +179,82 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
                   Подать заявку
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>Новая заявка на займ</DialogTitle>
+                  <DialogTitle className="text-2xl font-montserrat">Новая заявка на займ</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Сумма займа (₽)</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder="Например: 50000"
-                      value={newAmount}
-                      onChange={(e) => setNewAmount(e.target.value)}
+                <div className="space-y-6 py-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-semibold">Сумма займа</Label>
+                      <div className="text-2xl font-bold text-primary">
+                        {amount.toLocaleString('ru-RU')} ₽
+                      </div>
+                    </div>
+                    <Slider
+                      value={[amount]}
+                      onValueChange={(value) => setAmount(value[0])}
+                      min={5000}
+                      max={100000}
+                      step={1000}
+                      className="w-full"
                     />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>5 000 ₽</span>
+                      <span>100 000 ₽</span>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="term">Срок займа</Label>
-                    <Input
-                      id="term"
-                      placeholder="Например: 30 дней"
-                      value={newTerm}
-                      onChange={(e) => setNewTerm(e.target.value)}
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-semibold">Срок займа</Label>
+                      <div className="text-2xl font-bold text-secondary">
+                        {termDays} {termDays === 1 ? 'день' : termDays < 5 ? 'дня' : 'дней'}
+                      </div>
+                    </div>
+                    <Slider
+                      value={[termDays]}
+                      onValueChange={(value) => setTermDays(value[0])}
+                      min={7}
+                      max={90}
+                      step={1}
+                      className="w-full"
                     />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>7 дней</span>
+                      <span>90 дней</span>
+                    </div>
                   </div>
+
+                  <div className="p-5 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl border-2 border-primary/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm text-muted-foreground">Процентная ставка</span>
+                      <span className="text-lg font-bold">{interestRate}% в день</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                      <span className="text-base font-semibold">Сумма к возврату</span>
+                      <span className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                        {Math.round(totalReturn).toLocaleString('ru-RU')} ₽
+                      </span>
+                    </div>
+                  </div>
+
                   <Button 
                     onClick={handleSubmitApplication} 
                     disabled={submitting}
-                    className="w-full bg-gradient-to-r from-primary to-secondary"
+                    className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
                   >
-                    {submitting ? 'Отправка...' : 'Отправить заявку'}
+                    {submitting ? (
+                      <>
+                        <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                        Отправка...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="Send" size={20} className="mr-2" />
+                        Подать заявку
+                      </>
+                    )}
                   </Button>
                 </div>
               </DialogContent>
