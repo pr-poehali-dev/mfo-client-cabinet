@@ -92,6 +92,11 @@ const ProfileTab = ({
   };
 
   const handleUploadDocuments = async () => {
+    console.log('[UPLOAD] Starting upload process');
+    console.log('[UPLOAD] Passport photo:', passportPhoto);
+    console.log('[UPLOAD] Selfie photo:', selfiePhoto);
+    console.log('[UPLOAD] Client phone:', clientPhone);
+    
     if (!passportPhoto || !selfiePhoto) {
       toast.error('Загрузите оба документа');
       return;
@@ -99,28 +104,44 @@ const ProfileTab = ({
 
     setUploading(true);
     try {
+      console.log('[UPLOAD] Converting files to base64...');
       const passportBase64 = await fileToBase64(passportPhoto);
       const selfieBase64 = await fileToBase64(selfiePhoto);
+      
+      console.log('[UPLOAD] Passport base64 length:', passportBase64.length);
+      console.log('[UPLOAD] Selfie base64 length:', selfieBase64.length);
+
+      const payload = {
+        phone: clientPhone,
+        passport: passportBase64,
+        selfie: selfieBase64
+      };
+      
+      console.log('[UPLOAD] Sending request to AmoCRM...');
+      console.log('[UPLOAD] Payload:', { ...payload, passport: `${passportBase64.substring(0, 50)}...`, selfie: `${selfieBase64.substring(0, 50)}...` });
 
       const response = await fetch('https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          phone: clientPhone,
-          passport: passportBase64,
-          selfie: selfieBase64
-        })
+        body: JSON.stringify(payload)
       });
 
-      if (!response.ok) throw new Error('Ошибка загрузки');
+      console.log('[UPLOAD] Response status:', response.status);
+      const responseData = await response.json();
+      console.log('[UPLOAD] Response data:', responseData);
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Ошибка загрузки');
+      }
 
       toast.success('Документы успешно отправлены в AmoCRM!');
       setPassportPhoto(null);
       setSelfiePhoto(null);
     } catch (error) {
-      toast.error('Не удалось отправить документы');
+      console.error('[UPLOAD] Error:', error);
+      toast.error(`Не удалось отправить документы: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     } finally {
       setUploading(false);
     }
