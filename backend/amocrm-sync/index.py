@@ -174,6 +174,92 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             'isBase64Encoded': False
         }
     
+    params = event.get('queryStringParameters') or {}
+    if method == 'GET' and 'file_uuid' in params and 'version_uuid' in params:
+        file_uuid = params.get('file_uuid', '')
+        version_uuid = params.get('version_uuid', '')
+        filename = params.get('filename', 'document.pdf')
+        
+        if not file_uuid or not version_uuid:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'Missing file_uuid or version_uuid'}),
+                'isBase64Encoded': False
+            }
+        
+        access_token = TOKEN_CACHE.get('access_token') or os.environ.get('ACCESS_TOKEN', '')
+        if not access_token:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'AmoCRM token not configured'}),
+                'isBase64Encoded': False
+            }
+        
+        download_url = f'https://drive.amocrm.ru/v1.0/files/{file_uuid}/versions/{version_uuid}/download'
+        
+        try:
+            print(f'[DEBUG] Downloading file: {filename}')
+            print(f'[DEBUG] URL: {download_url}')
+            
+            req = urllib.request.Request(
+                download_url,
+                headers={'Authorization': f'Bearer {access_token}'}
+            )
+            
+            with urllib.request.urlopen(req, timeout=30) as response:
+                file_data = response.read()
+                content_type = response.headers.get('Content-Type', 'application/octet-stream')
+                encoded_data = base64.b64encode(file_data).decode('utf-8')
+                
+                print(f'[DEBUG] File downloaded successfully, size: {len(file_data)} bytes')
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': content_type,
+                        'Content-Disposition': f'attachment; filename="{filename}"',
+                        'Access-Control-Allow-Origin': '*',
+                        'Cache-Control': 'no-cache'
+                    },
+                    'body': encoded_data,
+                    'isBase64Encoded': True
+                }
+        
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8') if e.fp else 'Unknown error'
+            print(f'[ERROR] HTTPError downloading file: {e.code} - {error_body}')
+            return {
+                'statusCode': e.code,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': f'Download failed: {e.code}'}),
+                'isBase64Encoded': False
+            }
+        
+        except Exception as e:
+            print(f'[ERROR] File download error: {str(e)}')
+            import traceback
+            print(f'[ERROR] Traceback: {traceback.format_exc()}')
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': f'Download failed: {str(e)}'}),
+                'isBase64Encoded': False
+            }
+    
     if method == 'POST':
         return handle_create_deal(event, context)
     

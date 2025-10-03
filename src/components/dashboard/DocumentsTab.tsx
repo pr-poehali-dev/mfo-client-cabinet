@@ -40,8 +40,45 @@ const DocumentsTab = ({ documents }: DocumentsTabProps) => {
     }
   };
 
-  const handleOpenDocument = (url: string) => {
-    window.open(url, '_blank');
+  const extractFileParams = (url: string) => {
+    const match = url.match(/files\/([^\/]+)\/versions\/([^\/]+)/);
+    if (match) {
+      return { file_uuid: match[1], version_uuid: match[2] };
+    }
+    return null;
+  };
+
+  const handleDownloadDocument = async (doc: Document) => {
+    const params = extractFileParams(doc.file_url);
+    if (!params) {
+      console.error('Invalid file URL format');
+      return;
+    }
+
+    const downloadUrl = `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?file_uuid=${params.file_uuid}&version_uuid=${params.version_uuid}&filename=${encodeURIComponent(doc.file_name)}`;
+    
+    try {
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = doc.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+    }
+  };
+
+  const handleOpenDocument = (doc: Document) => {
+    handleDownloadDocument(doc);
   };
 
   return (
@@ -104,22 +141,11 @@ const DocumentsTab = ({ documents }: DocumentsTabProps) => {
               <CardContent className="relative pt-0">
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => handleOpenDocument(doc.file_url)}
+                    onClick={() => handleOpenDocument(doc)}
                     className="flex-1 bg-gradient-to-r from-primary to-secondary"
                   >
-                    <Icon name="ExternalLink" size={16} className="mr-2" />
-                    Открыть документ
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = doc.file_url;
-                      link.download = doc.file_name;
-                      link.click();
-                    }}
-                  >
-                    <Icon name="Download" size={16} />
+                    <Icon name="Download" size={16} className="mr-2" />
+                    Скачать документ
                   </Button>
                 </div>
               </CardContent>
