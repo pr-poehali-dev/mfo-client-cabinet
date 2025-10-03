@@ -494,7 +494,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         try:
             print(f'[DEBUG] Loading documents from leads...')
             
-            for lead in all_leads:
+            for lead in leads_data.get('_embedded', {}).get('leads', []):
                 lead_id = lead['id']
                 
                 try:
