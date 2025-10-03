@@ -16,7 +16,12 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   const hasApprovedDeal = deals.some(deal => deal.status_name === 'Заявка одобрена');
   const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
 
-  const filteredDeals = deals.filter(deal => deal.status_name !== 'Заявка отклонена');
+  const nonRejectedDeals = deals.filter(deal => deal.status_name !== 'Заявка отклонена');
+  const hasOtherDeals = nonRejectedDeals.length > 0;
+  
+  const filteredDeals = hasOtherDeals 
+    ? nonRejectedDeals 
+    : deals;
 
   return (
     <div className="space-y-4 animate-fade-in">
