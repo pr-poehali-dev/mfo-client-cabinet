@@ -492,50 +492,89 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         
         documents: List[Dict[str, Any]] = []
         try:
-            print(f'[DEBUG] Loading documents from lead custom fields...')
+            print(f'[DEBUG] Loading documents from lead notes (chat files)...')
             
             for lead in leads_data.get('_embedded', {}).get('leads', []):
                 lead_id = lead['id']
                 lead_name = lead.get('name', f'Сделка #{lead_id}')
-                custom_fields = lead.get('custom_fields_values', []) or []
                 
-                print(f'[DEBUG] Checking lead {lead_id} for file fields...')
+                lead_contacts = lead.get('_embedded', {}).get('contacts', [])
+                if lead_contacts:
+                    lead_contact_ids = [c.get('id') for c in lead_contacts]
+                    if contact_id not in lead_contact_ids:
+                        continue
                 
-                for field in custom_fields:
-                    field_name = field.get('field_name', '')
-                    field_type = field.get('field_type', '')
-                    values = field.get('values', []) or []
+                print(f'[DEBUG] Loading notes for lead {lead_id}...')
+                
+                try:
+                    notes_url = f'{base_url}/api/v4/leads/{lead_id}/notes'
+                    notes_req = urllib.request.Request(notes_url, headers=headers)
                     
-                    print(f'[DEBUG] Field: {field_name}, Type: {field_type}, Values count: {len(values)}')
+                    with urllib.request.urlopen(notes_req, timeout=10) as response:
+                        response_body = response.read().decode()
+                        
+                        if not response_body:
+                            print(f'[DEBUG] Lead {lead_id}: Empty notes response')
+                            continue
+                        
+                        notes_data = json.loads(response_body)
                     
-                    if field_type == 'file' or field_type == 'url':
-                        for value_obj in values:
-                            value = value_obj.get('value', '')
+                    notes_list = notes_data.get('_embedded', {}).get('notes', [])
+                    print(f'[DEBUG] Lead {lead_id}: Found {len(notes_list)} notes')
+                    
+                    for note in notes_list:
+                        note_type = note.get('note_type', '')
+                        note_id = note.get('id', 0)
+                        
+                        print(f'[DEBUG] Note {note_id}: type={note_type}')
+                        
+                        params = note.get('params', {})
+                        
+                        if 'file' in params or 'attachment' in params:
+                            file_info = params.get('file') or params.get('attachment')
                             
-                            if isinstance(value, str) and value:
-                                file_name = field_name
-                                
-                                if isinstance(value, dict):
-                                    file_url = value.get('url', '') or value.get('link', '')
-                                    file_name = value.get('name', field_name)
-                                    file_size = value.get('size', 0)
-                                else:
-                                    file_url = str(value)
-                                    file_size = 0
+                            if file_info:
+                                file_name = file_info.get('name') or file_info.get('file_name') or params.get('text', 'Документ')
+                                file_url = file_info.get('url') or file_info.get('link', '')
+                                file_size = file_info.get('size', 0)
                                 
                                 if file_url:
                                     documents.append({
-                                        'id': f'{lead_id}_{field.get("field_id", 0)}',
+                                        'id': str(note_id),
                                         'name': file_name,
                                         'file_url': file_url,
                                         'file_name': file_name,
                                         'file_size': file_size,
-                                        'uploaded_at': datetime.fromtimestamp(lead.get('updated_at', 0)).strftime('%d.%m.%Y'),
+                                        'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
                                         'type': 'contract' if 'договор' in file_name.lower() else 'other',
                                         'lead_id': str(lead_id),
                                         'lead_name': lead_name
                                     })
-                                    print(f'[DEBUG] Added document from lead {lead_id}: {file_name} -> {file_url}')
+                                    print(f'[DEBUG] Added document: {file_name} from lead {lead_id}')
+                        
+                        if note_type == 'file_attachment' or note_type == 'attachment':
+                            attachment = params.get('attachment')
+                            if attachment:
+                                file_name = attachment.get('file_name', 'Документ')
+                                file_url = attachment.get('link', '')
+                                
+                                if file_url:
+                                    documents.append({
+                                        'id': str(note_id),
+                                        'name': file_name,
+                                        'file_url': file_url,
+                                        'file_name': file_name,
+                                        'file_size': attachment.get('size', 0),
+                                        'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
+                                        'type': 'contract' if 'договор' in file_name.lower() else 'other',
+                                        'lead_id': str(lead_id),
+                                        'lead_name': lead_name
+                                    })
+                                    print(f'[DEBUG] Added attachment: {file_name} from lead {lead_id}')
+                
+                except Exception as note_err:
+                    print(f'[WARNING] Failed to load notes for lead {lead_id}: {note_err}')
+                    continue
             
             print(f'[DEBUG] Total documents loaded: {len(documents)}')
         except Exception as e:
