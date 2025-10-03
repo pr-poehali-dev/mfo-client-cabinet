@@ -44,10 +44,15 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   };
 
   const sendSMS = async (phoneDigits: string) => {
+    console.log('Sending SMS to:', phoneDigits);
+    
     try {
+      console.log('Making fetch request...');
+      
       const response = await fetch('https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e', {
         method: 'POST',
         mode: 'cors',
+        credentials: 'omit',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -55,13 +60,20 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         body: JSON.stringify({ phone: phoneDigits, action: 'send' })
       });
 
+      console.log('Response received:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
+        console.error('Error response:', errorData);
         throw new Error(errorData.error || 'Ошибка отправки SMS');
       }
 
       const result = await response.json();
-      console.log('SMS response:', result);
+      console.log('SMS result:', result);
+      
+      if (!result.code) {
+        throw new Error('Код не получен от сервера');
+      }
       
       setStoredCode(result.code);
       setStep('code');
@@ -78,7 +90,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       }, 1000);
       
     } catch (err: any) {
-      console.error('SMS Send Error:', err);
+      console.error('SMS Send Full Error:', err, err.stack);
       throw new Error(err.message || 'Ошибка отправки SMS');
     }
   };
