@@ -1,13 +1,20 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { Document } from './types';
+import DocumentPreviewModal from './DocumentPreviewModal';
+import LoanAgreementTemplate from './documents/LoanAgreementTemplate';
+import PersonalDataConsentTemplate from './documents/PersonalDataConsentTemplate';
 
 interface DocumentsTabProps {
   documents: Document[];
+  clientName?: string;
+  clientPhone?: string;
 }
 
-const DocumentsTab = ({ documents }: DocumentsTabProps) => {
+const DocumentsTab = ({ documents, clientName, clientPhone }: DocumentsTabProps) => {
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; content: React.ReactNode } | null>(null);
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
     if (ext === 'pdf') return 'FileText';
@@ -81,6 +88,20 @@ const DocumentsTab = ({ documents }: DocumentsTabProps) => {
     handleDownloadDocument(doc);
   };
 
+  const handlePreviewLoanAgreement = () => {
+    setPreviewDoc({
+      title: 'Договор займа',
+      content: <LoanAgreementTemplate clientName={clientName} clientPhone={clientPhone} />
+    });
+  };
+
+  const handlePreviewPersonalDataConsent = () => {
+    setPreviewDoc({
+      title: 'Согласие на обработку персональных данных',
+      content: <PersonalDataConsentTemplate clientName={clientName} clientPhone={clientPhone} />
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="mb-6">
@@ -88,6 +109,38 @@ const DocumentsTab = ({ documents }: DocumentsTabProps) => {
         <p className="text-sm text-muted-foreground">
           Все ваши документы, загруженные в AmoCRM
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5 hover:shadow-lg transition-all cursor-pointer" onClick={handlePreviewLoanAgreement}>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/20 border-2 border-primary/30">
+                <Icon name="FileText" size={32} className="text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg mb-1">Договор займа</h3>
+                <p className="text-sm text-muted-foreground">Образец договора займа</p>
+              </div>
+              <Icon name="Eye" size={20} className="text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-green-500/30 bg-gradient-to-br from-green-500/5 to-blue-500/5 hover:shadow-lg transition-all cursor-pointer" onClick={handlePreviewPersonalDataConsent}>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-green-500/20 border-2 border-green-500/30">
+                <Icon name="ShieldCheck" size={32} className="text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg mb-1">Согласие на обработку ПД</h3>
+                <p className="text-sm text-muted-foreground">Персональные данные</p>
+              </div>
+              <Icon name="Eye" size={20} className="text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {documents.length === 0 ? (
@@ -166,6 +219,16 @@ const DocumentsTab = ({ documents }: DocumentsTabProps) => {
           </div>
         </div>
       </div>
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          open={true}
+          onClose={() => setPreviewDoc(null)}
+          title={previewDoc.title}
+          content={previewDoc.content}
+          onDownload={() => window.print()}
+        />
+      )}
     </div>
   );
 };
