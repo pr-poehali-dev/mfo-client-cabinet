@@ -115,7 +115,6 @@ const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
 };
 
 const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) => {
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newAmount, setNewAmount] = useState('');
   const [newTerm, setNewTerm] = useState('');
@@ -134,18 +133,7 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
     } : { r: 204, g: 204, b: 204 };
   };
 
-  const filteredDeals = deals.filter(deal => {
-    const isRejected = deal.status_name === 'Заявка отклонена';
-    const isApproved = deal.status_name === 'Заявка одобрена';
-    
-    if (filter === 'all') return !isRejected;
-    if (filter === 'completed') return isRejected;
-    if (filter === 'active') return isApproved;
-    return deal.status === filter;
-  });
-
-  const activeCount = deals.filter(d => d.status_name === 'Заявка одобрена').length;
-  const completedCount = deals.filter(d => d.status_name === 'Заявка отклонена').length;
+  const filteredDeals = deals.filter(deal => deal.status_name !== 'Заявка отклонена');
 
   const handleSubmitApplication = async () => {
     if (!newAmount || !newTerm) {
@@ -231,35 +219,9 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          <Button
-            variant={filter === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter('all')}
-            className={filter === 'all' ? 'bg-gradient-to-r from-primary to-secondary' : ''}
-          >
-            <Icon name="FileText" size={16} className="mr-2" />
-            Все ({deals.length})
-          </Button>
-          
-          <Button
-            variant={filter === 'active' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter('active')}
-            className={filter === 'active' ? 'bg-gradient-to-r from-primary to-secondary' : ''}
-          >
-            <Icon name="Play" size={16} className="mr-2" />
-            Активные ({activeCount})
-          </Button>
-          
-          <Button
-            variant={filter === 'completed' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter('completed')}
-            className={filter === 'completed' ? 'bg-gradient-to-r from-primary to-secondary' : ''}
-          >
-            <Icon name="XCircle" size={16} className="mr-2" />
-            Отклонены ({completedCount})
-          </Button>
+          <div className="text-sm text-muted-foreground">
+            Всего заявок: {filteredDeals.length}
+          </div>
         </div>
       </div>
 
