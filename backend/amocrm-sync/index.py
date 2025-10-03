@@ -495,24 +495,39 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             notes_url = f'{base_url}/api/v4/contacts/{contact_id}/notes'
             notes_req = urllib.request.Request(notes_url, headers=headers)
             
+            print(f'[DEBUG] Loading notes from: {notes_url}')
+            
             with urllib.request.urlopen(notes_req, timeout=10) as response:
                 notes_data = json.loads(response.read().decode())
             
-            for note in notes_data.get('_embedded', {}).get('notes', []):
-                if note.get('note_type') == 'file' or note.get('params', {}).get('attachment'):
-                    attachment = note.get('params', {}).get('attachment')
+            notes_list = notes_data.get('_embedded', {}).get('notes', [])
+            print(f'[DEBUG] Found {len(notes_list)} notes for contact {contact_id}')
+            
+            for note in notes_list:
+                note_type = note.get('note_type')
+                print(f'[DEBUG] Note {note.get("id")}: type={note_type}, params={note.get("params", {})}')
+                
+                if note_type == 'attachment':
+                    params = note.get('params', {})
+                    attachment = params.get('attachment')
                     if attachment:
+                        doc_name = params.get('text', attachment.get('file_name', 'Документ'))
                         documents.append({
                             'id': str(note['id']),
-                            'name': note.get('params', {}).get('text', 'Документ'),
+                            'name': doc_name,
                             'file_url': attachment.get('link', ''),
-                            'file_name': attachment.get('name', 'file'),
+                            'file_name': attachment.get('file_name', 'file'),
                             'file_size': attachment.get('size', 0),
                             'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
-                            'type': 'contract' if 'договор' in attachment.get('name', '').lower() else 'other'
+                            'type': 'contract' if 'договор' in doc_name.lower() else 'other'
                         })
+                        print(f'[DEBUG] Added document: {doc_name}')
+            
+            print(f'[DEBUG] Total documents loaded: {len(documents)}')
         except Exception as e:
-            print(f'Failed to load documents: {e}')
+            print(f'[ERROR] Failed to load documents: {e}')
+            import traceback
+            print(traceback.format_exc())
         
         client_data = {
             'id': contact_id,
