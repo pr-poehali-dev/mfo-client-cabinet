@@ -1,0 +1,64 @@
+{
+  "tests": [
+    {
+      "name": "Contact update webhook",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "type": "contact_update",
+        "data": {
+          "contact": {
+            "id": 12345,
+            "name": "Иван Петров",
+            "first_name": "Иван",
+            "last_name": "Петров",
+            "phone": "+79991234567",
+            "email": "ivan@example.com",
+            "created_at": 1609459200
+          }
+        }
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Lead update webhook",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "type": "lead_update",
+        "data": {
+          "lead": {
+            "id": 67890,
+            "name": "Заявка на займ",
+            "price": 50000,
+            "status": "active",
+            "status_id": 142,
+            "pipeline_id": 1,
+            "created_at": 1609459200,
+            "updated_at": 1609545600
+          },
+          "contacts": [
+            {
+              "id": 12345
+            }
+          ]
+        }
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "OPTIONS CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}

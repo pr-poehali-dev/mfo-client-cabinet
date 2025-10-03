@@ -1,11 +1,17 @@
 import json
 import os
-import psycopg2
 from typing import Dict, Any
 from datetime import datetime
 
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
+
 def get_db_connection():
     '''Создает подключение к БД'''
+    if psycopg2 is None:
+        raise Exception('psycopg2 module not available')
     dsn = os.environ.get('DATABASE_URL', '')
     if not dsn:
         raise Exception('DATABASE_URL not configured')
