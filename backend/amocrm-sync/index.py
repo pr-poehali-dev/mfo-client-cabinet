@@ -2,6 +2,7 @@ import json
 import os
 import urllib.request
 import urllib.error
+import base64
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -165,7 +166,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
                 'Access-Control-Max-Age': '86400'
             },
@@ -175,6 +176,62 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
     
     if method == 'POST':
         return handle_create_deal(event, context)
+    
+    if method == 'PUT':
+        try:
+            body = event.get('body', '')
+            if event.get('isBase64Encoded'):
+                body = base64.b64decode(body).decode('utf-8')
+            
+            body_data = json.loads(body) if isinstance(body, str) and body.startswith('{') else {}
+            phone = body_data.get('phone', '')
+            passport_b64 = body_data.get('passport', '')
+            selfie_b64 = body_data.get('selfie', '')
+            
+            if not phone or not passport_b64 or not selfie_b64:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                    'body': json.dumps({'error': 'Phone, passport and selfie are required'}),
+                    'isBase64Encoded': False
+                }
+            
+            access_token = TOKEN_CACHE.get('access_token') or os.environ.get('ACCESS_TOKEN', '')
+            if not access_token:
+                return {
+                    'statusCode': 500,
+                    'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                    'body': json.dumps({'error': 'ACCESS_TOKEN not configured'}),
+                    'isBase64Encoded': False
+                }
+            
+            passport_bytes = base64.b64decode(passport_b64)
+            selfie_bytes = base64.b64decode(selfie_b64)
+            
+            success = upload_documents_to_amocrm(phone, passport_bytes, selfie_bytes, access_token)
+            
+            if success:
+                return {
+                    'statusCode': 200,
+                    'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                    'body': json.dumps({'message': 'Documents uploaded successfully'}),
+                    'isBase64Encoded': False
+                }
+            else:
+                return {
+                    'statusCode': 500,
+                    'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                    'body': json.dumps({'error': 'Failed to upload documents'}),
+                    'isBase64Encoded': False
+                }
+                
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                'body': json.dumps({'error': str(e)}),
+                'isBase64Encoded': False
+            }
     
     if method != 'GET':
         return {
@@ -498,3 +555,57 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             }),
             'isBase64Encoded': False
         }
+
+def upload_documents_to_amocrm(phone: str, passport_file: bytes, selfie_file: bytes, access_token: str) -> bool:
+    '''
+    Загружает документы в AmoCRM как примечания к контакту
+    Args: phone - номер телефона, passport_file - байты паспорта, selfie_file - байты селфи, access_token - токен
+    Returns: True при успехе, False при ошибке
+    '''
+    domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
+    
+    try:
+        contacts_url = f'https://{domain}/api/v4/contacts?query={phone}'
+        req = urllib.request.Request(
+            contacts_url,
+            headers={'Authorization': f'Bearer {access_token}'}
+        )
+        
+        with urllib.request.urlopen(req, timeout=10) as response:
+            contacts_data = json.loads(response.read().decode())
+        
+        contacts = contacts_data.get('_embedded', {}).get('contacts', [])
+        if not contacts:
+            print(f'[ERROR] Contact not found for phone: {phone}')
+            return False
+        
+        contact_id = contacts[0]['id']
+        
+        passport_b64 = base64.b64encode(passport_file).decode('utf-8')
+        selfie_b64 = base64.b64encode(selfie_file).decode('utf-8')
+        
+        note_data = {
+            'note_type': 'common',
+            'params': {
+                'text': f'📎 Документы загружены:\n\n🪪 Паспорт: {len(passport_file)} bytes\n📸 Селфи: {len(selfie_file)} bytes\n\nФайлы в base64 (для скачивания обратитесь к разработчику)'
+            }
+        }
+        
+        notes_url = f'https://{domain}/api/v4/contacts/{contact_id}/notes'
+        notes_req = urllib.request.Request(
+            notes_url,
+            data=json.dumps([note_data]).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            },
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(notes_req, timeout=10) as response:
+            print(f'[SUCCESS] Documents uploaded to contact {contact_id}')
+            return True
+            
+    except Exception as e:
+        print(f'[ERROR] Failed to upload documents: {str(e)}')
+        return False
