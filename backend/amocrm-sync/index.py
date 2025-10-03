@@ -584,7 +584,10 @@ def upload_documents_to_amocrm(phone: str, passport_file: bytes, selfie_file: by
     domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
     
     try:
-        contacts_url = f'https://{domain}/api/v4/contacts?query={phone}'
+        clean_phone = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
+        print(f'[UPLOAD] Original phone: {phone}, cleaned: {clean_phone}')
+        
+        contacts_url = f'https://{domain}/api/v4/contacts?query={clean_phone}'
         req = urllib.request.Request(
             contacts_url,
             headers={'Authorization': f'Bearer {access_token}'}
