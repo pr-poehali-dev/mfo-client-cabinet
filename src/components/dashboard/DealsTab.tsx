@@ -187,6 +187,35 @@ const DealsTab = ({ deals }: DealsTabProps) => {
             const bgColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`;
             const borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`;
             const textColor = deal.status_color;
+            const isRejected = deal.status_name === 'Заявка отклонена';
+
+            if (isRejected) {
+              return (
+                <Card key={deal.id} className="border-red-500/30 bg-red-950/20 backdrop-blur-md overflow-hidden">
+                  <CardContent className="p-8">
+                    <div className="text-center space-y-6">
+                      <div className="w-20 h-20 mx-auto rounded-full bg-red-500/20 flex items-center justify-center border-4 border-red-500/30">
+                        <Icon name="X" size={40} className="text-red-500" />
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-2xl font-bold text-red-400 mb-2">Заявка не одобрена</h3>
+                        <p className="text-lg text-muted-foreground mb-4">
+                          Запрошенная сумма: <span className="font-bold text-white">{deal.price.toLocaleString('ru-RU')} ₽</span>
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                        <div className="flex items-center justify-center gap-2 text-yellow-400">
+                          <Icon name="Clock" size={20} />
+                          <p className="font-semibold">Повторная подача заявки через 30 дней</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
 
             return (
               <Card key={deal.id} className="border-border/30 bg-card/80 backdrop-blur-md hover:shadow-2xl transition-all duration-300 overflow-hidden group">
