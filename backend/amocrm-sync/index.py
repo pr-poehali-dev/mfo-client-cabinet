@@ -10,7 +10,7 @@ def refresh_access_token() -> Optional[str]:
     Обновляет access token используя refresh token
     Returns: Новый access token или None при ошибке
     '''
-    domain = os.environ.get('AMOCRM_DOMAIN', '')
+    domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
     client_id = os.environ.get('AMOCRM_CLIENT_ID', '')
     client_secret = os.environ.get('AMOCRM_CLIENT_SECRET', '')
     refresh_token = os.environ.get('AMOCRM_REFRESH_TOKEN', '')
@@ -146,9 +146,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         print(f'[DEBUG] Searching contact with phone: {client_phone}')
         print(f'[DEBUG] Request URL: {contact_url}')
+        print(f'[DEBUG] Using token: {access_token[:20]}...')
         
         with urllib.request.urlopen(contact_req, timeout=10) as response:
-            contacts_data = json.loads(response.read().decode())
+            response_text = response.read().decode()
+            print(f'[DEBUG] Response: {response_text[:200]}')
+            contacts_data = json.loads(response_text)
         
         print(f'[DEBUG] Found contacts: {len(contacts_data.get("_embedded", {}).get("contacts", []))}')
         
