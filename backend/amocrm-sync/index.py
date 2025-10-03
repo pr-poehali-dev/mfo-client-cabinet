@@ -474,6 +474,16 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         phone_field = next((f for f in custom_fields if f.get('field_code') == 'PHONE'), None)
         email_field = next((f for f in custom_fields if f.get('field_code') == 'EMAIL'), None)
         
+        gender = 'male'
+        for field in custom_fields:
+            field_name = field.get('field_name', '').lower()
+            values = field.get('values', []) or []
+            if values and ('пол' in field_name or 'gender' in field_name):
+                field_value = str(values[0].get('value', '')).lower()
+                if 'жен' in field_value or 'female' in field_value or 'ж' == field_value:
+                    gender = 'female'
+                break
+        
         full_name = contact.get('name', 'Клиент')
         name_parts = full_name.split(' ', 2)
         last_name = name_parts[0] if len(name_parts) > 0 else ''
@@ -486,6 +496,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             'first_name': first_name,
             'last_name': last_name,
             'middle_name': middle_name,
+            'gender': gender,
             'phone': phone_field['values'][0]['value'] if phone_field else client_phone,
             'email': email_field['values'][0]['value'] if email_field else '',
             'created_at': datetime.fromtimestamp(contact.get('created_at', 0)).strftime('%d.%m.%Y'),

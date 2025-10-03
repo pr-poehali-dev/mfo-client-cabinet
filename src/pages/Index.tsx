@@ -19,6 +19,7 @@ const Index = () => {
   const [clientFirstName, setClientFirstName] = useState('');
   const [clientLastName, setClientLastName] = useState('');
   const [clientMiddleName, setClientMiddleName] = useState('');
+  const [clientGender, setClientGender] = useState<'male' | 'female'>('male');
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,6 +61,7 @@ const Index = () => {
       setClientFirstName(data.first_name || '');
       setClientLastName(data.last_name || '');
       setClientMiddleName(data.middle_name || '');
+      setClientGender(data.gender || 'male');
       setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
       
@@ -122,6 +124,7 @@ const Index = () => {
     setClientFirstName('');
     setClientLastName('');
     setClientMiddleName('');
+    setClientGender('male');
     setClientPhone('');
     setClientEmail('');
     setError('');
@@ -161,6 +164,7 @@ const Index = () => {
       setClientFirstName(data.first_name || '');
       setClientLastName(data.last_name || '');
       setClientMiddleName(data.middle_name || '');
+      setClientGender(data.gender || 'male');
       setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
       
@@ -251,6 +255,7 @@ const Index = () => {
               clientFirstName={clientFirstName}
               clientLastName={clientLastName}
               clientMiddleName={clientMiddleName}
+              clientGender={clientGender}
               clientPhone={clientPhone}
               clientEmail={clientEmail}
             />

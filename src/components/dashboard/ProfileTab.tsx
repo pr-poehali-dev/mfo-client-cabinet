@@ -11,6 +11,7 @@ interface ProfileTabProps {
   clientFirstName: string;
   clientLastName: string;
   clientMiddleName: string;
+  clientGender: 'male' | 'female';
   clientPhone: string;
   clientEmail: string;
 }
@@ -19,7 +20,8 @@ const ProfileTab = ({
   clientName,
   clientFirstName, 
   clientLastName, 
-  clientMiddleName, 
+  clientMiddleName,
+  clientGender,
   clientPhone, 
   clientEmail 
 }: ProfileTabProps) => {
@@ -155,7 +157,7 @@ const ProfileTab = ({
         <CardHeader className="relative pb-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             <Avatar className="w-28 h-28 border-4 border-background shadow-2xl">
-              <AvatarImage src="" />
+              <AvatarImage src={clientGender === 'female' ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=female&backgroundColor=b6e3f4' : 'https://api.dicebear.com/7.x/avataaars/svg?seed=male&backgroundColor=c0aede'} />
               <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-3xl font-bold">
                 {getInitials()}
               </AvatarFallback>
