@@ -47,12 +47,16 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     try {
       const response = await fetch('https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneDigits, action: 'send' })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ phone: phoneDigits, action: 'send' }),
+        mode: 'cors'
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
         throw new Error(errorData.error || 'Ошибка отправки SMS');
       }
 
@@ -72,6 +76,9 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       }, 1000);
       
     } catch (err: any) {
+      if (err.message === 'Failed to fetch') {
+        throw new Error('Не удалось подключиться к серверу. Проверьте интернет-соединение.');
+      }
       throw new Error(err.message || 'Ошибка отправки SMS');
     }
   };
@@ -113,17 +120,21 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     try {
       const response = await fetch('https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ 
           phone: phone.replace(/\D/g, ''),
           action: 'verify',
           code: code,
           stored_code: storedCode
-        })
+        }),
+        mode: 'cors'
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Неверный код' }));
         setError(errorData.error || 'Неверный код');
         return;
       }
@@ -136,9 +147,13 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         setError('Неверный код подтверждения');
       }
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Verification error:', err);
-      setError('Ошибка проверки кода. Попробуйте снова.');
+      if (err.message === 'Failed to fetch') {
+        setError('Не удалось подключиться к серверу. Проверьте интернет-соединение.');
+      } else {
+        setError('Ошибка проверки кода. Попробуйте снова.');
+      }
     } finally {
       setLoading(false);
     }
