@@ -86,7 +86,7 @@ const Index = () => {
       
     } catch (err) {
       console.error('AmoCRM sync error:', err);
-      setError('Не удалось подключиться к AmoCRM');
+      setError(`Не удалось подключиться к AmoCRM. Проверьте подключение к интернету или попробуйте позже. Ошибка: ${err instanceof Error ? err.message : 'Неизвестная ошибка'}`);
     } finally {
       setLoading(false);
     }

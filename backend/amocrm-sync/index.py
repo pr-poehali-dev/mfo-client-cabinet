@@ -400,13 +400,18 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         print(f'[DEBUG] Using token: {access_token[:30]}...')
         print(f'[DEBUG] Retry count: {_retry_count}')
         
-        with urllib.request.urlopen(contact_req, timeout=10) as response:
+        with urllib.request.urlopen(contact_req, timeout=30) as response:
             response_text = response.read().decode()
             print(f'[DEBUG] Response status: {response.status}')
             print(f'[DEBUG] Response length: {len(response_text)}')
-            if response_text:
-                print(f'[DEBUG] Response preview: {response_text[:200]}')
-            contacts_data = json.loads(response_text)
+            
+            if not response_text or response.status == 204:
+                print(f'[WARNING] Empty response from AmoCRM (status {response.status})')
+                contacts_data = {}
+            else:
+                if response_text:
+                    print(f'[DEBUG] Response preview: {response_text[:200]}')
+                contacts_data = json.loads(response_text)
         
         print(f'[DEBUG] Found contacts: {len(contacts_data.get("_embedded", {}).get("contacts", []))}')
         
