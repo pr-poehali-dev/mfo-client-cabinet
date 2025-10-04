@@ -407,11 +407,12 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             
             if not response_text or response.status == 204:
                 print(f'[WARNING] Empty response from AmoCRM (status {response.status})')
-                contacts_data = {}
-            else:
-                if response_text:
-                    print(f'[DEBUG] Response preview: {response_text[:200]}')
+                contacts_data = {'_embedded': {'contacts': []}}
+            elif response_text.strip():
+                print(f'[DEBUG] Response preview: {response_text[:200]}')
                 contacts_data = json.loads(response_text)
+            else:
+                contacts_data = {'_embedded': {'contacts': []}}
         
         print(f'[DEBUG] Found contacts: {len(contacts_data.get("_embedded", {}).get("contacts", []))}')
         

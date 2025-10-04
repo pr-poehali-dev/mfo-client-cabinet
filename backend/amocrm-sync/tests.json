@@ -7,12 +7,13 @@
       "expectedStatus": 200
     },
     {
-      "name": "Test credentials check",
+      "name": "Test GET with valid phone",
       "method": "GET",
-      "path": "/?phone=79991234567",
-      "expectedStatus": 500,
+      "path": "/?phone=79012830346",
+      "expectedStatus": 200,
       "expectedBody": {
-        "error": "AmoCRM credentials not configured"
+        "name": "string",
+        "phone": "string"
       },
       "bodyMatcher": "partial"
     }
