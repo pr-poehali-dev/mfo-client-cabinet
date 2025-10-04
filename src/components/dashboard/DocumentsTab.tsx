@@ -1,13 +1,21 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { Document } from './types';
+import DocumentPreviewModal from './DocumentPreviewModal';
+import LoanAgreementTemplate from './documents/LoanAgreementTemplate';
+import PersonalDataConsentTemplate from './documents/PersonalDataConsentTemplate';
+import { generatePDF } from '@/utils/pdfGenerator';
 
 interface DocumentsTabProps {
   documents: Document[];
+  clientName?: string;
+  clientPhone?: string;
 }
 
-const DocumentsTab = ({ documents }: DocumentsTabProps) => {
+const DocumentsTab = ({ documents, clientName, clientPhone }: DocumentsTabProps) => {
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; content: React.ReactNode; id: string; filename: string } | null>(null);
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
     if (ext === 'pdf') return 'FileText';
@@ -40,8 +48,69 @@ const DocumentsTab = ({ documents }: DocumentsTabProps) => {
     }
   };
 
-  const handleOpenDocument = (url: string) => {
-    window.open(url, '_blank');
+  const extractFileParams = (url: string) => {
+    const match = url.match(/files\/([^\/]+)\/versions\/([^\/]+)/);
+    if (match) {
+      return { file_uuid: match[1], version_uuid: match[2] };
+    }
+    return null;
+  };
+
+  const handleDownloadDocument = async (doc: Document) => {
+    const params = extractFileParams(doc.file_url);
+    if (!params) {
+      console.error('Invalid file URL format');
+      return;
+    }
+
+    const downloadUrl = `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?file_uuid=${params.file_uuid}&version_uuid=${params.version_uuid}&filename=${encodeURIComponent(doc.file_name)}`;
+    
+    try {
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = doc.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+    }
+  };
+
+  const handleOpenDocument = (doc: Document) => {
+    handleDownloadDocument(doc);
+  };
+
+  const handlePreviewLoanAgreement = () => {
+    setPreviewDoc({
+      title: 'Договор займа',
+      content: <LoanAgreementTemplate clientName={clientName} clientPhone={clientPhone} />,
+      id: 'loan-agreement-doc',
+      filename: 'договор_займа.pdf'
+    });
+  };
+
+  const handlePreviewPersonalDataConsent = () => {
+    setPreviewDoc({
+      title: 'Согласие на обработку персональных данных',
+      content: <PersonalDataConsentTemplate clientName={clientName} clientPhone={clientPhone} />,
+      id: 'personal-data-consent-doc',
+      filename: 'согласие_на_обработку_ПД.pdf'
+    });
+  };
+
+  const handleDownloadPDF = async () => {
+    if (previewDoc) {
+      await generatePDF(previewDoc.id, previewDoc.filename);
+    }
   };
 
   return (
@@ -51,6 +120,38 @@ const DocumentsTab = ({ documents }: DocumentsTabProps) => {
         <p className="text-sm text-muted-foreground">
           Все ваши документы, загруженные в AmoCRM
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5 hover:shadow-lg transition-all cursor-pointer" onClick={handlePreviewLoanAgreement}>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/20 border-2 border-primary/30">
+                <Icon name="FileText" size={32} className="text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg mb-1">Договор займа</h3>
+                <p className="text-sm text-muted-foreground">Образец договора займа</p>
+              </div>
+              <Icon name="Eye" size={20} className="text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-green-500/30 bg-gradient-to-br from-green-500/5 to-blue-500/5 hover:shadow-lg transition-all cursor-pointer" onClick={handlePreviewPersonalDataConsent}>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-green-500/20 border-2 border-green-500/30">
+                <Icon name="ShieldCheck" size={32} className="text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg mb-1">Согласие на обработку ПД</h3>
+                <p className="text-sm text-muted-foreground">Персональные данные</p>
+              </div>
+              <Icon name="Eye" size={20} className="text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {documents.length === 0 ? (
@@ -104,22 +205,11 @@ const DocumentsTab = ({ documents }: DocumentsTabProps) => {
               <CardContent className="relative pt-0">
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => handleOpenDocument(doc.file_url)}
+                    onClick={() => handleOpenDocument(doc)}
                     className="flex-1 bg-gradient-to-r from-primary to-secondary"
                   >
-                    <Icon name="ExternalLink" size={16} className="mr-2" />
-                    Открыть документ
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = doc.file_url;
-                      link.download = doc.file_name;
-                      link.click();
-                    }}
-                  >
-                    <Icon name="Download" size={16} />
+                    <Icon name="Download" size={16} className="mr-2" />
+                    Скачать документ
                   </Button>
                 </div>
               </CardContent>
@@ -140,6 +230,17 @@ const DocumentsTab = ({ documents }: DocumentsTabProps) => {
           </div>
         </div>
       </div>
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          open={true}
+          onClose={() => setPreviewDoc(null)}
+          title={previewDoc.title}
+          content={previewDoc.content}
+          documentId={previewDoc.id}
+          onDownload={handleDownloadPDF}
+        />
+      )}
     </div>
   );
 };

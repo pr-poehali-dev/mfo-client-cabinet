@@ -174,6 +174,92 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             'isBase64Encoded': False
         }
     
+    params = event.get('queryStringParameters') or {}
+    if method == 'GET' and 'file_uuid' in params and 'version_uuid' in params:
+        file_uuid = params.get('file_uuid', '')
+        version_uuid = params.get('version_uuid', '')
+        filename = params.get('filename', 'document.pdf')
+        
+        if not file_uuid or not version_uuid:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'Missing file_uuid or version_uuid'}),
+                'isBase64Encoded': False
+            }
+        
+        access_token = TOKEN_CACHE.get('access_token') or os.environ.get('ACCESS_TOKEN', '')
+        if not access_token:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'AmoCRM token not configured'}),
+                'isBase64Encoded': False
+            }
+        
+        download_url = f'https://drive.amocrm.ru/v1.0/files/{file_uuid}/versions/{version_uuid}/download'
+        
+        try:
+            print(f'[DEBUG] Downloading file: {filename}')
+            print(f'[DEBUG] URL: {download_url}')
+            
+            req = urllib.request.Request(
+                download_url,
+                headers={'Authorization': f'Bearer {access_token}'}
+            )
+            
+            with urllib.request.urlopen(req, timeout=30) as response:
+                file_data = response.read()
+                content_type = response.headers.get('Content-Type', 'application/octet-stream')
+                encoded_data = base64.b64encode(file_data).decode('utf-8')
+                
+                print(f'[DEBUG] File downloaded successfully, size: {len(file_data)} bytes')
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': content_type,
+                        'Content-Disposition': f'attachment; filename="{filename}"',
+                        'Access-Control-Allow-Origin': '*',
+                        'Cache-Control': 'no-cache'
+                    },
+                    'body': encoded_data,
+                    'isBase64Encoded': True
+                }
+        
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8') if e.fp else 'Unknown error'
+            print(f'[ERROR] HTTPError downloading file: {e.code} - {error_body}')
+            return {
+                'statusCode': e.code,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': f'Download failed: {e.code}'}),
+                'isBase64Encoded': False
+            }
+        
+        except Exception as e:
+            print(f'[ERROR] File download error: {str(e)}')
+            import traceback
+            print(f'[ERROR] Traceback: {traceback.format_exc()}')
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': f'Download failed: {str(e)}'}),
+                'isBase64Encoded': False
+            }
+    
     if method == 'POST':
         return handle_create_deal(event, context)
     
@@ -342,6 +428,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         contact_id = contact['id']
         
         print(f'[DEBUG] Contact ID: {contact_id}, Name: {contact.get("name")}')
+        print(f'[INFO] Загружаем сделки ТОЛЬКО для контакта {contact_id} (телефон: {client_phone})')
         
         leads_url = f'{base_url}/api/v4/leads?filter[contacts][0]={contact_id}&with=contacts'
         leads_req = urllib.request.Request(leads_url, headers=headers)
@@ -350,7 +437,9 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             response_text = response.read().decode()
             leads_data = json.loads(response_text)
         
-        print(f'[DEBUG] Found leads: {len(leads_data.get("_embedded", {}).get("leads", []))}')
+        leads_count = len(leads_data.get('_embedded', {}).get('leads', []))
+        print(f'[INFO] Найдено сделок для контакта {contact_id}: {leads_count}')
+        print(f'[SECURITY] Все сделки принадлежат только клиенту с телефоном {client_phone}')
         
         pipelines_url = f'{base_url}/api/v4/leads/pipelines'
         pipelines_req = urllib.request.Request(pipelines_url, headers=headers)
@@ -380,12 +469,19 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         deals: List[Dict[str, Any]] = []
         
         for lead in leads_data.get('_embedded', {}).get('leads', []):
+            lead_id = lead.get('id')
+            lead_name = lead.get('name', f'Сделка #{lead_id}')
+            
             lead_contacts = lead.get('_embedded', {}).get('contacts', [])
-            if lead_contacts:
-                lead_contact_ids = [c.get('id') for c in lead_contacts]
-                if contact_id not in lead_contact_ids:
-                    print(f'[WARNING] Skipping lead {lead.get("id")} - not linked to contact {contact_id}')
-                    continue
+            lead_contact_ids = [c.get('id') for c in lead_contacts] if lead_contacts else []
+            
+            print(f'[CHECK] Сделка {lead_id} "{lead_name}": привязана к контактам {lead_contact_ids}')
+            
+            if lead_contacts and contact_id not in lead_contact_ids:
+                print(f'[WARNING] Сделка {lead_id} НЕ принадлежит контакту {contact_id}! Пропускаем.')
+                continue
+            
+            print(f'[OK] Сделка {lead_id} принадлежит клиенту {contact_id}')
             
             loan_amount = lead.get('price', 0)
             created_at = lead.get('created_at', 0)
@@ -498,12 +594,6 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                 lead_id = lead['id']
                 lead_name = lead.get('name', f'Сделка #{lead_id}')
                 
-                lead_contacts = lead.get('_embedded', {}).get('contacts', [])
-                if lead_contacts:
-                    lead_contact_ids = [c.get('id') for c in lead_contacts]
-                    if contact_id not in lead_contact_ids:
-                        continue
-                
                 print(f'[DEBUG] Loading notes for lead {lead_id}...')
                 
                 try:
@@ -525,52 +615,33 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                     for note in notes_list:
                         note_type = note.get('note_type', '')
                         note_id = note.get('id', 0)
-                        
-                        print(f'[DEBUG] Note {note_id}: type={note_type}')
-                        
                         params = note.get('params', {})
                         
-                        if 'file' in params or 'attachment' in params:
-                            file_info = params.get('file') or params.get('attachment')
-                            
-                            if file_info:
-                                file_name = file_info.get('name') or file_info.get('file_name') or params.get('text', 'Документ')
-                                file_url = file_info.get('url') or file_info.get('link', '')
-                                file_size = file_info.get('size', 0)
-                                
-                                if file_url:
-                                    documents.append({
-                                        'id': str(note_id),
-                                        'name': file_name,
-                                        'file_url': file_url,
-                                        'file_name': file_name,
-                                        'file_size': file_size,
-                                        'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
-                                        'type': 'contract' if 'договор' in file_name.lower() else 'other',
-                                        'lead_id': str(lead_id),
-                                        'lead_name': lead_name
-                                    })
-                                    print(f'[DEBUG] Added document: {file_name} from lead {lead_id}')
+                        print(f'[DEBUG] Note {note_id}: type={note_type}, params keys={list(params.keys())}')
                         
-                        if note_type == 'file_attachment' or note_type == 'attachment':
-                            attachment = params.get('attachment')
-                            if attachment:
-                                file_name = attachment.get('file_name', 'Документ')
-                                file_url = attachment.get('link', '')
+                        if note_type == 'attachment':
+                            is_drive = params.get('is_drive_attachment', False)
+                            file_name = params.get('file_name') or params.get('original_name') or params.get('text', 'Документ')
+                            
+                            if is_drive:
+                                file_uuid = params.get('file_uuid')
+                                version_uuid = params.get('version_uuid')
                                 
-                                if file_url:
+                                if file_uuid and version_uuid:
+                                    file_url = f'https://drive.amocrm.ru/v1.0/files/{file_uuid}/versions/{version_uuid}/download'
+                                    
                                     documents.append({
                                         'id': str(note_id),
                                         'name': file_name,
                                         'file_url': file_url,
                                         'file_name': file_name,
-                                        'file_size': attachment.get('size', 0),
+                                        'file_size': 0,
                                         'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
                                         'type': 'contract' if 'договор' in file_name.lower() else 'other',
                                         'lead_id': str(lead_id),
                                         'lead_name': lead_name
                                     })
-                                    print(f'[DEBUG] Added attachment: {file_name} from lead {lead_id}')
+                                    print(f'[DEBUG] Added drive document: {file_name} from lead {lead_id}')
                 
                 except Exception as note_err:
                     print(f'[WARNING] Failed to load notes for lead {lead_id}: {note_err}')

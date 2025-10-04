@@ -259,7 +259,11 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="documents">
-            <DocumentsTab documents={documents} />
+            <DocumentsTab 
+              documents={documents} 
+              clientName={clientName}
+              clientPhone={clientPhone}
+            />
           </TabsContent>
 
           <TabsContent value="profile">
