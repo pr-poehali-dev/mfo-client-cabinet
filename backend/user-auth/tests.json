@@ -1,0 +1,38 @@
+{
+  "tests": [
+    {
+      "name": "Register new user",
+      "method": "POST",
+      "body": {
+        "action": "register",
+        "firstName": "Иван",
+        "lastName": "Иванов",
+        "middleName": "Иванович",
+        "passportSeries": "1234",
+        "passportNumber": "567890",
+        "phone": "79991234567",
+        "email": "test@example.com",
+        "password": "testpass123"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "phone": "string",
+        "email": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Login by phone",
+      "method": "POST",
+      "body": {
+        "action": "login",
+        "phone": "79991234567"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "phone": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
