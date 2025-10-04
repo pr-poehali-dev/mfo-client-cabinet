@@ -16,6 +16,22 @@
         "phone": "string"
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test PUT update client data",
+      "method": "PUT",
+      "path": "/",
+      "body": {
+        "phone": "79012830346",
+        "firstName": "Иван",
+        "lastName": "Петров",
+        "email": "test@example.com"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

@@ -6,10 +6,156 @@ import base64
 from typing import Dict, Any, List
 from datetime import datetime
 
+def handle_update_client(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+    '''
+    Обновление данных клиента в AmoCRM (ФИО, телефон, email, кастомные поля)
+    '''
+    domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
+    access_token = os.environ.get('ACCESS_TOKEN', '')
+    
+    if not access_token:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'error': 'AmoCRM token not configured',
+                'message': 'Добавьте ACCESS_TOKEN в секреты проекта'
+            }),
+            'isBase64Encoded': False
+        }
+    
+    try:
+        body_data = json.loads(event.get('body', '{}'))
+        client_phone = body_data.get('phone', '')
+        
+        if not client_phone:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'Phone parameter required'}),
+                'isBase64Encoded': False
+            }
+        
+        base_url = f'https://{domain}'
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+        
+        contact_url = f'{base_url}/api/v4/contacts?query={client_phone}'
+        contact_req = urllib.request.Request(contact_url, headers=headers)
+        
+        with urllib.request.urlopen(contact_req, timeout=30) as response:
+            response_text = response.read().decode()
+            contacts_data = json.loads(response_text) if response_text.strip() else {'_embedded': {'contacts': []}}
+        
+        if not contacts_data.get('_embedded', {}).get('contacts'):
+            return {
+                'statusCode': 404,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'Client not found in AmoCRM'}),
+                'isBase64Encoded': False
+            }
+        
+        contact = contacts_data['_embedded']['contacts'][0]
+        contact_id = contact['id']
+        
+        update_data = []
+        
+        first_name = body_data.get('firstName', '')
+        last_name = body_data.get('lastName', '')
+        middle_name = body_data.get('middleName', '')
+        email = body_data.get('email', '')
+        
+        if first_name or last_name or middle_name:
+            full_name = f"{last_name} {first_name} {middle_name}".strip()
+            update_data.append({
+                'id': contact_id,
+                'name': full_name
+            })
+        
+        custom_fields_values = []
+        
+        if email:
+            custom_fields_values.append({
+                'field_code': 'EMAIL',
+                'values': [{'value': email, 'enum_code': 'WORK'}]
+            })
+        
+        if custom_fields_values:
+            if update_data:
+                update_data[0]['custom_fields_values'] = custom_fields_values
+            else:
+                update_data.append({
+                    'id': contact_id,
+                    'custom_fields_values': custom_fields_values
+                })
+        
+        if not update_data:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'No data to update'}),
+                'isBase64Encoded': False
+            }
+        
+        update_url = f'{base_url}/api/v4/contacts'
+        update_body = json.dumps(update_data).encode()
+        update_req = urllib.request.Request(
+            update_url,
+            data=update_body,
+            headers=headers,
+            method='PATCH'
+        )
+        
+        with urllib.request.urlopen(update_req, timeout=10) as response:
+            result = json.loads(response.read().decode())
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': True,
+                'message': 'Данные клиента обновлены в AmoCRM',
+                'contact_id': contact_id,
+                'updated': result
+            }),
+            'isBase64Encoded': False
+        }
+        
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'error': str(e),
+                'type': type(e).__name__
+            }),
+            'isBase64Encoded': False
+        }
+
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Синхронизация данных клиента из AmoCRM - получение займов, сделок и контактов
-    Args: event с httpMethod, queryStringParameters (phone)
+    Business: Синхронизация данных клиента из AmoCRM - получение/обновление займов, сделок и контактов
+    Args: event с httpMethod, queryStringParameters (phone), body (для PUT - данные клиента)
     Returns: JSON с данными клиента из AmoCRM
     '''
     method: str = event.get('httpMethod', 'GET')
@@ -19,13 +165,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
                 'Access-Control-Max-Age': '86400'
             },
             'body': '',
             'isBase64Encoded': False
         }
+    
+    if method == 'PUT':
+        return handle_update_client(event, context)
     
     if method != 'GET':
         return {
