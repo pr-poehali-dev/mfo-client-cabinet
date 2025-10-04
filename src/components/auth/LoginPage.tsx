@@ -45,10 +45,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
   const sendSMS = async (phoneDigits: string) => {
     try {
-      const response = await fetch('https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e', {
+      const response = await fetch('https://functions.poehali.dev/70d555d5-8b9c-471a-baaf-5b7796eef2d1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneDigits, action: 'send' })
+        body: JSON.stringify({ phone: phoneDigits, action: 'send-sms' })
       });
 
       if (!response.ok) {
@@ -57,7 +57,9 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       }
 
       const result = await response.json();
-      setStoredCode(result.code);
+      if (result.code) {
+        setStoredCode(result.code);
+      }
       setStep('code');
       setResendTimer(60);
       
@@ -111,14 +113,13 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setError('');
 
     try {
-      const response = await fetch('https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e', {
+      const response = await fetch('https://functions.poehali.dev/70d555d5-8b9c-471a-baaf-5b7796eef2d1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           phone: phone.replace(/\D/g, ''),
-          action: 'verify',
-          code: code,
-          stored_code: storedCode
+          action: 'verify-sms',
+          code: code
         })
       });
 
@@ -130,7 +131,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
       const result = await response.json();
       
-      if (result.verified) {
+      if (result.id) {
         onLogin(phone.replace(/\D/g, ''));
       } else {
         setError('Неверный код подтверждения');
