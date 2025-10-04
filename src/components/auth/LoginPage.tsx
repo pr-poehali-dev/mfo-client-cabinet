@@ -151,8 +151,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                       </div>
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground mb-1">Телефон</p>
-                        <a href="tel:+78001234567" className="text-lg font-semibold hover:text-primary transition-colors">
-                          +7 (800) 123-45-67
+                        <a href="tel:+74951340801" className="text-lg font-semibold hover:text-primary transition-colors">
+                          +7 (495) 134-08-01
                         </a>
                         <p className="text-xs text-muted-foreground mt-1">Круглосуточно</p>
                       </div>
@@ -164,8 +164,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                       </div>
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground mb-1">Email</p>
-                        <a href="mailto:support@example.com" className="text-lg font-semibold hover:text-primary transition-colors break-all">
-                          support@example.com
+                        <a href="mailto:support@manifesto.ru" className="text-lg font-semibold hover:text-primary transition-colors break-all">
+                          support@manifesto.ru
                         </a>
                         <p className="text-xs text-muted-foreground mt-1">Ответ в течение 24 часов</p>
                       </div>
@@ -196,7 +196,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                     <Button
                       className="flex-1 bg-gradient-to-r from-primary to-secondary"
                       onClick={() => {
-                        window.location.href = 'tel:+78001234567';
+                        window.location.href = 'tel:+74951340801';
                       }}
                     >
                       <Icon name="Phone" size={18} className="mr-2" />
