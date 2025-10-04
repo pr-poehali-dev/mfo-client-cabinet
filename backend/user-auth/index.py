@@ -4,6 +4,7 @@ import psycopg2
 import hashlib
 import requests
 import random
+import urllib.request
 from typing import Dict, Any
 from datetime import datetime, timedelta
 
@@ -190,6 +191,90 @@ def handle_register(body_data: Dict[str, Any], database_url: str) -> Dict[str, A
             conn.close()
 
 
+def check_amocrm_client(phone: str) -> bool:
+    """Проверяет наличие клиента в AmoCRM по телефону"""
+    try:
+        domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
+        access_token = os.environ.get('ACCESS_TOKEN', '')
+        
+        if not access_token:
+            return False
+        
+        contact_url = f'https://{domain}/api/v4/contacts?query={phone}'
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+        
+        contact_req = urllib.request.Request(contact_url, headers=headers)
+        
+        with urllib.request.urlopen(contact_req, timeout=10) as response:
+            response_text = response.read().decode()
+            contacts_data = json.loads(response_text) if response_text.strip() else {'_embedded': {'contacts': []}}
+        
+        return bool(contacts_data.get('_embedded', {}).get('contacts'))
+        
+    except Exception as e:
+        print(f"[AmoCRM] Check failed for {phone}: {str(e)}")
+        return False
+
+
+def send_sms_via_amocrm(phone: str, code: str) -> bool:
+    """Отправляет СМС через AmoCRM"""
+    try:
+        domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
+        access_token = os.environ.get('ACCESS_TOKEN', '')
+        
+        if not access_token:
+            return False
+        
+        contact_url = f'https://{domain}/api/v4/contacts?query={phone}'
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+        
+        contact_req = urllib.request.Request(contact_url, headers=headers)
+        
+        with urllib.request.urlopen(contact_req, timeout=10) as response:
+            response_text = response.read().decode()
+            contacts_data = json.loads(response_text) if response_text.strip() else {'_embedded': {'contacts': []}}
+        
+        contacts = contacts_data.get('_embedded', {}).get('contacts', [])
+        if not contacts:
+            return False
+        
+        contact_id = contacts[0]['id']
+        
+        note_text = f"Код для входа в личный кабинет: {code}\nДействителен 5 минут."
+        
+        note_data = [{
+            'entity_id': contact_id,
+            'note_type': 'common',
+            'params': {
+                'text': note_text
+            }
+        }]
+        
+        notes_url = f'https://{domain}/api/v4/contacts/notes'
+        notes_body = json.dumps(note_data).encode()
+        notes_req = urllib.request.Request(
+            notes_url,
+            data=notes_body,
+            headers=headers,
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(notes_req, timeout=10) as response:
+            result = json.loads(response.read().decode())
+            print(f"[AmoCRM] Note added for contact {contact_id}: {code}")
+            return True
+            
+    except Exception as e:
+        print(f"[AmoCRM] Failed to send note for {phone}: {str(e)}")
+        return False
+
+
 def handle_send_sms(body_data: Dict[str, Any], database_url: str) -> Dict[str, Any]:
     phone = body_data.get('phone', '').strip()
     
@@ -229,35 +314,50 @@ def handle_send_sms(body_data: Dict[str, Any], database_url: str) -> Dict[str, A
         )
         conn.commit()
         
-        smsru_api_key = os.environ.get('SMSRU_API_KEY')
+        is_amocrm_client = check_amocrm_client(phone)
         sms_sent = False
         sms_error = None
+        delivery_method = None
         
-        if smsru_api_key:
-            try:
-                sms_text = f"Ваш код для входа: {sms_code}. Действителен 5 минут."
-                sms_url = f"https://sms.ru/sms/send?api_id={smsru_api_key}&to={phone}&msg={requests.utils.quote(sms_text)}&json=1"
-                
-                sms_response = requests.get(sms_url, timeout=10)
-                sms_data = sms_response.json()
-                
-                if sms_data.get('status') == 'OK':
-                    sms_sent = True
-                    print(f"[SMS] Successfully sent to {phone}: {sms_code}")
-                else:
-                    sms_error = sms_data.get('status_text', 'Неизвестная ошибка SMS.ru')
-                    print(f"[SMS] Failed to send to {phone}: {sms_error}")
+        if is_amocrm_client:
+            if send_sms_via_amocrm(phone, sms_code):
+                sms_sent = True
+                delivery_method = 'amocrm'
+                print(f"[SMS] Code sent via AmoCRM to {phone}: {sms_code}")
+            else:
+                print(f"[SMS] AmoCRM send failed, falling back to SMS.ru")
+        
+        if not sms_sent:
+            smsru_api_key = os.environ.get('SMSRU_API_KEY')
+            
+            if smsru_api_key:
+                try:
+                    sms_text = f"Ваш код для входа: {sms_code}. Действителен 5 минут."
+                    sms_url = f"https://sms.ru/sms/send?api_id={smsru_api_key}&to={phone}&msg={requests.utils.quote(sms_text)}&json=1"
                     
-            except Exception as sms_err:
-                sms_error = str(sms_err)
-                print(f"[SMS] Exception sending to {phone}: {sms_error}")
-        else:
-            print(f"[SMS] API key not configured. Code for {phone}: {sms_code}")
+                    sms_response = requests.get(sms_url, timeout=10)
+                    sms_data = sms_response.json()
+                    
+                    if sms_data.get('status') == 'OK':
+                        sms_sent = True
+                        delivery_method = 'sms.ru'
+                        print(f"[SMS] Successfully sent via SMS.ru to {phone}: {sms_code}")
+                    else:
+                        sms_error = sms_data.get('status_text', 'Неизвестная ошибка SMS.ru')
+                        print(f"[SMS] Failed to send via SMS.ru to {phone}: {sms_error}")
+                        
+                except Exception as sms_err:
+                    sms_error = str(sms_err)
+                    print(f"[SMS] Exception sending via SMS.ru to {phone}: {sms_error}")
+            else:
+                print(f"[SMS] SMS.ru API key not configured. Code for {phone}: {sms_code}")
         
         response_data = {
             'success': True,
-            'message': 'СМС с кодом отправлено' if sms_sent else 'Код сгенерирован',
-            'sms_sent': sms_sent
+            'message': 'Код отправлен' if sms_sent else 'Код сгенерирован',
+            'sms_sent': sms_sent,
+            'delivery_method': delivery_method,
+            'is_amocrm_client': is_amocrm_client
         }
         
         if not sms_sent:

@@ -7,12 +7,13 @@
       "expectedStatus": 200
     },
     {
-      "name": "Test credentials check",
-      "method": "GET",
-      "path": "/?phone=79991234567",
-      "expectedStatus": 500,
+      "name": "Test missing fields",
+      "method": "POST",
+      "path": "/",
+      "body": {},
+      "expectedStatus": 400,
       "expectedBody": {
-        "error": "AmoCRM credentials not configured"
+        "error": "Missing required fields"
       },
       "bodyMatcher": "partial"
     }

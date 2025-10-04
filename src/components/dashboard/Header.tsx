@@ -27,22 +27,12 @@ const Header = ({ lastUpdate, loading, onRefresh, onLogout }: HeaderProps) => {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">Личный кабинет</h1>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {lastUpdate && (
-                  <span className="flex items-center gap-1">
-                    <Icon name="Clock" size={11} />
-                    {lastUpdate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                )}
-                <span className="flex items-center gap-1">
-                  <Icon name="Mail" size={11} />
-                  support@manifesto.ru
-                </span>
-                <span className="flex items-center gap-1">
-                  <Icon name="Phone" size={11} />
-                  +7(495) 134-08-01
-                </span>
-              </div>
+              {lastUpdate && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Icon name="Clock" size={11} />
+                  {lastUpdate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
             </div>
           </div>
         </div>

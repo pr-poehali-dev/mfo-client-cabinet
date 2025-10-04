@@ -5,9 +5,7 @@ import Header from '@/components/dashboard/Header';
 import ProfileTab from '@/components/dashboard/ProfileTab';
 import DealsTab from '@/components/dashboard/DealsTab';
 import LoginPage from '@/components/auth/LoginPage';
-import { Loan, Payment, Notification, Deal, Document } from '@/components/dashboard/types';
-import DocumentsTab from '@/components/dashboard/DocumentsTab';
-import funcUrls from '@/../backend/func2url.json';
+import { Loan, Payment, Notification, Deal } from '@/components/dashboard/types';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -17,7 +15,6 @@ const Index = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [clientName, setClientName] = useState('');
   const [clientFirstName, setClientFirstName] = useState('');
   const [clientLastName, setClientLastName] = useState('');
@@ -28,13 +25,6 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [clientLimit, setClientLimit] = useState<{
-    max_loan_amount: number;
-    current_debt: number;
-    available_limit: number;
-    credit_rating: string;
-    is_blocked: boolean;
-  } | null>(null);
 
   const fetchAmoCRMData = async (phone: string) => {
     try {
@@ -44,27 +34,13 @@ const Index = () => {
       const cleanPhone = phone.replace(/\D/g, '');
       
       const response = await fetch(
-        `${funcUrls['amocrm-sync']}?phone=${cleanPhone}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
       );
       
       if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = { error: 'Сервис временно недоступен' };
-        }
-        
+        const errorData = await response.json();
         if (response.status === 401) {
           setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
-        } else if (response.status === 402) {
-          setError('⚠️ AmoCRM интеграция требует оплаты. Свяжитесь с поддержкой для активации.');
         } else if (response.status === 500 && errorData.message?.includes('credentials')) {
           setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
         } else if (response.status === 404) {
@@ -102,25 +78,12 @@ const Index = () => {
       setLoans(uniqueLoans);
       setPayments(uniquePayments);
       setDeals(uniqueDeals);
-      setDocuments(data.documents || []);
       setNotifications(data.notifications || []);
       setLastUpdate(new Date());
       
-      const currentDebt = uniqueLoans.reduce((sum: number, loan: Loan) => 
-        sum + (loan.status === 'active' ? (loan.amount - loan.paid) : 0), 0
-      );
-      
-      setClientLimit({
-        max_loan_amount: 100000,
-        current_debt: currentDebt,
-        available_limit: 100000 - currentDebt,
-        credit_rating: currentDebt < 50000 ? 'Хороший' : 'Средний',
-        is_blocked: false
-      });
-      
     } catch (err) {
       console.error('AmoCRM sync error:', err);
-      setError(`Не удалось подключиться к AmoCRM. Проверьте подключение к интернету или попробуйте позже. Ошибка: ${err instanceof Error ? err.message : 'Неизвестная ошибка'}`);
+      setError('Не удалось подключиться к AmoCRM');
     } finally {
       setLoading(false);
     }
@@ -132,6 +95,12 @@ const Index = () => {
       setUserPhone(savedPhone);
       setIsAuthenticated(true);
       fetchAmoCRMData(savedPhone);
+      
+      const intervalId = setInterval(() => {
+        fetchAmoCRMData(savedPhone);
+      }, 15 * 1000);
+      
+      return () => clearInterval(intervalId);
     }
   }, []);
 
@@ -151,7 +120,6 @@ const Index = () => {
     setPayments([]);
     setNotifications([]);
     setDeals([]);
-    setDocuments([]);
     setClientName('');
     setClientFirstName('');
     setClientLastName('');
@@ -159,7 +127,6 @@ const Index = () => {
     setClientGender('male');
     setClientPhone('');
     setClientEmail('');
-    setClientLimit(null);
     setError('');
     setLastUpdate(null);
   };
@@ -174,27 +141,13 @@ const Index = () => {
       const cleanPhone = userPhone.replace(/\D/g, '');
       
       const response = await fetch(
-        `${funcUrls['amocrm-sync']}?phone=${cleanPhone}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
       );
       
       if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = { error: 'Сервис временно недоступен' };
-        }
-        
+        const errorData = await response.json();
         if (response.status === 401) {
           setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
-        } else if (response.status === 402) {
-          setError('⚠️ AmoCRM интеграция требует оплаты. Свяжитесь с поддержкой для активации.');
         } else if (response.status === 500 && errorData.message?.includes('credentials')) {
           setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
         } else if (response.status === 404) {
@@ -228,7 +181,6 @@ const Index = () => {
       setLoans(uniqueLoans);
       setPayments(uniquePayments);
       setDeals(uniqueDeals);
-      setDocuments(data.documents || []);
       setNotifications([{
         id: Date.now().toString(),
         title: 'Данные обновлены',
@@ -278,14 +230,10 @@ const Index = () => {
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto rounded-xl">
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto rounded-xl">
             <TabsTrigger value="applications" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="FileText" size={18} />
               <span className="hidden sm:inline">Заявки</span>
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
-              <Icon name="FolderOpen" size={18} />
-              <span className="hidden sm:inline">Документы</span>
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="User" size={18} />
@@ -301,14 +249,6 @@ const Index = () => {
             />
           </TabsContent>
 
-          <TabsContent value="documents">
-            <DocumentsTab 
-              documents={documents} 
-              clientName={clientName}
-              clientPhone={clientPhone}
-            />
-          </TabsContent>
-
           <TabsContent value="profile">
             <ProfileTab 
               clientName={clientName}
@@ -318,38 +258,10 @@ const Index = () => {
               clientGender={clientGender}
               clientPhone={clientPhone}
               clientEmail={clientEmail}
-              clientLimit={clientLimit || undefined}
             />
           </TabsContent>
         </Tabs>
       </div>
-
-      <footer className="mt-16 border-t border-border/50 bg-card/30 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-center md:text-left">
-              <h3 className="text-lg font-semibold mb-2">Поддержка клиентов</h3>
-              <p className="text-sm text-muted-foreground">Мы всегда на связи, если у вас возникли вопросы</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 items-center">
-              <a 
-                href="mailto:support@manifesto.ru" 
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
-              >
-                <Icon name="Mail" size={18} className="text-primary" />
-                <span className="text-sm font-medium">support@manifesto.ru</span>
-              </a>
-              <a 
-                href="tel:+74951340801" 
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/10 hover:bg-secondary/20 transition-colors"
-              >
-                <Icon name="Phone" size={18} className="text-secondary" />
-                <span className="text-sm font-medium">+7 (495) 134-08-01</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

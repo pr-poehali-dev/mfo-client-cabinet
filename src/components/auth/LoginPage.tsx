@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
-import funcUrls from '@/../backend/func2url.json';
 import {
   Dialog,
   DialogContent,
@@ -20,16 +18,14 @@ interface LoginPageProps {
 }
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
-  const navigate = useNavigate();
-  const [loginMode, setLoginMode] = useState<'phone' | 'sms' | 'email'>('sms');
   const [phone, setPhone] = useState('');
-  const [smsCode, setSmsCode] = useState('');
-  const [smsStep, setSmsStep] = useState<'phone' | 'code'>('phone');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  const [step, setStep] = useState<'phone' | 'code'>('phone');
+  const [code, setCode] = useState('');
+  const [storedCode, setStoredCode] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -47,6 +43,39 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setError('');
   };
 
+  const sendSMS = async (phoneDigits: string) => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneDigits, action: 'send' })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка отправки SMS');
+      }
+
+      const result = await response.json();
+      setStoredCode(result.code);
+      setStep('code');
+      setResendTimer(60);
+      
+      const interval = setInterval(() => {
+        setResendTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+    } catch (err: any) {
+      throw new Error(err.message || 'Ошибка отправки SMS');
+    }
+  };
+
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -61,37 +90,20 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setError('');
 
     try {
-      const response = await fetch(funcUrls['user-auth'], {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'login', phone: digits })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.error || 'Ошибка входа');
-        setLoading(false);
-        return;
-      }
-
-      const data = await response.json();
-      localStorage.setItem('userName', data.name);
-      localStorage.setItem('userEmail', data.email || '');
-      
-      onLogin(digits);
-    } catch (err) {
-      setError('Не удалось войти. Проверьте подключение к интернету');
+      await sendSMS(digits);
+    } catch (err: any) {
+      console.error('SMS error:', err);
+      setError(err.message || 'Не удалось отправить СМС. Попробуйте позже.');
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      setError('Заполните все поля');
+    if (code.length !== 4) {
+      setError('Введите 4-значный код');
       return;
     }
 
@@ -99,28 +111,50 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setError('');
 
     try {
-      const response = await fetch(funcUrls['user-auth'], {
+      const response = await fetch('https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'login', email, password })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          phone: phone.replace(/\D/g, ''),
+          action: 'verify',
+          code: code,
+          stored_code: storedCode
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        setError(errorData.error || 'Неверный email или пароль');
-        setLoading(false);
+        setError(errorData.error || 'Неверный код');
         return;
       }
 
-      const data = await response.json();
-      localStorage.setItem('userName', data.name);
-      localStorage.setItem('userEmail', data.email);
+      const result = await response.json();
       
-      onLogin(data.phone);
+      if (result.verified) {
+        onLogin(phone.replace(/\D/g, ''));
+      } else {
+        setError('Неверный код подтверждения');
+      }
+      
     } catch (err) {
-      setError('Не удалось войти. Проверьте подключение к интернету');
+      console.error('Verification error:', err);
+      setError('Ошибка проверки кода. Попробуйте снова.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendTimer > 0) return;
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      await sendSMS(phone.replace(/\D/g, ''));
+    } catch (err: any) {
+      setError(err.message || 'Ошибка повторной отправки');
+    } finally {
       setLoading(false);
     }
   };
@@ -136,202 +170,12 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             Вход в личный кабинет
           </CardTitle>
           <CardDescription>
-            {loginMode === 'sms' 
-              ? (smsStep === 'phone' ? 'Введите номер телефона' : 'Введите код из СМС')
-              : loginMode === 'phone'
-              ? 'Введите номер телефона для быстрого входа'
-              : 'Войдите с помощью email и пароля'
-            }
+            Введите номер телефона, указанный при оформлении займа
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => { setLoginMode('sms'); setSmsStep('phone'); setSmsCode(''); }}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                loginMode === 'sms'
-                  ? 'bg-primary text-white'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              <Icon name="MessageSquare" size={18} className="inline mr-2" />
-              По СМС
-            </button>
-            <button
-              onClick={() => setLoginMode('phone')}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                loginMode === 'phone'
-                  ? 'bg-primary text-white'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              <Icon name="Phone" size={18} className="inline mr-2" />
-              Телефон
-            </button>
-            <button
-              onClick={() => setLoginMode('email')}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                loginMode === 'email'
-                  ? 'bg-primary text-white'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              <Icon name="Mail" size={18} className="inline mr-2" />
-              Email
-            </button>
-          </div>
-
-          {loginMode === 'sms' ? (
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              
-              if (smsStep === 'phone') {
-                const digits = phone.replace(/\D/g, '');
-                if (digits.length !== 11) {
-                  setError('Введите корректный номер телефона');
-                  return;
-                }
-                
-                setLoading(true);
-                setError('');
-                
-                try {
-                  const response = await fetch(funcUrls['user-auth'], {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'send-sms', phone: digits })
-                  });
-
-                  if (!response.ok) {
-                    const errorData = await response.json();
-                    setError(errorData.error || 'Не удалось отправить СМС');
-                    setLoading(false);
-                    return;
-                  }
-
-                  setSmsStep('code');
-                  setLoading(false);
-                } catch (err) {
-                  setError('Не удалось отправить СМС. Проверьте подключение');
-                  setLoading(false);
-                }
-              } else {
-                if (!smsCode || smsCode.length < 4) {
-                  setError('Введите код из СМС');
-                  return;
-                }
-                
-                setLoading(true);
-                setError('');
-                
-                try {
-                  const digits = phone.replace(/\D/g, '');
-                  const response = await fetch(funcUrls['user-auth'], {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'verify-sms', phone: digits, code: smsCode })
-                  });
-
-                  if (!response.ok) {
-                    const errorData = await response.json();
-                    setError(errorData.error || 'Неверный код');
-                    setLoading(false);
-                    return;
-                  }
-
-                  const data = await response.json();
-                  localStorage.setItem('userName', data.name);
-                  localStorage.setItem('userEmail', data.email || '');
-                  
-                  onLogin(digits);
-                } catch (err) {
-                  setError('Ошибка проверки кода');
-                  setLoading(false);
-                }
-              }
-            }} className="space-y-4">
-              {smsStep === 'phone' ? (
-                <div className="space-y-2">
-                  <Label htmlFor="sms-phone">Номер телефона</Label>
-                  <Input
-                    id="sms-phone"
-                    type="tel"
-                    placeholder="+7 (999) 123-45-67"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    disabled={loading}
-                    className="text-lg"
-                    autoComplete="tel"
-                    autoFocus
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg">
-                    <p className="text-sm text-center">
-                      Код отправлен на номер <span className="font-bold">{phone}</span>
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sms-code">Код из СМС</Label>
-                    <Input
-                      id="sms-code"
-                      type="text"
-                      placeholder="1234"
-                      value={smsCode}
-                      onChange={(e) => {
-                        setSmsCode(e.target.value.replace(/\D/g, ''));
-                        setError('');
-                      }}
-                      disabled={loading}
-                      className="text-lg text-center tracking-widest"
-                      maxLength={6}
-                      autoFocus
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setSmsStep('phone');
-                      setSmsCode('');
-                      setError('');
-                    }}
-                    className="w-full"
-                  >
-                    <Icon name="ArrowLeft" size={18} className="mr-2" />
-                    Изменить номер
-                  </Button>
-                </>
-              )}
-
-              {error && (
-                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
-                  <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                    {smsStep === 'phone' ? 'Отправка...' : 'Проверка...'}
-                  </>
-                ) : (
-                  <>
-                    <Icon name={smsStep === 'phone' ? 'Send' : 'LogIn'} size={20} className="mr-2" />
-                    {smsStep === 'phone' ? 'Получить код' : 'Войти'}
-                  </>
-                )}
-              </Button>
-            </form>
-          ) : loginMode === 'phone' ? (
-            <form onSubmit={handlePhoneSubmit} className="space-y-4">
+          <form onSubmit={step === 'phone' ? handlePhoneSubmit : handleCodeSubmit} className="space-y-4">
+            {step === 'phone' ? (
               <div className="space-y-2">
                 <Label htmlFor="phone">Номер телефона</Label>
                 <Input
@@ -346,203 +190,186 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                   autoFocus
                 />
               </div>
-
-              {error && (
-                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
-                  <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                    Вход...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="LogIn" size={20} className="mr-2" />
-                    Войти
-                  </>
-                )}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
+            ) : (
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="code">Код из СМС</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@mail.ru"
-                  value={email}
+                  id="code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  placeholder="0000"
+                  value={code}
                   onChange={(e) => {
-                    setEmail(e.target.value);
+                    const value = e.target.value.replace(/\D/g, '');
+                    setCode(value);
                     setError('');
                   }}
                   disabled={loading}
-                  className="text-lg"
-                  autoComplete="email"
+                  className="text-lg text-center tracking-widest"
                   autoFocus
                 />
+                <p className="text-sm text-muted-foreground text-center">
+                  Код отправлен на номер {phone}
+                </p>
               </div>
+            )}
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Пароль</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Введите пароль"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
+            {error && (
+              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
+                <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                  {step === 'phone' ? 'Отправка кода...' : 'Проверка...'}
+                </>
+              ) : (
+                <>
+                  <Icon name={step === 'phone' ? 'Send' : 'LogIn'} size={20} className="mr-2" />
+                  {step === 'phone' ? 'Получить код' : 'Войти'}
+                </>
+              )}
+            </Button>
+
+            {step === 'code' && (
+              <div className="flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setStep('phone');
+                    setCode('');
                     setError('');
                   }}
                   disabled={loading}
-                  className="text-lg"
-                  autoComplete="current-password"
-                />
+                >
+                  <Icon name="ArrowLeft" size={16} className="mr-1" />
+                  Изменить номер
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResend}
+                  disabled={loading || resendTimer > 0}
+                >
+                  {resendTimer > 0 ? (
+                    `Повторить через ${resendTimer}с`
+                  ) : (
+                    <>
+                      <Icon name="RefreshCw" size={16} className="mr-1" />
+                      Отправить снова
+                    </>
+                  )}
+                </Button>
               </div>
+            )}
 
-              {error && (
-                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
-                  <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                    Вход...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="LogIn" size={20} className="mr-2" />
-                    Войти
-                  </>
-                )}
-              </Button>
-            </form>
-          )}
-
-          <div className="mt-6 space-y-3">
             <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
               <Icon name="Info" size={18} className="text-accent flex-shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                {loginMode === 'sms'
-                  ? 'На указанный номер придёт СМС с кодом подтверждения'
-                  : loginMode === 'phone' 
-                  ? 'Используйте номер телефона, указанный при регистрации'
-                  : 'Используйте email и пароль, указанные при регистрации'
-                }
+                {step === 'phone' 
+                  ? 'Используйте номер телефона, указанный при оформлении займа. На него придёт SMS с кодом.'
+                  : 'Введите 4-значный код из SMS для подтверждения входа.'}
               </p>
             </div>
+          </form>
 
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-2">
-                Нет аккаунта?{' '}
-                <button 
-                  onClick={() => navigate('/register')}
-                  className="text-primary hover:underline font-medium"
-                >
-                  Зарегистрироваться
-                </button>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Проблемы со входом?{' '}
-                <Dialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen}>
-                  <DialogTrigger asChild>
-                    <button className="text-primary hover:underline font-medium">
-                      Свяжитесь с поддержкой
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2 text-xl">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-                          <Icon name="Headphones" size={20} className="text-white" />
-                        </div>
-                        Служба поддержки
-                      </DialogTitle>
-                      <DialogDescription>
-                        Свяжитесь с нами для получения помощи
-                      </DialogDescription>
-                    </DialogHeader>
-                    
-                    <div className="space-y-4 py-4">
-                      <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Icon name="Phone" size={20} className="text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs text-muted-foreground mb-1">Телефон</p>
-                          <a href="tel:+74951340801" className="text-lg font-semibold hover:text-primary transition-colors">
-                            +7 (495) 134-08-01
-                          </a>
-                          <p className="text-xs text-muted-foreground mt-1">Круглосуточно</p>
-                        </div>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Нет доступа к кабинету?{' '}
+              <Dialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen}>
+                <DialogTrigger asChild>
+                  <button className="text-primary hover:underline font-medium">
+                    Свяжитесь с поддержкой
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-xl">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+                        <Icon name="Headphones" size={20} className="text-white" />
                       </div>
-
-                      <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                        <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                          <Icon name="Mail" size={20} className="text-secondary" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs text-muted-foreground mb-1">Email</p>
-                          <a href="mailto:support@manifesto.ru" className="text-lg font-semibold hover:text-primary transition-colors break-all">
-                            support@manifesto.ru
-                          </a>
-                          <p className="text-xs text-muted-foreground mt-1">Ответ в течение 24 часов</p>
-                        </div>
+                      Служба поддержки
+                    </DialogTitle>
+                    <DialogDescription>
+                      Свяжитесь с нами для получения доступа к личному кабинету
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Icon name="Phone" size={20} className="text-primary" />
                       </div>
-
-                      <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                        <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                          <Icon name="MessageCircle" size={20} className="text-green-500" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs text-muted-foreground mb-1">Telegram</p>
-                          <a href="https://t.me/support" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold hover:text-primary transition-colors">
-                            @support
-                          </a>
-                          <p className="text-xs text-muted-foreground mt-1">Быстрый ответ</p>
-                        </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Телефон</p>
+                        <a href="tel:+78001234567" className="text-lg font-semibold hover:text-primary transition-colors">
+                          +7 (800) 123-45-67
+                        </a>
+                        <p className="text-xs text-muted-foreground mt-1">Круглосуточно</p>
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => setSupportDialogOpen(false)}
-                      >
-                        Закрыть
-                      </Button>
-                      <Button
-                        className="flex-1 bg-gradient-to-r from-primary to-secondary"
-                        onClick={() => {
-                          window.location.href = 'tel:+74951340801';
-                        }}
-                      >
-                        <Icon name="Phone" size={18} className="mr-2" />
-                        Позвонить
-                      </Button>
+                    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                        <Icon name="Mail" size={20} className="text-secondary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Email</p>
+                        <a href="mailto:support@example.com" className="text-lg font-semibold hover:text-primary transition-colors break-all">
+                          support@example.com
+                        </a>
+                        <p className="text-xs text-muted-foreground mt-1">Ответ в течение 24 часов</p>
+                      </div>
                     </div>
-                  </DialogContent>
-                </Dialog>
-              </p>
-            </div>
+
+                    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                        <Icon name="MessageCircle" size={20} className="text-green-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Telegram</p>
+                        <a href="https://t.me/support" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold hover:text-primary transition-colors">
+                          @support
+                        </a>
+                        <p className="text-xs text-muted-foreground mt-1">Быстрый ответ</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setSupportDialogOpen(false)}
+                    >
+                      Закрыть
+                    </Button>
+                    <Button
+                      className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                      onClick={() => {
+                        window.location.href = 'tel:+78001234567';
+                      }}
+                    >
+                      <Icon name="Phone" size={18} className="mr-2" />
+                      Позвонить
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </p>
           </div>
         </CardContent>
       </Card>

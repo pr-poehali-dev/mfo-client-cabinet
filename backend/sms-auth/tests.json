@@ -7,12 +7,16 @@
       "expectedStatus": 200
     },
     {
-      "name": "Test credentials check",
-      "method": "GET",
-      "path": "/?phone=79991234567",
-      "expectedStatus": 500,
+      "name": "Test send SMS",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "phone": "79991234567",
+        "action": "send"
+      },
+      "expectedStatus": 200,
       "expectedBody": {
-        "error": "AmoCRM credentials not configured"
+        "success": true
       },
       "bodyMatcher": "partial"
     }
