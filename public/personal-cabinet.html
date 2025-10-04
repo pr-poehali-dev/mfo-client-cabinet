@@ -301,8 +301,12 @@
                     <div>
                         <h1 style="font-size: 1.75rem; font-weight: bold; margin-bottom: 0.5rem;">Личный кабинет</h1>
                         <p id="userName" style="color: rgba(255, 255, 255, 0.6);"></p>
+                        <p id="lastUpdate" style="color: rgba(255, 255, 255, 0.4); font-size: 0.875rem;"></p>
                     </div>
-                    <button onclick="logout()" class="btn btn-secondary">Выйти</button>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <button onclick="refreshData()" class="btn btn-secondary" id="refreshBtn">🔄 Обновить</button>
+                        <button onclick="logout()" class="btn btn-secondary">Выйти</button>
+                    </div>
                 </div>
 
                 <div class="tabs">
@@ -334,6 +338,8 @@
         const AMOCRM_URL = 'https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5';
 
         let userData = null;
+        let updateInterval = null;
+        let lastUpdate = null;
 
         async function login() {
             const phone = document.getElementById('phoneInput').value;
@@ -372,13 +378,20 @@
             }
         }
 
-        async function loadUserData(phone) {
+        async function loadUserData(phone, silent = false) {
             try {
+                if (!silent) {
+                    const refreshBtn = document.getElementById('refreshBtn');
+                    if (refreshBtn) refreshBtn.innerHTML = '⏳ Загрузка...';
+                }
+
                 const response = await fetch(`${AMOCRM_URL}?phone=${phone}`);
                 if (!response.ok) throw new Error('Ошибка загрузки данных');
                 
                 userData = await response.json();
+                lastUpdate = new Date();
                 renderCabinet();
+                updateLastUpdateTime();
             } catch (err) {
                 console.error('Ошибка загрузки:', err);
                 userData = {
@@ -388,12 +401,57 @@
                     documents: []
                 };
                 renderCabinet();
+            } finally {
+                if (!silent) {
+                    const refreshBtn = document.getElementById('refreshBtn');
+                    if (refreshBtn) refreshBtn.innerHTML = '🔄 Обновить';
+                }
             }
+        }
+
+        async function refreshData() {
+            const phone = localStorage.getItem('userPhone');
+            if (phone) {
+                await loadUserData(phone, false);
+            }
+        }
+
+        function updateLastUpdateTime() {
+            const updateDiv = document.getElementById('lastUpdate');
+            if (updateDiv && lastUpdate) {
+                const now = new Date();
+                const diff = Math.floor((now - lastUpdate) / 1000);
+                
+                let timeText;
+                if (diff < 60) {
+                    timeText = 'Обновлено только что';
+                } else if (diff < 3600) {
+                    timeText = `Обновлено ${Math.floor(diff / 60)} мин. назад`;
+                } else {
+                    timeText = `Обновлено в ${lastUpdate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+                }
+                
+                updateDiv.textContent = timeText;
+            }
+        }
+
+        function startAutoUpdate() {
+            if (updateInterval) clearInterval(updateInterval);
+            
+            updateInterval = setInterval(() => {
+                const phone = localStorage.getItem('userPhone');
+                if (phone) {
+                    loadUserData(phone, true);
+                }
+            }, 30000);
+
+            setInterval(updateLastUpdateTime, 10000);
         }
 
         function showCabinet() {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('cabinet').style.display = 'block';
+            startAutoUpdate();
         }
 
         function renderCabinet() {
@@ -476,9 +534,14 @@
         }
 
         function logout() {
+            if (updateInterval) clearInterval(updateInterval);
+            updateInterval = null;
+            
             localStorage.removeItem('userPhone');
             localStorage.removeItem('userName');
             userData = null;
+            lastUpdate = null;
+            
             document.getElementById('loginForm').style.display = 'block';
             document.getElementById('cabinet').style.display = 'none';
             document.getElementById('phoneInput').value = '';
