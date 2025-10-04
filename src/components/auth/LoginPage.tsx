@@ -21,8 +21,10 @@ interface LoginPageProps {
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
   const navigate = useNavigate();
-  const [loginMode, setLoginMode] = useState<'phone' | 'email'>('phone');
+  const [loginMode, setLoginMode] = useState<'phone' | 'sms' | 'email'>('sms');
   const [phone, setPhone] = useState('');
+  const [smsCode, setSmsCode] = useState('');
+  const [smsStep, setSmsStep] = useState<'phone' | 'code'>('phone');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -134,7 +136,9 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             Вход в личный кабинет
           </CardTitle>
           <CardDescription>
-            {loginMode === 'phone' 
+            {loginMode === 'sms' 
+              ? (smsStep === 'phone' ? 'Введите номер телефона' : 'Введите код из СМС')
+              : loginMode === 'phone'
               ? 'Введите номер телефона для быстрого входа'
               : 'Войдите с помощью email и пароля'
             }
@@ -142,6 +146,17 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         </CardHeader>
         <CardContent>
           <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => { setLoginMode('sms'); setSmsStep('phone'); setSmsCode(''); }}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                loginMode === 'sms'
+                  ? 'bg-primary text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              <Icon name="MessageSquare" size={18} className="inline mr-2" />
+              По СМС
+            </button>
             <button
               onClick={() => setLoginMode('phone')}
               className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
@@ -151,7 +166,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               }`}
             >
               <Icon name="Phone" size={18} className="inline mr-2" />
-              По телефону
+              Телефон
             </button>
             <button
               onClick={() => setLoginMode('email')}
@@ -162,11 +177,160 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               }`}
             >
               <Icon name="Mail" size={18} className="inline mr-2" />
-              По email
+              Email
             </button>
           </div>
 
-          {loginMode === 'phone' ? (
+          {loginMode === 'sms' ? (
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              
+              if (smsStep === 'phone') {
+                const digits = phone.replace(/\D/g, '');
+                if (digits.length !== 11) {
+                  setError('Введите корректный номер телефона');
+                  return;
+                }
+                
+                setLoading(true);
+                setError('');
+                
+                try {
+                  const response = await fetch(funcUrls['user-auth'], {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'send-sms', phone: digits })
+                  });
+
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    setError(errorData.error || 'Не удалось отправить СМС');
+                    setLoading(false);
+                    return;
+                  }
+
+                  setSmsStep('code');
+                  setLoading(false);
+                } catch (err) {
+                  setError('Не удалось отправить СМС. Проверьте подключение');
+                  setLoading(false);
+                }
+              } else {
+                if (!smsCode || smsCode.length < 4) {
+                  setError('Введите код из СМС');
+                  return;
+                }
+                
+                setLoading(true);
+                setError('');
+                
+                try {
+                  const digits = phone.replace(/\D/g, '');
+                  const response = await fetch(funcUrls['user-auth'], {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'verify-sms', phone: digits, code: smsCode })
+                  });
+
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    setError(errorData.error || 'Неверный код');
+                    setLoading(false);
+                    return;
+                  }
+
+                  const data = await response.json();
+                  localStorage.setItem('userName', data.name);
+                  localStorage.setItem('userEmail', data.email || '');
+                  
+                  onLogin(digits);
+                } catch (err) {
+                  setError('Ошибка проверки кода');
+                  setLoading(false);
+                }
+              }
+            }} className="space-y-4">
+              {smsStep === 'phone' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="sms-phone">Номер телефона</Label>
+                  <Input
+                    id="sms-phone"
+                    type="tel"
+                    placeholder="+7 (999) 123-45-67"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    disabled={loading}
+                    className="text-lg"
+                    autoComplete="tel"
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg">
+                    <p className="text-sm text-center">
+                      Код отправлен на номер <span className="font-bold">{phone}</span>
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sms-code">Код из СМС</Label>
+                    <Input
+                      id="sms-code"
+                      type="text"
+                      placeholder="1234"
+                      value={smsCode}
+                      onChange={(e) => {
+                        setSmsCode(e.target.value.replace(/\D/g, ''));
+                        setError('');
+                      }}
+                      disabled={loading}
+                      className="text-lg text-center tracking-widest"
+                      maxLength={6}
+                      autoFocus
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setSmsStep('phone');
+                      setSmsCode('');
+                      setError('');
+                    }}
+                    className="w-full"
+                  >
+                    <Icon name="ArrowLeft" size={18} className="mr-2" />
+                    Изменить номер
+                  </Button>
+                </>
+              )}
+
+              {error && (
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
+                  <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                    {smsStep === 'phone' ? 'Отправка...' : 'Проверка...'}
+                  </>
+                ) : (
+                  <>
+                    <Icon name={smsStep === 'phone' ? 'Send' : 'LogIn'} size={20} className="mr-2" />
+                    {smsStep === 'phone' ? 'Получить код' : 'Войти'}
+                  </>
+                )}
+              </Button>
+            </form>
+          ) : loginMode === 'phone' ? (
             <form onSubmit={handlePhoneSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Номер телефона</Label>
@@ -276,7 +440,9 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
               <Icon name="Info" size={18} className="text-accent flex-shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                {loginMode === 'phone' 
+                {loginMode === 'sms'
+                  ? 'На указанный номер придёт СМС с кодом подтверждения'
+                  : loginMode === 'phone' 
                   ? 'Используйте номер телефона, указанный при регистрации'
                   : 'Используйте email и пароль, указанные при регистрации'
                 }

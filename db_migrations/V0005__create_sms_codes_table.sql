@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS sms_codes (
+    phone VARCHAR(11) PRIMARY KEY,
+    code VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);

@@ -3,7 +3,9 @@ import os
 import psycopg2
 import hashlib
 import requests
+import random
 from typing import Dict, Any
+from datetime import datetime, timedelta
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
@@ -47,6 +49,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     if action == 'register':
         return handle_register(body_data, database_url)
+    elif action == 'send-sms':
+        return handle_send_sms(body_data, database_url)
+    elif action == 'verify-sms':
+        return handle_verify_sms(body_data, database_url)
     else:
         return handle_login(body_data, database_url)
 
@@ -178,6 +184,159 @@ def handle_register(body_data: Dict[str, Any], database_url: str) -> Dict[str, A
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             'body': json.dumps({'error': f'Ошибка регистрации: {str(e)}'})
+        }
+    finally:
+        if conn:
+            conn.close()
+
+
+def handle_send_sms(body_data: Dict[str, Any], database_url: str) -> Dict[str, Any]:
+    phone = body_data.get('phone', '').strip()
+    
+    if not phone or len(phone) != 11:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Неверный формат номера телефона'})
+        }
+    
+    conn = None
+    try:
+        conn = psycopg2.connect(database_url)
+        cur = conn.cursor()
+        
+        cur.execute("SELECT id FROM users WHERE phone = %s", (phone,))
+        user = cur.fetchone()
+        
+        if not user:
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Пользователь не найден. Пожалуйста, зарегистрируйтесь'})
+            }
+        
+        sms_code = str(random.randint(1000, 9999))
+        expires_at = datetime.now() + timedelta(minutes=5)
+        
+        cur.execute(
+            """
+            INSERT INTO sms_codes (phone, code, expires_at)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (phone) DO UPDATE 
+            SET code = EXCLUDED.code, expires_at = EXCLUDED.expires_at, created_at = NOW()
+            """,
+            (phone, sms_code, expires_at)
+        )
+        conn.commit()
+        
+        print(f"[SMS] Code for {phone}: {sms_code}")
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'success': True,
+                'message': 'СМС с кодом отправлено',
+                'code': sms_code
+            })
+        }
+        
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Ошибка отправки СМС: {str(e)}'})
+        }
+    finally:
+        if conn:
+            conn.close()
+
+
+def handle_verify_sms(body_data: Dict[str, Any], database_url: str) -> Dict[str, Any]:
+    phone = body_data.get('phone', '').strip()
+    code = body_data.get('code', '').strip()
+    
+    if not phone or not code:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Укажите телефон и код'})
+        }
+    
+    conn = None
+    try:
+        conn = psycopg2.connect(database_url)
+        cur = conn.cursor()
+        
+        cur.execute(
+            "SELECT code, expires_at FROM sms_codes WHERE phone = %s",
+            (phone,)
+        )
+        sms_record = cur.fetchone()
+        
+        if not sms_record:
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Код не найден. Запросите новый'})
+            }
+        
+        saved_code, expires_at = sms_record
+        
+        if datetime.now() > expires_at:
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Код истёк. Запросите новый'})
+            }
+        
+        if saved_code != code:
+            return {
+                'statusCode': 401,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Неверный код'})
+            }
+        
+        cur.execute(
+            "SELECT id, phone, email, first_name, last_name, middle_name FROM users WHERE phone = %s",
+            (phone,)
+        )
+        user = cur.fetchone()
+        
+        if not user:
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Пользователь не найден'})
+            }
+        
+        user_id, user_phone, user_email, first_name, last_name, middle_name = user
+        
+        cur.execute("DELETE FROM sms_codes WHERE phone = %s", (phone,))
+        conn.commit()
+        
+        full_name = f"{last_name} {first_name}"
+        if middle_name:
+            full_name += f" {middle_name}"
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'id': user_id,
+                'phone': user_phone,
+                'email': user_email or '',
+                'name': full_name
+            })
+        }
+        
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Ошибка проверки кода: {str(e)}'})
         }
     finally:
         if conn:
