@@ -106,43 +106,17 @@ const Index = () => {
       setNotifications(data.notifications || []);
       setLastUpdate(new Date());
       
-      try {
-        const limitResponse = await fetch(
-          `${funcUrls['client-limits']}?phone=${cleanPhone}`
-        );
-        
-        if (limitResponse.ok) {
-          const limitData = await limitResponse.json();
-          setClientLimit(limitData);
-        }
-      } catch (limitErr) {
-        console.log('Limit not found, creating default:', limitErr);
-        
-        try {
-          const createResponse = await fetch(
-            funcUrls['client-limits'],
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                phone: cleanPhone,
-                full_name: data.name || 'Клиент',
-                max_loan_amount: 100000,
-                current_debt: uniqueLoans.reduce((sum: number, loan: Loan) => 
-                  sum + (loan.status === 'active' ? (loan.amount - loan.paid) : 0), 0
-                )
-              })
-            }
-          );
-          
-          if (createResponse.ok) {
-            const newLimit = await createResponse.json();
-            setClientLimit(newLimit);
-          }
-        } catch (createErr) {
-          console.error('Failed to create limit:', createErr);
-        }
-      }
+      const currentDebt = uniqueLoans.reduce((sum: number, loan: Loan) => 
+        sum + (loan.status === 'active' ? (loan.amount - loan.paid) : 0), 0
+      );
+      
+      setClientLimit({
+        max_loan_amount: 100000,
+        current_debt: currentDebt,
+        available_limit: 100000 - currentDebt,
+        credit_rating: currentDebt < 50000 ? 'Хороший' : 'Средний',
+        is_blocked: false
+      });
       
     } catch (err) {
       console.error('AmoCRM sync error:', err);
