@@ -132,12 +132,6 @@ const Index = () => {
       setUserPhone(savedPhone);
       setIsAuthenticated(true);
       fetchAmoCRMData(savedPhone);
-      
-      const intervalId = setInterval(() => {
-        fetchAmoCRMData(savedPhone);
-      }, 15 * 1000);
-      
-      return () => clearInterval(intervalId);
     }
   }, []);
 
