@@ -229,16 +229,46 @@ def handle_send_sms(body_data: Dict[str, Any], database_url: str) -> Dict[str, A
         )
         conn.commit()
         
-        print(f"[SMS] Code for {phone}: {sms_code}")
+        smsru_api_key = os.environ.get('SMSRU_API_KEY')
+        sms_sent = False
+        sms_error = None
+        
+        if smsru_api_key:
+            try:
+                sms_text = f"Ваш код для входа: {sms_code}. Действителен 5 минут."
+                sms_url = f"https://sms.ru/sms/send?api_id={smsru_api_key}&to={phone}&msg={requests.utils.quote(sms_text)}&json=1"
+                
+                sms_response = requests.get(sms_url, timeout=10)
+                sms_data = sms_response.json()
+                
+                if sms_data.get('status') == 'OK':
+                    sms_sent = True
+                    print(f"[SMS] Successfully sent to {phone}: {sms_code}")
+                else:
+                    sms_error = sms_data.get('status_text', 'Неизвестная ошибка SMS.ru')
+                    print(f"[SMS] Failed to send to {phone}: {sms_error}")
+                    
+            except Exception as sms_err:
+                sms_error = str(sms_err)
+                print(f"[SMS] Exception sending to {phone}: {sms_error}")
+        else:
+            print(f"[SMS] API key not configured. Code for {phone}: {sms_code}")
+        
+        response_data = {
+            'success': True,
+            'message': 'СМС с кодом отправлено' if sms_sent else 'Код сгенерирован',
+            'sms_sent': sms_sent
+        }
+        
+        if not sms_sent:
+            response_data['code'] = sms_code
+            if sms_error:
+                response_data['sms_error'] = sms_error
         
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({
-                'success': True,
-                'message': 'СМС с кодом отправлено',
-                'code': sms_code
-            })
+            'body': json.dumps(response_data)
         }
         
     except Exception as e:
