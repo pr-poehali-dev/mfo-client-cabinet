@@ -27,6 +27,13 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [clientLimit, setClientLimit] = useState<{
+    max_loan_amount: number;
+    current_debt: number;
+    available_limit: number;
+    credit_rating: string;
+    is_blocked: boolean;
+  } | null>(null);
 
   const fetchAmoCRMData = async (phone: string) => {
     try {
@@ -84,6 +91,44 @@ const Index = () => {
       setNotifications(data.notifications || []);
       setLastUpdate(new Date());
       
+      try {
+        const limitResponse = await fetch(
+          `https://functions.poehali.dev/95b2b7fe-c719-4dc6-b16d-4eefb362e963?phone=${cleanPhone}`
+        );
+        
+        if (limitResponse.ok) {
+          const limitData = await limitResponse.json();
+          setClientLimit(limitData);
+        }
+      } catch (limitErr) {
+        console.log('Limit not found, creating default:', limitErr);
+        
+        try {
+          const createResponse = await fetch(
+            'https://functions.poehali.dev/95b2b7fe-c719-4dc6-b16d-4eefb362e963',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                phone: cleanPhone,
+                full_name: data.name || 'Клиент',
+                max_loan_amount: 100000,
+                current_debt: uniqueLoans.reduce((sum: number, loan: Loan) => 
+                  sum + (loan.status === 'active' ? (loan.amount - loan.paid) : 0), 0
+                )
+              })
+            }
+          );
+          
+          if (createResponse.ok) {
+            const newLimit = await createResponse.json();
+            setClientLimit(newLimit);
+          }
+        } catch (createErr) {
+          console.error('Failed to create limit:', createErr);
+        }
+      }
+      
     } catch (err) {
       console.error('AmoCRM sync error:', err);
       setError(`Не удалось подключиться к AmoCRM. Проверьте подключение к интернету или попробуйте позже. Ошибка: ${err instanceof Error ? err.message : 'Неизвестная ошибка'}`);
@@ -131,6 +176,7 @@ const Index = () => {
     setClientGender('male');
     setClientPhone('');
     setClientEmail('');
+    setClientLimit(null);
     setError('');
     setLastUpdate(null);
   };
@@ -275,6 +321,7 @@ const Index = () => {
               clientGender={clientGender}
               clientPhone={clientPhone}
               clientEmail={clientEmail}
+              clientLimit={clientLimit || undefined}
             />
           </TabsContent>
         </Tabs>
