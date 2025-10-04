@@ -44,13 +44,27 @@ const Index = () => {
       const cleanPhone = phone.replace(/\D/g, '');
       
       const response = await fetch(
-        `${funcUrls['amocrm-sync']}?phone=${cleanPhone}`
+        `${funcUrls['amocrm-sync']}?phone=${cleanPhone}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
       
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: 'Сервис временно недоступен' };
+        }
+        
         if (response.status === 401) {
           setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
+        } else if (response.status === 402) {
+          setError('⚠️ AmoCRM интеграция требует оплаты. Свяжитесь с поддержкой для активации.');
         } else if (response.status === 500 && errorData.message?.includes('credentials')) {
           setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
         } else if (response.status === 404) {
@@ -192,13 +206,27 @@ const Index = () => {
       const cleanPhone = userPhone.replace(/\D/g, '');
       
       const response = await fetch(
-        `${funcUrls['amocrm-sync']}?phone=${cleanPhone}`
+        `${funcUrls['amocrm-sync']}?phone=${cleanPhone}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
       
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: 'Сервис временно недоступен' };
+        }
+        
         if (response.status === 401) {
           setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
+        } else if (response.status === 402) {
+          setError('⚠️ AmoCRM интеграция требует оплаты. Свяжитесь с поддержкой для активации.');
         } else if (response.status === 500 && errorData.message?.includes('credentials')) {
           setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
         } else if (response.status === 404) {
