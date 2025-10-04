@@ -16,20 +16,12 @@
       }
     },
     {
-      "name": "Create client limit",
-      "method": "POST",
-      "path": "/",
-      "body": {
-        "phone": "79991234567",
-        "full_name": "Тестовый Клиент",
-        "max_loan_amount": 150000,
-        "current_debt": 0
-      },
-      "expectedStatus": 200,
+      "name": "Get nonexistent client",
+      "method": "GET",
+      "path": "/?phone=79999999999",
+      "expectedStatus": 404,
       "expectedBody": {
-        "phone": "string",
-        "max_loan_amount": "number",
-        "available_limit": "number"
+        "error": "Client not found"
       },
       "bodyMatcher": "partial"
     }

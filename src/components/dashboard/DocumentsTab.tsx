@@ -7,6 +7,7 @@ import DocumentPreviewModal from './DocumentPreviewModal';
 import LoanAgreementTemplate from './documents/LoanAgreementTemplate';
 import PersonalDataConsentTemplate from './documents/PersonalDataConsentTemplate';
 import { generatePDF } from '@/utils/pdfGenerator';
+import funcUrls from '@/../backend/func2url.json';
 
 interface DocumentsTabProps {
   documents: Document[];
@@ -63,7 +64,7 @@ const DocumentsTab = ({ documents, clientName, clientPhone }: DocumentsTabProps)
       return;
     }
 
-    const downloadUrl = `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?file_uuid=${params.file_uuid}&version_uuid=${params.version_uuid}&filename=${encodeURIComponent(doc.file_name)}`;
+    const downloadUrl = `${funcUrls['amocrm-sync']}?file_uuid=${params.file_uuid}&version_uuid=${params.version_uuid}&filename=${encodeURIComponent(doc.file_name)}`;
     
     try {
       const response = await fetch(downloadUrl);

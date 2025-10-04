@@ -7,6 +7,7 @@ import DealsTab from '@/components/dashboard/DealsTab';
 import LoginPage from '@/components/auth/LoginPage';
 import { Loan, Payment, Notification, Deal, Document } from '@/components/dashboard/types';
 import DocumentsTab from '@/components/dashboard/DocumentsTab';
+import funcUrls from '@/../backend/func2url.json';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -43,7 +44,7 @@ const Index = () => {
       const cleanPhone = phone.replace(/\D/g, '');
       
       const response = await fetch(
-        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
+        `${funcUrls['amocrm-sync']}?phone=${cleanPhone}`
       );
       
       if (!response.ok) {
@@ -93,7 +94,7 @@ const Index = () => {
       
       try {
         const limitResponse = await fetch(
-          `https://functions.poehali.dev/95b2b7fe-c719-4dc6-b16d-4eefb362e963?phone=${cleanPhone}`
+          `${funcUrls['client-limits']}?phone=${cleanPhone}`
         );
         
         if (limitResponse.ok) {
@@ -105,7 +106,7 @@ const Index = () => {
         
         try {
           const createResponse = await fetch(
-            'https://functions.poehali.dev/95b2b7fe-c719-4dc6-b16d-4eefb362e963',
+            funcUrls['client-limits'],
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -191,7 +192,7 @@ const Index = () => {
       const cleanPhone = userPhone.replace(/\D/g, '');
       
       const response = await fetch(
-        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
+        `${funcUrls['amocrm-sync']}?phone=${cleanPhone}`
       );
       
       if (!response.ok) {

@@ -2,7 +2,6 @@ import json
 import os
 import psycopg2
 from typing import Dict, Any, Optional
-from datetime import datetime
 
 def get_db_connection():
     '''Создает подключение к базе данных'''
@@ -10,6 +9,10 @@ def get_db_connection():
     if not database_url:
         raise Exception('DATABASE_URL not configured')
     return psycopg2.connect(database_url)
+
+def escape_sql_string(value: str) -> str:
+    '''Экранирует строку для SQL (защита от SQL-инъекций)'''
+    return value.replace("'", "''")
 
 def get_client_limit(phone: str) -> Optional[Dict[str, Any]]:
     '''
@@ -21,17 +24,19 @@ def get_client_limit(phone: str) -> Optional[Dict[str, Any]]:
     try:
         cursor = conn.cursor()
         
-        query = '''
+        phone_escaped = escape_sql_string(phone)
+        
+        query = f"""
             SELECT 
                 c.id, c.phone, c.full_name,
                 cl.max_loan_amount, cl.current_debt, cl.available_limit,
                 cl.credit_rating, cl.is_blocked, cl.blocked_reason
             FROM t_p14771149_mfo_client_cabinet.clients c
             LEFT JOIN t_p14771149_mfo_client_cabinet.client_limits cl ON c.id = cl.client_id
-            WHERE c.phone = %s
-        '''
+            WHERE c.phone = '{phone_escaped}'
+        """
         
-        cursor.execute(query, (phone,))
+        cursor.execute(query)
         row = cursor.fetchone()
         
         if not row:
@@ -63,29 +68,33 @@ def create_or_update_client_limit(phone: str, full_name: str = '',
     try:
         cursor = conn.cursor()
         
-        cursor.execute(
-            '''INSERT INTO t_p14771149_mfo_client_cabinet.clients (phone, full_name)
-               VALUES (%s, %s)
-               ON CONFLICT (phone) DO UPDATE SET full_name = EXCLUDED.full_name
-               RETURNING id''',
-            (phone, full_name)
-        )
+        phone_escaped = escape_sql_string(phone)
+        full_name_escaped = escape_sql_string(full_name)
+        
+        query1 = f"""
+            INSERT INTO t_p14771149_mfo_client_cabinet.clients (phone, full_name)
+            VALUES ('{phone_escaped}', '{full_name_escaped}')
+            ON CONFLICT (phone) DO UPDATE SET full_name = EXCLUDED.full_name
+            RETURNING id
+        """
+        
+        cursor.execute(query1)
         client_id = cursor.fetchone()[0]
         
         available = max_amount - current_debt
         
-        cursor.execute(
-            '''INSERT INTO t_p14771149_mfo_client_cabinet.client_limits 
-               (client_id, max_loan_amount, current_debt, available_limit)
-               VALUES (%s, %s, %s, %s)
-               ON CONFLICT (client_id) DO UPDATE SET
-                   max_loan_amount = EXCLUDED.max_loan_amount,
-                   current_debt = EXCLUDED.current_debt,
-                   available_limit = EXCLUDED.available_limit,
-                   updated_at = CURRENT_TIMESTAMP''',
-            (client_id, max_amount, current_debt, available)
-        )
+        query2 = f"""
+            INSERT INTO t_p14771149_mfo_client_cabinet.client_limits 
+            (client_id, max_loan_amount, current_debt, available_limit)
+            VALUES ({client_id}, {max_amount}, {current_debt}, {available})
+            ON CONFLICT (client_id) DO UPDATE SET
+                max_loan_amount = EXCLUDED.max_loan_amount,
+                current_debt = EXCLUDED.current_debt,
+                available_limit = EXCLUDED.available_limit,
+                updated_at = CURRENT_TIMESTAMP
+        """
         
+        cursor.execute(query2)
         conn.commit()
         
         return {

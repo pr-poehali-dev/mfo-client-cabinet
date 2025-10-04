@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import funcUrls from '@/../backend/func2url.json';
 
 interface NewApplicationDialogProps {
   clientPhone: string;
@@ -24,7 +25,7 @@ const NewApplicationDialog = ({ clientPhone, onApplicationSubmit, canSubmitNewAp
   const handleSubmitApplication = async () => {
     setSubmitting(true);
     try {
-      const response = await fetch('https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5', {
+      const response = await fetch(funcUrls['amocrm-sync'], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

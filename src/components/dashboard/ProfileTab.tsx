@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import funcUrls from '@/../backend/func2url.json';
 
 interface ProfileTabProps {
   clientName: string;
@@ -160,7 +161,7 @@ const ProfileTab = ({
       console.log('[UPLOAD] Sending request to AmoCRM...');
       console.log('[UPLOAD] Payload:', { ...payload, passport: `${passportBase64.substring(0, 50)}...`, selfie: `${selfieBase64.substring(0, 50)}...` });
 
-      const response = await fetch('https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5', {
+      const response = await fetch(funcUrls['amocrm-sync'], {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

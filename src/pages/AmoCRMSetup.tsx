@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Icon from '@/components/ui/icon';
+import funcUrls from '@/../backend/func2url.json';
 
 const AmoCRMSetup = () => {
   const [step, setStep] = useState<'info' | 'token'>('info');
@@ -39,7 +40,7 @@ const AmoCRMSetup = () => {
 
     try {
       const response = await fetch(
-        'https://functions.poehali.dev/06bc6704-e76c-4833-9904-f61f7519ea8e',
+        funcUrls['amocrm-oauth'],
         {
           method: 'POST',
           headers: {
@@ -82,7 +83,7 @@ const AmoCRMSetup = () => {
 
     try {
       const response = await fetch(
-        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=79991234567`
+        `${funcUrls['amocrm-sync']}?phone=79991234567`
       );
       
       const data = await response.json();
