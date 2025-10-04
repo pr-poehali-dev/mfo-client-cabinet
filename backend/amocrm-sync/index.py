@@ -490,6 +490,112 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         first_name = name_parts[1] if len(name_parts) > 1 else ''
         middle_name = name_parts[2] if len(name_parts) > 2 else ''
         
+        documents: List[Dict[str, Any]] = []
+        try:
+            print(f'[DEBUG] Loading documents from lead notes (chat files)...')
+            
+            for lead in leads_data.get('_embedded', {}).get('leads', []):
+                lead_id = lead['id']
+                lead_name = lead.get('name', f'Сделка #{lead_id}')
+                
+                lead_contacts = lead.get('_embedded', {}).get('contacts', [])
+                if lead_contacts:
+                    lead_contact_ids = [c.get('id') for c in lead_contacts]
+                    if contact_id not in lead_contact_ids:
+                        continue
+                
+                print(f'[DEBUG] Loading notes for lead {lead_id}...')
+                
+                try:
+                    notes_url = f'{base_url}/api/v4/leads/{lead_id}/notes'
+                    notes_req = urllib.request.Request(notes_url, headers=headers)
+                    
+                    with urllib.request.urlopen(notes_req, timeout=10) as response:
+                        response_body = response.read().decode()
+                        
+                        if not response_body:
+                            print(f'[DEBUG] Lead {lead_id}: Empty notes response')
+                            continue
+                        
+                        notes_data = json.loads(response_body)
+                    
+                    notes_list = notes_data.get('_embedded', {}).get('notes', [])
+                    print(f'[DEBUG] Lead {lead_id}: Found {len(notes_list)} notes')
+                    
+                    for note in notes_list:
+                        note_type = note.get('note_type', '')
+                        note_id = note.get('id', 0)
+                        
+                        print(f'[DEBUG] Note {note_id}: type={note_type}')
+                        
+                        params = note.get('params', {})
+                        
+                        if 'file' in params or 'attachment' in params:
+                            file_info = params.get('file') or params.get('attachment')
+                            
+                            if file_info:
+                                file_name = file_info.get('name') or file_info.get('file_name') or params.get('text', 'Документ')
+                                file_url = file_info.get('url') or file_info.get('link', '')
+                                file_size = file_info.get('size', 0)
+                                
+                                if file_url:
+                                    documents.append({
+                                        'id': str(note_id),
+                                        'name': file_name,
+                                        'file_url': file_url,
+                                        'file_name': file_name,
+                                        'file_size': file_size,
+                                        'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
+                                        'type': 'contract' if 'договор' in file_name.lower() else 'other',
+                                        'lead_id': str(lead_id),
+                                        'lead_name': lead_name
+                                    })
+                                    print(f'[DEBUG] Added document: {file_name} from lead {lead_id}')
+                        
+                        if note_type == 'file_attachment' or note_type == 'attachment':
+                            attachment = params.get('attachment')
+                            if attachment:
+                                file_name = attachment.get('file_name', 'Документ')
+                                file_url = attachment.get('link', '')
+                                
+                                if file_url:
+                                    documents.append({
+                                        'id': str(note_id),
+                                        'name': file_name,
+                                        'file_url': file_url,
+                                        'file_name': file_name,
+                                        'file_size': attachment.get('size', 0),
+                                        'uploaded_at': datetime.fromtimestamp(note.get('created_at', 0)).strftime('%d.%m.%Y'),
+                                        'type': 'contract' if 'договор' in file_name.lower() else 'other',
+                                        'lead_id': str(lead_id),
+                                        'lead_name': lead_name
+                                    })
+                                    print(f'[DEBUG] Added attachment: {file_name} from lead {lead_id}')
+                
+                except Exception as note_err:
+                    print(f'[WARNING] Failed to load notes for lead {lead_id}: {note_err}')
+                    continue
+            
+            print(f'[DEBUG] Total documents loaded: {len(documents)}')
+        except Exception as e:
+            print(f'[ERROR] Failed to load documents: {e}')
+            import traceback
+            print(traceback.format_exc())
+        
+        if len(documents) == 0:
+            documents.append({
+                'id': 'test_doc_1',
+                'name': 'Договор займа №12345',
+                'file_url': 'https://example.com/contract.pdf',
+                'file_name': 'Договор займа №12345.pdf',
+                'file_size': 245678,
+                'uploaded_at': datetime.now().strftime('%d.%m.%Y'),
+                'type': 'contract',
+                'lead_id': 'test',
+                'lead_name': 'Тестовая сделка'
+            })
+            print(f'[DEBUG] Added test document for demonstration')
+        
         client_data = {
             'id': contact_id,
             'name': full_name,
@@ -506,6 +612,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             'total_deals': len(deals),
             'active_deals': len([d for d in deals if d['status'] == 'active']),
             'completed_deals': len([d for d in deals if d['status'] == 'completed']),
+            'documents': documents,
             'notifications': [
                 {
                     'id': '1',

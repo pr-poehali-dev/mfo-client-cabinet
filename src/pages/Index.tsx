@@ -5,7 +5,8 @@ import Header from '@/components/dashboard/Header';
 import ProfileTab from '@/components/dashboard/ProfileTab';
 import DealsTab from '@/components/dashboard/DealsTab';
 import LoginPage from '@/components/auth/LoginPage';
-import { Loan, Payment, Notification, Deal } from '@/components/dashboard/types';
+import { Loan, Payment, Notification, Deal, Document } from '@/components/dashboard/types';
+import DocumentsTab from '@/components/dashboard/DocumentsTab';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -15,6 +16,7 @@ const Index = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [clientName, setClientName] = useState('');
   const [clientFirstName, setClientFirstName] = useState('');
   const [clientLastName, setClientLastName] = useState('');
@@ -78,6 +80,7 @@ const Index = () => {
       setLoans(uniqueLoans);
       setPayments(uniquePayments);
       setDeals(uniqueDeals);
+      setDocuments(data.documents || []);
       setNotifications(data.notifications || []);
       setLastUpdate(new Date());
       
@@ -120,6 +123,7 @@ const Index = () => {
     setPayments([]);
     setNotifications([]);
     setDeals([]);
+    setDocuments([]);
     setClientName('');
     setClientFirstName('');
     setClientLastName('');
@@ -181,6 +185,7 @@ const Index = () => {
       setLoans(uniqueLoans);
       setPayments(uniquePayments);
       setDeals(uniqueDeals);
+      setDocuments(data.documents || []);
       setNotifications([{
         id: Date.now().toString(),
         title: 'Данные обновлены',
@@ -230,10 +235,14 @@ const Index = () => {
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto rounded-xl">
+          <TabsList className="grid w-full grid-cols-3 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto rounded-xl">
             <TabsTrigger value="applications" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="FileText" size={18} />
               <span className="hidden sm:inline">Заявки</span>
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
+              <Icon name="FolderOpen" size={18} />
+              <span className="hidden sm:inline">Документы</span>
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="User" size={18} />
@@ -247,6 +256,10 @@ const Index = () => {
               clientPhone={clientPhone}
               onApplicationSubmit={() => fetchAmoCRMData(userPhone)}
             />
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <DocumentsTab documents={documents} />
           </TabsContent>
 
           <TabsContent value="profile">
