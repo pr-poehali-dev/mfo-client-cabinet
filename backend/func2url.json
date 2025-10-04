@@ -1,3 +1,4 @@
 {
-  "sms-auth": "https://functions.poehali.dev/cf45200f-62b4-4c40-8f00-49ac52fd6b0e"
+  "amocrm-client": "https://functions.poehali.dev/7bc3d305-bf6d-4723-928c-5a609d11b7d3",
+  "amocrm-sync": "https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5"
 }
