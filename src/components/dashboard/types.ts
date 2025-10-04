@@ -27,6 +27,35 @@ export interface Notification {
   type: 'info' | 'warning' | 'success';
 }
 
+export interface CustomField {
+  field_id: number;
+  field_name: string;
+  field_code?: string;
+  field_type?: string;
+  values: Array<{
+    value: string | number | boolean;
+    enum_id?: number;
+    enum_code?: string;
+  }>;
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+  color?: string;
+}
+
+export interface Task {
+  id: number;
+  text: string;
+  complete_till: number;
+  is_completed: boolean;
+  task_type_id: number;
+  created_at: number;
+  updated_at: number;
+  responsible_user_id: number;
+}
+
 export interface Deal {
   id: string;
   name: string;
@@ -40,14 +69,14 @@ export interface Deal {
   responsible_user_id: number;
   created_at: string;
   updated_at: string;
-  custom_fields: Array<{
-    field_id: number;
-    field_name: string;
-    field_code: string;
-    values: Array<{
-      value: string | number;
-    }>;
-  }>;
+  custom_fields: CustomField[];
+  tags?: Tag[];
+  tasks?: Task[];
+  loss_reason?: string;
+  loss_reason_name?: string;
+  closed_at?: string;
+  closest_task_at?: number;
+  account_id?: number;
 }
 
 export interface Document {
