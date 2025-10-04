@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem;
+            border-radius: 12px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab.active:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .profile-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-item {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        .deals-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .deal-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .deal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .deal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .deal-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-new {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .status-processing {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .status-approved {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+
+        .status-rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .deal-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .login-form {
+            max-width: 400px;
+            margin: 5rem auto;
+        }
+
+        .input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        .documents-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .document-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+
+        .document-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .document-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .profile-info,
+            .deal-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="login-form" id="loginForm">
+            <div class="card">
+                <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 1.5rem; text-align: center;">Личный кабинет</h1>
+                <div id="errorMessage"></div>
+                <input type="tel" id="phoneInput" class="input" placeholder="Телефон: 79991234567" />
+                <input type="password" id="passwordInput" class="input" placeholder="Пароль" />
+                <button onclick="login()" class="btn btn-primary" style="width: 100%;">Войти</button>
+            </div>
+        </div>
+
+        <div id="cabinet" style="display: none;">
+            <div class="container">
+                <div class="header">
+                    <div>
+                        <h1 style="font-size: 1.75rem; font-weight: bold; margin-bottom: 0.5rem;">Личный кабинет</h1>
+                        <p id="userName" style="color: rgba(255, 255, 255, 0.6);"></p>
+                    </div>
+                    <button onclick="logout()" class="btn btn-secondary">Выйти</button>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('deals')">📋 Заявки</button>
+                    <button class="tab" onclick="switchTab('documents')">📁 Документы</button>
+                    <button class="tab" onclick="switchTab('profile')">👤 Профиль</button>
+                </div>
+
+                <div id="tabDeals" class="tab-content active">
+                    <div id="dealsList" class="deals-grid"></div>
+                </div>
+
+                <div id="tabDocuments" class="tab-content">
+                    <div id="documentsList" class="documents-list"></div>
+                </div>
+
+                <div id="tabProfile" class="tab-content">
+                    <div class="card">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">Личная информация</h2>
+                        <div id="profileInfo" class="profile-info"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://functions.poehali.dev/70d555d5-8b9c-471a-baaf-5b7796eef2d1';
+        const AMOCRM_URL = 'https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5';
+
+        let userData = null;
+
+        async function login() {
+            const phone = document.getElementById('phoneInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('errorMessage');
+
+            if (!phone || !password) {
+                errorDiv.innerHTML = '<div class="alert alert-error">Введите телефон и пароль</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'login',
+                        phone: phone.replace(/\D/g, ''),
+                        password: password
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка входа');
+                }
+
+                const data = await response.json();
+                localStorage.setItem('userPhone', data.phone);
+                localStorage.setItem('userName', data.name);
+                
+                await loadUserData(data.phone);
+                showCabinet();
+            } catch (err) {
+                errorDiv.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+            }
+        }
+
+        async function loadUserData(phone) {
+            try {
+                const response = await fetch(`${AMOCRM_URL}?phone=${phone}`);
+                if (!response.ok) throw new Error('Ошибка загрузки данных');
+                
+                userData = await response.json();
+                renderCabinet();
+            } catch (err) {
+                console.error('Ошибка загрузки:', err);
+                userData = {
+                    name: localStorage.getItem('userName') || 'Пользователь',
+                    phone: phone,
+                    deals: [],
+                    documents: []
+                };
+                renderCabinet();
+            }
+        }
+
+        function showCabinet() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('cabinet').style.display = 'block';
+        }
+
+        function renderCabinet() {
+            document.getElementById('userName').textContent = userData.name || 'Пользователь';
+            
+            const dealsList = document.getElementById('dealsList');
+            if (userData.deals && userData.deals.length > 0) {
+                dealsList.innerHTML = userData.deals.map(deal => `
+                    <div class="deal-card">
+                        <div class="deal-header">
+                            <div>
+                                <div class="deal-title">${deal.name || 'Заявка'}</div>
+                                <div style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem;">
+                                    ${new Date(deal.created_at).toLocaleDateString('ru-RU')}
+                                </div>
+                            </div>
+                            <span class="deal-status status-${getStatusClass(deal.status)}">
+                                ${deal.status || 'В обработке'}
+                            </span>
+                        </div>
+                        <div class="deal-info">
+                            ${deal.amount ? `<div class="info-item">
+                                <div class="info-label">Сумма</div>
+                                <div class="info-value">${formatMoney(deal.amount)}</div>
+                            </div>` : ''}
+                            ${deal.pipeline_name ? `<div class="info-item">
+                                <div class="info-label">Воронка</div>
+                                <div class="info-value">${deal.pipeline_name}</div>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                dealsList.innerHTML = '<div class="card">Заявок пока нет</div>';
+            }
+
+            const docsList = document.getElementById('documentsList');
+            if (userData.documents && userData.documents.length > 0) {
+                docsList.innerHTML = userData.documents.map(doc => `
+                    <div class="document-item">
+                        <div class="document-info">
+                            <div class="document-icon">📄</div>
+                            <div>
+                                <div style="font-weight: 500;">${doc.name}</div>
+                                <div style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem;">
+                                    ${new Date(doc.created_at).toLocaleDateString('ru-RU')}
+                                </div>
+                            </div>
+                        </div>
+                        ${doc.url ? `<a href="${doc.url}" class="btn btn-primary" target="_blank">Скачать</a>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                docsList.innerHTML = '<div class="card">Документов пока нет</div>';
+            }
+
+            const profileInfo = document.getElementById('profileInfo');
+            profileInfo.innerHTML = `
+                <div class="info-item">
+                    <div class="info-label">ФИО</div>
+                    <div class="info-value">${userData.name || 'Не указано'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Телефон</div>
+                    <div class="info-value">${formatPhone(userData.phone)}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value">${userData.email || 'Не указан'}</div>
+                </div>
+            `;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+        }
+
+        function logout() {
+            localStorage.removeItem('userPhone');
+            localStorage.removeItem('userName');
+            userData = null;
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('cabinet').style.display = 'none';
+            document.getElementById('phoneInput').value = '';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('errorMessage').innerHTML = '';
+        }
+
+        function getStatusClass(status) {
+            const statusMap = {
+                'Новый': 'new',
+                'В обработке': 'processing',
+                'Одобрено': 'approved',
+                'Отклонено': 'rejected'
+            };
+            return statusMap[status] || 'new';
+        }
+
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: 'RUB',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatPhone(phone) {
+            if (!phone) return '';
+            const cleaned = phone.replace(/\D/g, '');
+            return `+7 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7, 9)}-${cleaned.slice(9, 11)}`;
+        }
+
+        window.onload = function() {
+            const savedPhone = localStorage.getItem('userPhone');
+            if (savedPhone) {
+                loadUserData(savedPhone);
+                showCabinet();
+            }
+        };
+    </script>
+</body>
+</html>
