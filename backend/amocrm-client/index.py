@@ -44,7 +44,7 @@ def find_contact_by_phone(phone: str, access_token: str) -> Optional[Dict[str, A
     """
     domain = os.environ.get('AMOCRM_DOMAIN')
     
-    url = f'https://{domain}/api/v4/contacts?query={phone}'
+    url = f'https://{domain}/api/v4/contacts?query={phone}&with=contacts'
     
     req = urllib.request.Request(
         url,
@@ -58,6 +58,41 @@ def find_contact_by_phone(phone: str, access_token: str) -> Optional[Dict[str, A
         result = json.loads(response.read().decode('utf-8'))
         if result.get('_embedded') and result['_embedded'].get('contacts'):
             return result['_embedded']['contacts'][0]
+        return None
+
+def verify_contact_password(phone: str, password: str, access_token: str) -> Optional[Dict[str, Any]]:
+    """
+    Business: Проверяет пароль контакта в amoCRM
+    Args: phone - номер телефона, password - пароль, access_token - токен доступа
+    Returns: Данные контакта если пароль верный, иначе None
+    """
+    domain = os.environ.get('AMOCRM_DOMAIN')
+    
+    contact = find_contact_by_phone(phone, access_token)
+    if not contact:
+        return None
+    
+    contact_id = contact['id']
+    url = f'https://{domain}/api/v4/contacts/{contact_id}'
+    
+    req = urllib.request.Request(
+        url,
+        headers={
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+    )
+    
+    with urllib.request.urlopen(req) as response:
+        full_contact = json.loads(response.read().decode('utf-8'))
+        custom_fields = full_contact.get('custom_fields_values', [])
+        
+        for field in custom_fields:
+            if field.get('field_name') == 'Пароль' or field.get('field_code') == 'PASSWORD':
+                stored_password = field.get('values', [{}])[0].get('value', '')
+                if stored_password == password:
+                    return full_contact
+        
         return None
 
 def get_contact_leads(contact_id: int, access_token: str) -> list:
@@ -114,6 +149,10 @@ def create_contact_and_lead(data: Dict[str, Any], access_token: str) -> Dict[str
                     {
                         'field_name': 'Паспорт',
                         'values': [{'value': data['passport']}]
+                    },
+                    {
+                        'field_name': 'Пароль',
+                        'values': [{'value': data['password']}]
                     }
                 ]
             }
@@ -199,6 +238,42 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     if method == 'POST':
         body_data = json.loads(event.get('body', '{}'))
+        
+        action = body_data.get('action')
+        
+        if action == 'login':
+            phone = body_data.get('phone', '').strip()
+            password = body_data.get('password', '')
+            
+            if not phone or not password:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Введите телефон и пароль'}),
+                    'isBase64Encoded': False
+                }
+            
+            access_token = get_access_token()
+            contact = verify_contact_password(phone, password, access_token)
+            
+            if not contact:
+                return {
+                    'statusCode': 401,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Неверный телефон или пароль'}),
+                    'isBase64Encoded': False
+                }
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({
+                    'success': True,
+                    'phone': phone,
+                    'name': contact.get('name', '')
+                }),
+                'isBase64Encoded': False
+            }
         
         required_fields = ['fullName', 'birthDate', 'phone', 'passport', 'loanAmount', 'loanTerm', 'password']
         for field in required_fields:
