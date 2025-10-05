@@ -94,10 +94,24 @@ const Index = () => {
 
   useEffect(() => {
     const savedPhone = localStorage.getItem('userPhone');
+    const isNewRegistration = localStorage.getItem('newRegistration');
+    
     if (savedPhone) {
       setUserPhone(savedPhone);
       setIsAuthenticated(true);
       fetchAmoCRMData(savedPhone);
+      
+      if (isNewRegistration === 'true') {
+        setNotifications([{
+          id: 'welcome-' + Date.now(),
+          title: '🎉 Добро пожаловать!',
+          message: 'Ваша заявка успешно принята в обработку. Мы свяжемся с вами в ближайшее время.',
+          date: new Date().toLocaleDateString('ru-RU'),
+          read: false,
+          type: 'success'
+        }]);
+        localStorage.removeItem('newRegistration');
+      }
       
       const intervalId = setInterval(() => {
         fetchAmoCRMData(savedPhone);

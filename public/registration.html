@@ -392,9 +392,10 @@
                     successDiv.textContent = '✅ Заявка успешно отправлена! Перенаправление в личный кабинет...';
                     successDiv.style.display = 'block';
                     
-                    // Сохраняем телефон для автовхода
+                    // Сохраняем телефон для автовхода и флаг новой регистрации
                     const cleanPhone = phone.replace(/\D/g, '');
                     localStorage.setItem('userPhone', cleanPhone);
+                    localStorage.setItem('newRegistration', 'true');
                     
                     // Перенаправление на главную страницу (React приложение)
                     setTimeout(() => {
