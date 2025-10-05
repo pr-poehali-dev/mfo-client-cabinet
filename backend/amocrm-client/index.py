@@ -347,13 +347,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             access_token = get_access_token()
+            
+            # Сначала проверяем, существует ли клиент в AmoCRM
+            existing_contact = find_contact_by_phone(phone, access_token)
+            
+            if not existing_contact:
+                return {
+                    'statusCode': 404,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Телефон такой не зарегистрирован'}),
+                    'isBase64Encoded': False
+                }
+            
+            # Затем проверяем пароль
             contact = verify_contact_password(phone, password, access_token)
             
             if not contact:
                 return {
                     'statusCode': 401,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Неверный телефон или пароль'}),
+                    'body': json.dumps({'error': 'Неверный пароль'}),
                     'isBase64Encoded': False
                 }
             
