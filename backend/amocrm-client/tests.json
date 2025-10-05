@@ -19,6 +19,27 @@
         "leads": "array"
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create contact and lead",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "fullName": "Иванов Иван Иванович",
+        "birthDate": "1990-01-01",
+        "phone": "79991234567",
+        "passport": "1234 567890",
+        "loanAmount": 50000,
+        "loanTerm": 30,
+        "password": "test123"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "contact_id": "number",
+        "lead_id": "number"
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

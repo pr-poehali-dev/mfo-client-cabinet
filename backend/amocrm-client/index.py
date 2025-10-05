@@ -84,10 +84,101 @@ def get_contact_leads(contact_id: int, access_token: str) -> list:
             return result['_embedded']['leads']
         return []
 
+def create_contact_and_lead(data: Dict[str, Any], access_token: str) -> Dict[str, Any]:
+    """
+    Business: Создает контакт и сделку в amoCRM
+    Args: data - данные клиента, access_token - токен доступа
+    Returns: Данные созданного контакта и сделки
+    """
+    domain = os.environ.get('AMOCRM_DOMAIN')
+    
+    # Ищем существующий контакт
+    existing_contact = find_contact_by_phone(data['phone'], access_token)
+    
+    if existing_contact:
+        contact_id = existing_contact['id']
+    else:
+        # Создаем новый контакт
+        contact_data = [
+            {
+                'name': data['fullName'],
+                'custom_fields_values': [
+                    {
+                        'field_code': 'PHONE',
+                        'values': [{'value': data['phone'], 'enum_code': 'WORK'}]
+                    },
+                    {
+                        'field_name': 'Дата рождения',
+                        'values': [{'value': data['birthDate']}]
+                    },
+                    {
+                        'field_name': 'Паспорт',
+                        'values': [{'value': data['passport']}]
+                    }
+                ]
+            }
+        ]
+        
+        req = urllib.request.Request(
+            f'https://{domain}/api/v4/contacts',
+            data=json.dumps(contact_data).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            },
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            contact_id = result['_embedded']['contacts'][0]['id']
+    
+    # Создаем сделку
+    lead_name = f"Займ {data['loanAmount']} ₽ на {data['loanTerm']} дней"
+    lead_data = [
+        {
+            'name': lead_name,
+            'price': data['loanAmount'],
+            'custom_fields_values': [
+                {
+                    'field_name': 'Срок займа',
+                    'values': [{'value': f"{data['loanTerm']} дней"}]
+                },
+                {
+                    'field_name': 'Сумма займа',
+                    'values': [{'value': data['loanAmount']}]
+                }
+            ],
+            '_embedded': {
+                'contacts': [{'id': contact_id}]
+            }
+        }
+    ]
+    
+    req = urllib.request.Request(
+        f'https://{domain}/api/v4/leads',
+        data=json.dumps(lead_data).encode('utf-8'),
+        headers={
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        },
+        method='POST'
+    )
+    
+    with urllib.request.urlopen(req) as response:
+        result = json.loads(response.read().decode('utf-8'))
+        lead_id = result['_embedded']['leads'][0]['id']
+    
+    return {
+        'contact_id': contact_id,
+        'lead_id': lead_id,
+        'lead_name': lead_name
+    }
+
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
-    Business: Получает данные клиента из amoCRM по номеру телефона
-    Args: event - dict с httpMethod, queryStringParameters{phone}
+    Business: Получает данные клиента из amoCRM по номеру телефона или создает новую сделку
+    Args: event - dict с httpMethod, queryStringParameters{phone} или body с данными регистрации
           context - object с атрибутами request_id, function_name
     Returns: HTTP response с данными клиента
     """
@@ -98,11 +189,39 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
                 'Access-Control-Max-Age': '86400'
             },
             'body': '',
+            'isBase64Encoded': False
+        }
+    
+    if method == 'POST':
+        body_data = json.loads(event.get('body', '{}'))
+        
+        required_fields = ['fullName', 'birthDate', 'phone', 'passport', 'loanAmount', 'loanTerm', 'password']
+        for field in required_fields:
+            if field not in body_data:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': f'Missing field: {field}'}),
+                    'isBase64Encoded': False
+                }
+        
+        access_token = get_access_token()
+        result = create_contact_and_lead(body_data, access_token)
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'success': True,
+                'contact_id': result['contact_id'],
+                'lead_id': result['lead_id'],
+                'lead_name': result['lead_name']
+            }),
             'isBase64Encoded': False
         }
     

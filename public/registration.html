@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - Займ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 0.875rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .success {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+            padding: 0.875rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 2rem;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .link {
+            color: #667eea;
+            text-decoration: none;
+            text-align: center;
+            display: block;
+            margin-top: 1rem;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        .amount-info {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .amount-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .required {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1 class="title">📝 Регистрация</h1>
+            <p class="subtitle">Заполните форму для получения займа</p>
+
+            <div id="errorMessage" class="error"></div>
+            <div id="successMessage" class="success"></div>
+
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label>ФИО <span class="required">*</span></label>
+                    <input type="text" id="fullName" placeholder="Иванов Иван Иванович" required>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label>Дата рождения <span class="required">*</span></label>
+                        <input type="date" id="birthDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Телефон <span class="required">*</span></label>
+                        <input type="tel" id="phone" placeholder="+7 (999) 123-45-67" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label>Серия паспорта <span class="required">*</span></label>
+                        <input type="text" id="passportSeries" placeholder="1234" maxlength="4" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Номер паспорта <span class="required">*</span></label>
+                        <input type="text" id="passportNumber" placeholder="567890" maxlength="6" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Сумма займа <span class="required">*</span></label>
+                    <select id="loanAmount" required>
+                        <option value="">Выберите сумму</option>
+                        <option value="5000">5 000 ₽</option>
+                        <option value="10000">10 000 ₽</option>
+                        <option value="15000">15 000 ₽</option>
+                        <option value="20000">20 000 ₽</option>
+                        <option value="25000">25 000 ₽</option>
+                        <option value="30000">30 000 ₽</option>
+                        <option value="50000">50 000 ₽</option>
+                        <option value="75000">75 000 ₽</option>
+                        <option value="100000">100 000 ₽</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Срок займа <span class="required">*</span></label>
+                    <select id="loanTerm" required>
+                        <option value="">Выберите срок</option>
+                        <option value="7">7 дней</option>
+                        <option value="14">14 дней</option>
+                        <option value="21">21 день</option>
+                        <option value="30">30 дней</option>
+                        <option value="60">60 дней</option>
+                        <option value="90">90 дней</option>
+                    </select>
+                </div>
+
+                <div id="loanInfo" class="amount-info" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 0.875rem; color: rgba(255,255,255,0.7);">Сумма к возврату:</div>
+                            <div class="amount-display" id="totalAmount">0 ₽</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.875rem; color: rgba(255,255,255,0.7);">Ежедневно:</div>
+                            <div style="font-size: 1.25rem; font-weight: 600; color: #a78bfa;" id="dailyPayment">0 ₽</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Придумайте пароль <span class="required">*</span></label>
+                    <input type="password" id="password" placeholder="Минимум 6 символов" minlength="6" required>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    🚀 Отправить заявку
+                </button>
+
+                <a href="personal-cabinet.html" class="link">Уже есть аккаунт? Войти</a>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const AMOCRM_CREATE_URL = 'https://functions.poehali.dev/7bc3d305-bf6d-4723-928c-5a609d11b7d3';
+        
+        const form = document.getElementById('registrationForm');
+        const phoneInput = document.getElementById('phone');
+        const loanAmountSelect = document.getElementById('loanAmount');
+        const loanTermSelect = document.getElementById('loanTerm');
+        const loanInfo = document.getElementById('loanInfo');
+        const totalAmountDisplay = document.getElementById('totalAmount');
+        const dailyPaymentDisplay = document.getElementById('dailyPayment');
+
+        // Маска для телефона
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                if (value[0] === '8') value = '7' + value.slice(1);
+                if (value[0] !== '7') value = '7' + value;
+            }
+            
+            let formatted = '+7';
+            if (value.length > 1) {
+                formatted += ' (' + value.substring(1, 4);
+            }
+            if (value.length >= 5) {
+                formatted += ') ' + value.substring(4, 7);
+            }
+            if (value.length >= 8) {
+                formatted += '-' + value.substring(7, 9);
+            }
+            if (value.length >= 10) {
+                formatted += '-' + value.substring(9, 11);
+            }
+            
+            e.target.value = formatted;
+        });
+
+        // Расчет суммы займа
+        function calculateLoan() {
+            const amount = parseFloat(loanAmountSelect.value);
+            const term = parseInt(loanTermSelect.value);
+            
+            if (amount && term) {
+                const interestRate = 0.01; // 1% в день
+                const totalInterest = amount * interestRate * term;
+                const totalAmount = amount + totalInterest;
+                const dailyPayment = totalAmount / term;
+                
+                totalAmountDisplay.textContent = Math.round(totalAmount).toLocaleString('ru-RU') + ' ₽';
+                dailyPaymentDisplay.textContent = Math.round(dailyPayment).toLocaleString('ru-RU') + ' ₽';
+                loanInfo.style.display = 'block';
+            } else {
+                loanInfo.style.display = 'none';
+            }
+        }
+
+        loanAmountSelect.addEventListener('change', calculateLoan);
+        loanTermSelect.addEventListener('change', calculateLoan);
+
+        // Валидация паспортных данных
+        document.getElementById('passportSeries').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+
+        document.getElementById('passportNumber').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            // Валидация
+            const fullName = document.getElementById('fullName').value.trim();
+            const birthDate = document.getElementById('birthDate').value;
+            const phone = phoneInput.value.replace(/\D/g, '');
+            const passportSeries = document.getElementById('passportSeries').value;
+            const passportNumber = document.getElementById('passportNumber').value;
+            const loanAmount = loanAmountSelect.value;
+            const loanTerm = loanTermSelect.value;
+            const password = document.getElementById('password').value;
+
+            if (!fullName || !birthDate || !phone || !passportSeries || !passportNumber || !loanAmount || !loanTerm || !password) {
+                errorDiv.textContent = '⚠️ Пожалуйста, заполните все поля';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (phone.length !== 11) {
+                errorDiv.textContent = '⚠️ Некорректный номер телефона';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (passportSeries.length !== 4 || passportNumber.length !== 6) {
+                errorDiv.textContent = '⚠️ Некорректные паспортные данные';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Отправка заявки...';
+
+            try {
+                const response = await fetch(AMOCRM_CREATE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fullName,
+                        birthDate,
+                        phone,
+                        passport: `${passportSeries} ${passportNumber}`,
+                        loanAmount: parseInt(loanAmount),
+                        loanTerm: parseInt(loanTerm),
+                        password
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    successDiv.textContent = '✅ Заявка успешно отправлена! Перенаправление в личный кабинет...';
+                    successDiv.style.display = 'block';
+                    
+                    // Сохраняем данные для автовхода
+                    localStorage.setItem('userPhone', phone);
+                    localStorage.setItem('userName', fullName);
+                    
+                    // Перенаправление через 2 секунды
+                    setTimeout(() => {
+                        window.location.href = 'personal-cabinet.html';
+                    }, 2000);
+                } else {
+                    throw new Error(result.error || 'Ошибка отправки заявки');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                errorDiv.textContent = `⚠️ ${error.message}`;
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Отправить заявку';
+            }
+        });
+    </script>
+</body>
+</html>
