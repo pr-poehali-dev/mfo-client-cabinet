@@ -392,13 +392,13 @@
                     successDiv.textContent = '✅ Заявка успешно отправлена! Перенаправление в личный кабинет...';
                     successDiv.style.display = 'block';
                     
-                    // Сохраняем данные для автовхода
-                    localStorage.setItem('userPhone', phone);
-                    localStorage.setItem('userName', fullName);
+                    // Сохраняем телефон для автовхода
+                    const cleanPhone = phone.replace(/\D/g, '');
+                    localStorage.setItem('userPhone', cleanPhone);
                     
-                    // Перенаправление через 2 секунды
+                    // Перенаправление на главную страницу (React приложение)
                     setTimeout(() => {
-                        window.location.href = 'personal-cabinet.html';
+                        window.location.href = '/';
                     }, 2000);
                 } else {
                     throw new Error(result.error || 'Ошибка отправки заявки');
