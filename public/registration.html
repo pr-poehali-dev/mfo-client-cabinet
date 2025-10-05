@@ -24,7 +24,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 400px;
             width: 100%;
         }
 
@@ -34,36 +34,19 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             padding: 2.5rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
-        .icon-container {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 1.5rem;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-        }
+
 
         .title {
             font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            text-align: center;
-        }
-
-        .subtitle {
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 2rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
             text-align: center;
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 0;
         }
 
         label {
@@ -77,53 +60,54 @@
         input[type="text"],
         input[type="tel"],
         input[type="date"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="range"] {
             width: 100%;
-            padding: 0.875rem 1rem;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        input[type="date"],
+        input[type="password"] {
+            padding: 0.75rem 1rem;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             color: white;
             font-size: 1rem;
-            transition: all 0.3s;
+            margin-bottom: 1rem;
         }
 
         input:focus {
             outline: none;
             border-color: #667eea;
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.4);
         }
 
         .slider-container {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .slider-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .slider-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #667eea;
         }
 
         input[type="range"] {
             -webkit-appearance: none;
-            width: 100%;
-            height: 8px;
-            border-radius: 4px;
+            height: 6px;
+            border-radius: 3px;
             background: rgba(255, 255, 255, 0.1);
             outline: none;
         }
@@ -131,48 +115,38 @@
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 24px;
-            height: 24px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
         }
 
         input[type="range"]::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
             border: none;
         }
 
         .slider-marks {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 0.5rem;
-            padding: 0 4px;
-        }
-
-        .slider-mark {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.4);
+            display: none;
         }
 
         .loan-info {
             background: rgba(102, 126, 234, 0.1);
             border: 1px solid rgba(102, 126, 234, 0.3);
-            padding: 1.25rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
         }
 
         .loan-info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         .loan-info-item {
@@ -180,40 +154,36 @@
         }
 
         .loan-info-label {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             color: rgba(255, 255, 255, 0.6);
             margin-bottom: 0.25rem;
         }
 
         .loan-info-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #667eea;
-        }
-
-        .loan-info-value-small {
-            font-size: 1.25rem;
+            font-size: 1rem;
             font-weight: 600;
-            color: #a78bfa;
+            color: #667eea;
         }
 
         .btn {
             width: 100%;
-            padding: 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 8px;
-            color: white;
-            font-size: 1rem;
-            font-weight: 600;
             cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
             transition: all 0.3s;
-            margin-top: 1rem;
         }
 
-        .btn:hover {
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
         .btn:disabled {
@@ -222,26 +192,22 @@
             transform: none;
         }
 
-        .error {
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-error {
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.3);
             color: #fca5a5;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            display: none;
-            font-size: 0.875rem;
         }
 
-        .success {
+        .alert-success {
             background: rgba(34, 197, 94, 0.1);
             border: 1px solid rgba(34, 197, 94, 0.3);
             color: #86efac;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            display: none;
-            font-size: 0.875rem;
         }
 
         .row {
@@ -285,42 +251,37 @@
 <body>
     <div class="container">
         <div class="card">
-            <div class="icon-container">
-                💰
-            </div>
-            <h1 class="title">Заявка на займ</h1>
-            <p class="subtitle">Заполните форму для получения займа</p>
-
-            <div id="errorMessage" class="error"></div>
-            <div id="successMessage" class="success"></div>
+            <h1 class="title">Регистрация</h1>
+            <div id="errorMessage"></div>
+            <div id="successMessage"></div>
 
             <form id="registrationForm">
                 <div class="form-group">
                     <label>ФИО <span class="required">*</span></label>
-                    <input type="text" id="fullName" placeholder="Иванов Иван Иванович" required>
+                    <input type="text" id="fullName" placeholder="Иванов Иван Иванович" required autocomplete="name">
                 </div>
 
                 <div class="row">
                     <div class="form-group">
                         <label>Дата рождения <span class="required">*</span></label>
-                        <input type="date" id="birthDate" required>
+                        <input type="date" id="birthDate" required autocomplete="bday">
                     </div>
 
                     <div class="form-group">
                         <label>Телефон <span class="required">*</span></label>
-                        <input type="tel" id="phone" placeholder="+7 (999) 123-45-67" required>
+                        <input type="tel" id="phone" placeholder="79991234567" required autocomplete="tel">
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="form-group">
                         <label>Серия паспорта <span class="required">*</span></label>
-                        <input type="text" id="passportSeries" placeholder="1234" maxlength="4" required>
+                        <input type="text" id="passportSeries" placeholder="1234" maxlength="4" required autocomplete="off">
                     </div>
 
                     <div class="form-group">
                         <label>Номер паспорта <span class="required">*</span></label>
-                        <input type="text" id="passportNumber" placeholder="567890" maxlength="6" required>
+                        <input type="text" id="passportNumber" placeholder="567890" maxlength="6" required autocomplete="off">
                     </div>
                 </div>
 
@@ -357,22 +318,19 @@
                             <div class="loan-info-value" id="totalAmount">0 ₽</div>
                         </div>
                         <div class="loan-info-item">
-                            <div class="loan-info-label">Ежедневный платеж</div>
-                            <div class="loan-info-value-small" id="dailyPayment">0 ₽</div>
+                            <div class="loan-info-label">Ежедневно</div>
+                            <div class="loan-info-value" id="dailyPayment">0 ₽</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Придумайте пароль <span class="required">*</span></label>
-                    <input type="password" id="password" placeholder="Минимум 6 символов" minlength="6" required>
+                    <input type="password" id="password" placeholder="Минимум 6 символов" minlength="6" required autocomplete="new-password">
                 </div>
 
-                <button type="submit" class="btn" id="submitBtn">
-                    🚀 Отправить заявку
-                </button>
-
-                <a href="/" class="link">Уже есть аккаунт? Войти</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Зарегистрироваться</button>
+                <a href="/" class="link" style="display: block; text-align: center; margin-top: 1rem; color: #667eea; text-decoration: none;">Уже есть аккаунт? Войти</a>
             </form>
         </div>
     </div>
@@ -481,8 +439,8 @@
             const errorDiv = document.getElementById('errorMessage');
             const successDiv = document.getElementById('successMessage');
             
-            errorDiv.style.display = 'none';
-            successDiv.style.display = 'none';
+            errorDiv.className = '';
+            successDiv.className = '';
             
             const fullName = document.getElementById('fullName').value.trim();
             const birthDate = document.getElementById('birthDate').value;
@@ -493,39 +451,38 @@
             const loanTerm = parseInt(loanTermSlider.value);
             const password = document.getElementById('password').value;
 
-            // Валидация
             if (!validateAge(birthDate)) {
-                errorDiv.textContent = '⚠️ Займы выдаются только лицам от 18 до 100 лет';
-                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Займы выдаются только лицам от 18 до 100 лет';
+                errorDiv.className = 'alert alert-error';
                 return;
             }
 
             if (phone.length !== 11) {
-                errorDiv.textContent = '⚠️ Введите корректный номер телефона';
-                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Введите корректный номер телефона';
+                errorDiv.className = 'alert alert-error';
                 return;
             }
 
             if (passportSeries.length !== 4) {
-                errorDiv.textContent = '⚠️ Серия паспорта должна содержать 4 цифры';
-                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Серия паспорта должна содержать 4 цифры';
+                errorDiv.className = 'alert alert-error';
                 return;
             }
 
             if (passportNumber.length !== 6) {
-                errorDiv.textContent = '⚠️ Номер паспорта должен содержать 6 цифр';
-                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Номер паспорта должен содержать 6 цифр';
+                errorDiv.className = 'alert alert-error';
                 return;
             }
 
             if (password.length < 6) {
-                errorDiv.textContent = '⚠️ Пароль должен содержать минимум 6 символов';
-                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Пароль должен содержать минимум 6 символов';
+                errorDiv.className = 'alert alert-error';
                 return;
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ Отправка заявки...';
+            submitBtn.textContent = 'Отправка...';
 
             try {
                 const response = await fetch(AMOCRM_CREATE_URL, {
@@ -547,8 +504,8 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    successDiv.textContent = '✅ Заявка успешно отправлена! Перенаправление в личный кабинет...';
-                    successDiv.style.display = 'block';
+                    successDiv.textContent = 'Заявка успешно отправлена! Перенаправление...';
+                    successDiv.className = 'alert alert-success';
                     
                     const cleanPhone = phone.replace(/\D/g, '');
                     localStorage.setItem('userPhone', cleanPhone);
@@ -562,10 +519,10 @@
                 }
             } catch (error) {
                 console.error('Ошибка:', error);
-                errorDiv.textContent = `⚠️ ${error.message}`;
-                errorDiv.style.display = 'block';
+                errorDiv.textContent = error.message;
+                errorDiv.className = 'alert alert-error';
                 submitBtn.disabled = false;
-                submitBtn.textContent = '🚀 Отправить заявку';
+                submitBtn.textContent = 'Зарегистрироваться';
             }
         });
     </script>
