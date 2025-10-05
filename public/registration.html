@@ -20,7 +20,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
+            padding: 2rem 1rem;
         }
 
         .container {
@@ -34,6 +34,32 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             padding: 2.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon-container {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 2rem;
+            text-align: center;
         }
 
         .form-group {
@@ -48,25 +74,127 @@
             font-weight: 500;
         }
 
-        input, select {
+        input[type="text"],
+        input[type="tel"],
+        input[type="date"],
+        input[type="password"] {
             width: 100%;
             padding: 0.875rem 1rem;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             color: white;
             font-size: 1rem;
             transition: all 0.3s;
         }
 
-        input:focus, select:focus {
+        input:focus {
             outline: none;
             border-color: #667eea;
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         input::placeholder {
             color: rgba(255, 255, 255, 0.3);
+        }
+
+        .slider-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .slider-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+            border: none;
+        }
+
+        .slider-marks {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            padding: 0 4px;
+        }
+
+        .slider-mark {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .loan-info {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .loan-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .loan-info-item {
+            text-align: center;
+        }
+
+        .loan-info-label {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.25rem;
+        }
+
+        .loan-info-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .loan-info-value-small {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #a78bfa;
         }
 
         .btn {
@@ -95,38 +223,25 @@
         }
 
         .error {
-            background: rgba(239, 68, 68, 0.15);
+            background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.3);
             color: #fca5a5;
-            padding: 0.875rem;
+            padding: 1rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
             display: none;
+            font-size: 0.875rem;
         }
 
         .success {
-            background: rgba(34, 197, 94, 0.15);
+            background: rgba(34, 197, 94, 0.1);
             border: 1px solid rgba(34, 197, 94, 0.3);
             color: #86efac;
-            padding: 0.875rem;
+            padding: 1rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
             display: none;
-        }
-
-        .title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .subtitle {
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 2rem;
+            font-size: 0.875rem;
         }
 
         .row {
@@ -141,35 +256,39 @@
             text-align: center;
             display: block;
             margin-top: 1rem;
+            font-size: 0.9rem;
         }
 
         .link:hover {
             text-decoration: underline;
         }
 
-        .amount-info {
-            background: rgba(102, 126, 234, 0.1);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 0.5rem;
-        }
-
-        .amount-display {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #667eea;
-        }
-
         .required {
             color: #ef4444;
+        }
+
+        @media (max-width: 640px) {
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .row {
+                grid-template-columns: 1fr;
+            }
+
+            .loan-info-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card">
-            <h1 class="title">📝 Регистрация</h1>
+            <div class="icon-container">
+                💰
+            </div>
+            <h1 class="title">Заявка на займ</h1>
             <p class="subtitle">Заполните форму для получения займа</p>
 
             <div id="errorMessage" class="error"></div>
@@ -205,44 +324,41 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Сумма займа <span class="required">*</span></label>
-                    <select id="loanAmount" required>
-                        <option value="">Выберите сумму</option>
-                        <option value="5000">5 000 ₽</option>
-                        <option value="10000">10 000 ₽</option>
-                        <option value="15000">15 000 ₽</option>
-                        <option value="20000">20 000 ₽</option>
-                        <option value="25000">25 000 ₽</option>
-                        <option value="30000">30 000 ₽</option>
-                        <option value="50000">50 000 ₽</option>
-                        <option value="75000">75 000 ₽</option>
-                        <option value="100000">100 000 ₽</option>
-                    </select>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <label>Сумма займа <span class="required">*</span></label>
+                        <span class="slider-value" id="amountValue">50 000 ₽</span>
+                    </div>
+                    <input type="range" id="loanAmount" min="5000" max="100000" step="5000" value="50000">
+                    <div class="slider-marks">
+                        <span class="slider-mark">5 000 ₽</span>
+                        <span class="slider-mark">50 000 ₽</span>
+                        <span class="slider-mark">100 000 ₽</span>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Срок займа <span class="required">*</span></label>
-                    <select id="loanTerm" required>
-                        <option value="">Выберите срок</option>
-                        <option value="7">7 дней</option>
-                        <option value="14">14 дней</option>
-                        <option value="21">21 день</option>
-                        <option value="30">30 дней</option>
-                        <option value="60">60 дней</option>
-                        <option value="90">90 дней</option>
-                    </select>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <label>Срок займа <span class="required">*</span></label>
+                        <span class="slider-value" id="termValue">30 дней</span>
+                    </div>
+                    <input type="range" id="loanTerm" min="7" max="90" step="7" value="30">
+                    <div class="slider-marks">
+                        <span class="slider-mark">7 дней</span>
+                        <span class="slider-mark">49 дней</span>
+                        <span class="slider-mark">90 дней</span>
+                    </div>
                 </div>
 
-                <div id="loanInfo" class="amount-info" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-size: 0.875rem; color: rgba(255,255,255,0.7);">Сумма к возврату:</div>
-                            <div class="amount-display" id="totalAmount">0 ₽</div>
+                <div id="loanInfo" class="loan-info">
+                    <div class="loan-info-grid">
+                        <div class="loan-info-item">
+                            <div class="loan-info-label">Сумма к возврату</div>
+                            <div class="loan-info-value" id="totalAmount">0 ₽</div>
                         </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 0.875rem; color: rgba(255,255,255,0.7);">Ежедневно:</div>
-                            <div style="font-size: 1.25rem; font-weight: 600; color: #a78bfa;" id="dailyPayment">0 ₽</div>
+                        <div class="loan-info-item">
+                            <div class="loan-info-label">Ежедневный платеж</div>
+                            <div class="loan-info-value-small" id="dailyPayment">0 ₽</div>
                         </div>
                     </div>
                 </div>
@@ -256,7 +372,7 @@
                     🚀 Отправить заявку
                 </button>
 
-                <a href="personal-cabinet.html" class="link">Уже есть аккаунт? Войти</a>
+                <a href="/" class="link">Уже есть аккаунт? Войти</a>
             </form>
         </div>
     </div>
@@ -266,9 +382,10 @@
         
         const form = document.getElementById('registrationForm');
         const phoneInput = document.getElementById('phone');
-        const loanAmountSelect = document.getElementById('loanAmount');
-        const loanTermSelect = document.getElementById('loanTerm');
-        const loanInfo = document.getElementById('loanInfo');
+        const loanAmountSlider = document.getElementById('loanAmount');
+        const loanTermSlider = document.getElementById('loanTerm');
+        const amountValue = document.getElementById('amountValue');
+        const termValue = document.getElementById('termValue');
         const totalAmountDisplay = document.getElementById('totalAmount');
         const dailyPaymentDisplay = document.getElementById('dailyPayment');
 
@@ -297,27 +414,42 @@
             e.target.value = formatted;
         });
 
-        // Расчет суммы займа
-        function calculateLoan() {
-            const amount = parseFloat(loanAmountSelect.value);
-            const term = parseInt(loanTermSelect.value);
-            
-            if (amount && term) {
-                const interestRate = 0.01; // 1% в день
-                const totalInterest = amount * interestRate * term;
-                const totalAmount = amount + totalInterest;
-                const dailyPayment = totalAmount / term;
-                
-                totalAmountDisplay.textContent = Math.round(totalAmount).toLocaleString('ru-RU') + ' ₽';
-                dailyPaymentDisplay.textContent = Math.round(dailyPayment).toLocaleString('ru-RU') + ' ₽';
-                loanInfo.style.display = 'block';
-            } else {
-                loanInfo.style.display = 'none';
-            }
+        // Обновление отображения суммы
+        loanAmountSlider.addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            amountValue.textContent = value.toLocaleString('ru-RU') + ' ₽';
+            calculateLoan();
+        });
+
+        // Обновление отображения срока
+        loanTermSlider.addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            termValue.textContent = value + ' ' + getDaysWord(value);
+            calculateLoan();
+        });
+
+        function getDaysWord(days) {
+            if (days % 10 === 1 && days % 100 !== 11) return 'день';
+            if ([2, 3, 4].includes(days % 10) && ![12, 13, 14].includes(days % 100)) return 'дня';
+            return 'дней';
         }
 
-        loanAmountSelect.addEventListener('change', calculateLoan);
-        loanTermSelect.addEventListener('change', calculateLoan);
+        // Расчет суммы займа
+        function calculateLoan() {
+            const amount = parseInt(loanAmountSlider.value);
+            const term = parseInt(loanTermSlider.value);
+            
+            const interestRate = 0.01;
+            const totalInterest = amount * interestRate * term;
+            const totalAmount = amount + totalInterest;
+            const dailyPayment = totalAmount / term;
+            
+            totalAmountDisplay.textContent = Math.round(totalAmount).toLocaleString('ru-RU') + ' ₽';
+            dailyPaymentDisplay.textContent = Math.round(dailyPayment).toLocaleString('ru-RU') + ' ₽';
+        }
+
+        // Инициализация расчета
+        calculateLoan();
 
         // Валидация паспортных данных
         document.getElementById('passportSeries').addEventListener('input', function(e) {
@@ -327,6 +459,20 @@
         document.getElementById('passportNumber').addEventListener('input', function(e) {
             e.target.value = e.target.value.replace(/\D/g, '');
         });
+
+        // Валидация возраста
+        function validateAge(birthDate) {
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            
+            return age >= 18 && age <= 100;
+        }
 
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -338,30 +484,42 @@
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
             
-            // Валидация
             const fullName = document.getElementById('fullName').value.trim();
             const birthDate = document.getElementById('birthDate').value;
             const phone = phoneInput.value.replace(/\D/g, '');
             const passportSeries = document.getElementById('passportSeries').value;
             const passportNumber = document.getElementById('passportNumber').value;
-            const loanAmount = loanAmountSelect.value;
-            const loanTerm = loanTermSelect.value;
+            const loanAmount = parseInt(loanAmountSlider.value);
+            const loanTerm = parseInt(loanTermSlider.value);
             const password = document.getElementById('password').value;
 
-            if (!fullName || !birthDate || !phone || !passportSeries || !passportNumber || !loanAmount || !loanTerm || !password) {
-                errorDiv.textContent = '⚠️ Пожалуйста, заполните все поля';
+            // Валидация
+            if (!validateAge(birthDate)) {
+                errorDiv.textContent = '⚠️ Займы выдаются только лицам от 18 до 100 лет';
                 errorDiv.style.display = 'block';
                 return;
             }
 
             if (phone.length !== 11) {
-                errorDiv.textContent = '⚠️ Некорректный номер телефона';
+                errorDiv.textContent = '⚠️ Введите корректный номер телефона';
                 errorDiv.style.display = 'block';
                 return;
             }
 
-            if (passportSeries.length !== 4 || passportNumber.length !== 6) {
-                errorDiv.textContent = '⚠️ Некорректные паспортные данные';
+            if (passportSeries.length !== 4) {
+                errorDiv.textContent = '⚠️ Серия паспорта должна содержать 4 цифры';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (passportNumber.length !== 6) {
+                errorDiv.textContent = '⚠️ Номер паспорта должен содержать 6 цифр';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (password.length < 6) {
+                errorDiv.textContent = '⚠️ Пароль должен содержать минимум 6 символов';
                 errorDiv.style.display = 'block';
                 return;
             }
@@ -373,15 +531,15 @@
                 const response = await fetch(AMOCRM_CREATE_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         fullName,
                         birthDate,
                         phone,
                         passport: `${passportSeries} ${passportNumber}`,
-                        loanAmount: parseInt(loanAmount),
-                        loanTerm: parseInt(loanTerm),
+                        loanAmount,
+                        loanTerm,
                         password
                     })
                 });
@@ -392,12 +550,10 @@
                     successDiv.textContent = '✅ Заявка успешно отправлена! Перенаправление в личный кабинет...';
                     successDiv.style.display = 'block';
                     
-                    // Сохраняем телефон для автовхода и флаг новой регистрации
                     const cleanPhone = phone.replace(/\D/g, '');
                     localStorage.setItem('userPhone', cleanPhone);
                     localStorage.setItem('newRegistration', 'true');
                     
-                    // Перенаправление на главную страницу (React приложение)
                     setTimeout(() => {
                         window.location.href = '/';
                     }, 2000);
