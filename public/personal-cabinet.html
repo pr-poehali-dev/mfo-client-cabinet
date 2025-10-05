@@ -285,14 +285,36 @@
 </head>
 <body>
     <div id="app">
-        <div class="login-form" id="loginForm">
+        <div class="login-form" id="loginForm" style="display: block;">
             <div class="card">
                 <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 1.5rem; text-align: center;">Личный кабинет</h1>
                 <div id="errorMessage"></div>
                 <input type="tel" id="phoneInput" class="input" placeholder="79991234567" />
                 <input type="password" id="passwordInput" class="input" placeholder="Пароль" />
                 <button onclick="login()" class="btn btn-primary" style="width: 100%;">Войти</button>
-                <a href="registration.html" style="display: block; text-align: center; margin-top: 1rem; color: #667eea; text-decoration: none;">Нет аккаунта? Зарегистрироваться</a>
+                <a href="#" onclick="showResetPassword(); return false;" style="display: block; text-align: center; margin-top: 1rem; color: #667eea; text-decoration: none; font-size: 0.9rem;">Забыли пароль?</a>
+                <a href="registration.html" style="display: block; text-align: center; margin-top: 0.5rem; color: #667eea; text-decoration: none;">Нет аккаунта? Зарегистрироваться</a>
+            </div>
+        </div>
+
+        <div class="login-form" id="resetForm" style="display: none;">
+            <div class="card">
+                <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 1.5rem; text-align: center;">Восстановление пароля</h1>
+                <div id="resetErrorMessage"></div>
+                <div id="resetSuccessMessage"></div>
+                
+                <div id="resetStep1">
+                    <input type="tel" id="resetPhoneInput" class="input" placeholder="79991234567" />
+                    <button onclick="requestResetCode()" class="btn btn-primary" style="width: 100%;" id="requestCodeBtn">Получить код</button>
+                </div>
+                
+                <div id="resetStep2" style="display: none;">
+                    <input type="text" id="resetCodeInput" class="input" placeholder="Код из СМС" maxlength="4" />
+                    <input type="password" id="newPasswordInput" class="input" placeholder="Новый пароль" />
+                    <button onclick="resetPassword()" class="btn btn-primary" style="width: 100%;" id="resetPasswordBtn">Сменить пароль</button>
+                </div>
+                
+                <a href="#" onclick="showLogin(); return false;" style="display: block; text-align: center; margin-top: 1rem; color: #667eea; text-decoration: none;">Вернуться к входу</a>
             </div>
         </div>
 
@@ -661,6 +683,130 @@
             }
         `;
         document.head.appendChild(style);
+
+        let resetPhoneNumber = '';
+        let resetCode = '';
+
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('resetForm').style.display = 'none';
+        }
+
+        function showResetPassword() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('resetForm').style.display = 'block';
+            document.getElementById('resetStep1').style.display = 'block';
+            document.getElementById('resetStep2').style.display = 'none';
+            document.getElementById('resetErrorMessage').innerHTML = '';
+            document.getElementById('resetSuccessMessage').innerHTML = '';
+        }
+
+        async function requestResetCode() {
+            const phone = document.getElementById('resetPhoneInput').value.replace(/\D/g, '');
+            const errorDiv = document.getElementById('resetErrorMessage');
+            const successDiv = document.getElementById('resetSuccessMessage');
+            const btn = document.getElementById('requestCodeBtn');
+
+            if (!phone || phone.length !== 11) {
+                errorDiv.innerHTML = '<div class="alert alert-error">Введите корректный номер телефона</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Отправка...';
+            errorDiv.innerHTML = '';
+            successDiv.innerHTML = '';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'request-reset',
+                        phone: phone
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Ошибка отправки кода');
+                }
+
+                resetPhoneNumber = phone;
+                
+                if (result.sms_sent) {
+                    successDiv.innerHTML = '<div class="alert alert-success">Код отправлен на ваш номер</div>';
+                } else {
+                    resetCode = result.code;
+                    successDiv.innerHTML = `<div class="alert alert-success">Ваш код: ${result.code}</div>`;
+                }
+
+                document.getElementById('resetStep1').style.display = 'none';
+                document.getElementById('resetStep2').style.display = 'block';
+            } catch (err) {
+                errorDiv.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                btn.disabled = false;
+                btn.textContent = 'Получить код';
+            }
+        }
+
+        async function resetPassword() {
+            const code = document.getElementById('resetCodeInput').value.trim();
+            const newPassword = document.getElementById('newPasswordInput').value;
+            const errorDiv = document.getElementById('resetErrorMessage');
+            const successDiv = document.getElementById('resetSuccessMessage');
+            const btn = document.getElementById('resetPasswordBtn');
+
+            if (!code || !newPassword) {
+                errorDiv.innerHTML = '<div class="alert alert-error">Заполните все поля</div>';
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                errorDiv.innerHTML = '<div class="alert alert-error">Пароль должен быть минимум 6 символов</div>';
+                return;
+            }
+
+            if (resetCode && code !== resetCode) {
+                errorDiv.innerHTML = '<div class="alert alert-error">Неверный код</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Сохранение...';
+            errorDiv.innerHTML = '';
+            successDiv.innerHTML = '';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'reset-password',
+                        phone: resetPhoneNumber,
+                        code: code,
+                        newPassword: newPassword
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Ошибка смены пароля');
+                }
+
+                successDiv.innerHTML = '<div class="alert alert-success">Пароль успешно изменен!</div>';
+                
+                setTimeout(() => {
+                    showLogin();
+                }, 2000);
+            } catch (err) {
+                errorDiv.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                btn.disabled = false;
+                btn.textContent = 'Сменить пароль';
+            }
+        }
 
         window.onload = function() {
             const savedPhone = localStorage.getItem('userPhone');
