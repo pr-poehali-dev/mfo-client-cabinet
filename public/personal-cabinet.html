@@ -336,10 +336,12 @@
     <script>
         const API_URL = 'https://functions.poehali.dev/70d555d5-8b9c-471a-baaf-5b7796eef2d1';
         const AMOCRM_URL = 'https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5';
+        const NOTIFICATIONS_URL = 'https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5';
 
         let userData = null;
         let updateInterval = null;
         let lastUpdate = null;
+        let notificationBadge = null;
 
         async function login() {
             const phone = document.getElementById('phoneInput').value;
@@ -376,6 +378,56 @@
             } catch (err) {
                 errorDiv.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
             }
+        }
+
+        async function checkNotifications(phone) {
+            try {
+                const response = await fetch(`${NOTIFICATIONS_URL}?phone=${phone}`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                const notifications = data.notifications || [];
+                
+                if (notifications.length > 0) {
+                    notifications.forEach(notif => {
+                        showNotification(`Статус сделки "${notif.deal_name}" изменен на: ${notif.new_status}`);
+                    });
+                    
+                    loadUserData(phone, true);
+                }
+            } catch (err) {
+                console.error('Ошибка проверки уведомлений:', err);
+            }
+        }
+
+        function showNotification(message) {
+            const notifDiv = document.createElement('div');
+            notifDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                max-width: 350px;
+            `;
+            notifDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 1.5rem;">🔔</span>
+                    <div>${message}</div>
+                </div>
+            `;
+            
+            document.body.appendChild(notifDiv);
+            
+            setTimeout(() => {
+                notifDiv.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notifDiv.remove(), 300);
+            }, 5000);
         }
 
         async function loadUserData(phone, silent = false) {
@@ -441,6 +493,7 @@
             updateInterval = setInterval(() => {
                 const phone = localStorage.getItem('userPhone');
                 if (phone) {
+                    checkNotifications(phone);
                     loadUserData(phone, true);
                 }
             }, 30000);
@@ -573,11 +626,47 @@
             return `+7 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7, 9)}-${cleaned.slice(9, 11)}`;
         }
 
+        window.addEventListener('focus', function() {
+            const savedPhone = localStorage.getItem('userPhone');
+            const cabinetVisible = document.getElementById('cabinet').style.display !== 'none';
+            
+            if (savedPhone && cabinetVisible) {
+                checkNotifications(savedPhone);
+                loadUserData(savedPhone, false);
+            }
+        });
+
+        window.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                const savedPhone = localStorage.getItem('userPhone');
+                const cabinetVisible = document.getElementById('cabinet').style.display !== 'none';
+                
+                if (savedPhone && cabinetVisible) {
+                    checkNotifications(savedPhone);
+                    loadUserData(savedPhone, true);
+                }
+            }
+        });
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
         window.onload = function() {
             const savedPhone = localStorage.getItem('userPhone');
             if (savedPhone) {
                 loadUserData(savedPhone);
                 showCabinet();
+                checkNotifications(savedPhone);
             }
         };
     </script>

@@ -99,6 +99,19 @@ def upsert_deal(conn, deal_data: Dict[str, Any], client_id: int) -> None:
     conn.commit()
     cursor.close()
 
+def save_webhook_notification(conn, lead_id: int, status_id: int, old_status_id: int = None) -> None:
+    '''Сохраняет уведомление о смене статуса для последующей отправки клиенту'''
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO webhook_notifications (
+            lead_id, new_status_id, old_status_id, created_at, delivered
+        ) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, FALSE)
+    ''', (lead_id, status_id, old_status_id))
+    
+    conn.commit()
+    cursor.close()
+
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
     Business: Webhook для приема уведомлений от AmoCRM об изменениях контактов и сделок
@@ -154,8 +167,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             if lead and contacts:
                 client_id = contacts[0].get('id')
                 if client_id:
+                    old_status_id = lead.get('old_status_id')
+                    new_status_id = lead.get('status_id')
+                    
                     upsert_deal(conn, lead, client_id)
                     print(f'[INFO] Deal {lead.get("id")} synced to DB')
+                    
+                    if old_status_id and new_status_id and old_status_id != new_status_id:
+                        save_webhook_notification(conn, lead.get('id'), new_status_id, old_status_id)
+                        print(f'[INFO] Status change notification saved for lead {lead.get("id")}')
         
         conn.close()
         
