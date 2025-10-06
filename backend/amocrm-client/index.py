@@ -16,6 +16,9 @@ def get_access_token() -> str:
     refresh_token = os.environ.get('AMOCRM_REFRESH_TOKEN')
     redirect_uri = os.environ.get('AMOCRM_REDIRECT_URI')
     
+    if not all([domain, client_id, client_secret, refresh_token, redirect_uri]):
+        raise ValueError('AmoCRM credentials not configured')
+    
     url = f'https://{domain}/oauth2/access_token'
     data = {
         'client_id': client_id,
@@ -25,16 +28,24 @@ def get_access_token() -> str:
         'redirect_uri': redirect_uri
     }
     
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(data).encode('utf-8'),
-        headers={'Content-Type': 'application/json'},
-        method='POST'
-    )
-    
-    with urllib.request.urlopen(req) as response:
-        result = json.loads(response.read().decode('utf-8'))
-        return result['access_token']
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(data).encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            return result['access_token']
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8')
+        print(f'AmoCRM OAuth error: {e.code} - {error_body}')
+        raise ValueError(f'Failed to get AmoCRM access token: {e.code}')
+    except Exception as e:
+        print(f'AmoCRM connection error: {str(e)}')
+        raise ValueError('Failed to connect to AmoCRM')
 
 def find_contact_by_phone(phone: str, access_token: str) -> Optional[Dict[str, Any]]:
     """
@@ -329,6 +340,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    try:
+        access_token = get_access_token()
+    except ValueError as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': str(e)}),
+            'isBase64Encoded': False
+        }
+    
     if method == 'POST':
         body_data = json.loads(event.get('body', '{}'))
         
@@ -345,7 +366,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             
-            access_token = get_access_token()
             contact = find_contact_by_phone(phone, access_token)
             
             if not contact:
@@ -388,7 +408,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             
-            access_token = get_access_token()
             contact = find_contact_by_phone(phone, access_token)
             
             if not contact:
@@ -422,7 +441,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             
-            access_token = get_access_token()
             contact = find_contact_by_phone(phone, access_token)
             
             if not contact:
@@ -466,8 +484,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             
-            access_token = get_access_token()
-            
             updated = update_contact_password(phone, new_password, access_token)
             
             if not updated:
@@ -498,7 +514,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
         
-        access_token = get_access_token()
         result = create_contact_and_lead(body_data, access_token)
         
         if result.get('duplicate'):
@@ -542,7 +557,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    access_token = get_access_token()
     contact = find_contact_by_phone(phone, access_token)
     
     if not contact:
