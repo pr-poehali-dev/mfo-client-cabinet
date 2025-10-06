@@ -18,9 +18,11 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
 
   const getStatusPriority = (statusName: string): number => {
     if (statusName === 'Заявка одобрена') return 1;
-    if (statusName === 'Заявка на рассмотрение') return 2;
-    if (statusName === 'Заявка отклонена') return 4;
-    return 3;
+    if (statusName === 'Заявка на согласование') return 2;
+    if (statusName === 'Заявка на рассмотрение') return 3;
+    if (statusName === 'Поступила заявка') return 4;
+    if (statusName === 'Заявка отклонена') return 99;
+    return 5;
   };
 
   const sortedDeals = [...deals].sort((a, b) => {
