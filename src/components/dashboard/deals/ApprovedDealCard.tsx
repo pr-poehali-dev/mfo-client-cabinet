@@ -60,16 +60,16 @@ const ApprovedDealCard = ({ deal }: ApprovedDealCardProps) => {
                 <p className="text-base sm:text-lg font-semibold text-blue-400">Идет согласование договора</p>
               </div>
               
-              <div className="p-4 bg-gradient-to-br from-green-500/10 via-blue-500/10 to-green-500/10 rounded-xl border-2 border-green-500/30">
+              <div className="p-4 bg-gradient-to-br from-green-500/10 via-green-500/5 to-green-500/10 rounded-xl border-2 border-green-500/30">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center shrink-0 animate-pulse">
-                    <Icon name="Banknote" size={20} className="text-white" />
+                  <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shrink-0 animate-pulse">
+                    <Icon name="Check" size={24} className="text-white" />
                   </div>
                   <div className="text-left">
-                    <p className="text-base sm:text-lg font-bold text-green-400 mb-1">Идет зачисление займа</p>
+                    <p className="text-base sm:text-lg font-bold text-green-400 mb-1">Деньги отправлены на ваш счёт</p>
                     <p className="text-sm text-muted-foreground flex items-center gap-1.5">
                       <Icon name="Clock" size={14} />
-                      Ожидайте от 15 до 30 минут
+                      Время зачисления от 20 минут
                     </p>
                   </div>
                 </div>
