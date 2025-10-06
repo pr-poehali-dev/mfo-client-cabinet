@@ -52,14 +52,22 @@ const Index = () => {
           return;
         }
         
-        if (response.status === 401) {
-          setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
-        } else if (response.status === 500 && errorData.message?.includes('credentials')) {
-          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
+        console.error('API Error:', response.status, errorData);
+        
+        if (response.status === 500) {
+          if (errorData.error?.includes('access token')) {
+            setError('⚠️ Ошибка подключения к AmoCRM. Токен авторизации устарел. Обновите секрет AMOCRM_REFRESH_TOKEN');
+          } else if (errorData.error?.includes('credentials')) {
+            setError('⚠️ AmoCRM не настроен. Проверьте секреты: AMOCRM_DOMAIN, AMOCRM_CLIENT_ID, AMOCRM_CLIENT_SECRET, AMOCRM_REFRESH_TOKEN');
+          } else {
+            setError(`Ошибка сервера: ${errorData.error || 'Неизвестная ошибка'}`);
+          }
         } else if (response.status === 404) {
-          setError('Клиент не найден в AmoCRM. Проверьте номер телефона в системе');
+          setError('Клиент не найден в AmoCRM. Проверьте номер телефона');
+        } else if (response.status === 401) {
+          setError('⚠️ Ошибка авторизации AmoCRM');
         } else {
-          setError(errorData.error || 'Ошибка загрузки данных из AmoCRM');
+          setError(errorData.error || 'Ошибка загрузки данных');
         }
         setLoans([]);
         setPayments([]);
@@ -78,9 +86,17 @@ const Index = () => {
         return;
       }
       
-      console.log('Response from server:', responseText);
       const data = JSON.parse(responseText);
-      console.log('Parsed data:', data);
+      
+      if (!data || !data.id) {
+        setError('Получены некорректные данные от сервера');
+        console.error('Invalid data structure:', data);
+        setLoans([]);
+        setPayments([]);
+        setDeals([]);
+        setNotifications([]);
+        return;
+      }
       
       setClientName(data.name || 'Клиент');
       setClientFirstName(data.first_name || '');
@@ -102,6 +118,8 @@ const Index = () => {
         date: lead.created_at ? new Date(lead.created_at * 1000).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
         description: lead.name || 'Заявка на займ'
       }));
+      
+      console.log(`Loaded ${mappedLeads.length} deals for ${data.name}`);
       
       setDeals(mappedLeads);
       setLoans(mappedLeads);
@@ -197,14 +215,20 @@ const Index = () => {
           return;
         }
         
-        if (response.status === 401) {
-          setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
-        } else if (response.status === 500 && errorData.message?.includes('credentials')) {
-          setError('Настройте AmoCRM: добавьте AMOCRM_DOMAIN и ACCESS_TOKEN в секреты проекта');
+        console.error('Refresh Error:', response.status, errorData);
+        
+        if (response.status === 500) {
+          if (errorData.error?.includes('access token')) {
+            setError('⚠️ Ошибка подключения к AmoCRM. Токен авторизации устарел. Обновите секрет AMOCRM_REFRESH_TOKEN');
+          } else if (errorData.error?.includes('credentials')) {
+            setError('⚠️ AmoCRM не настроен. Проверьте секреты');
+          } else {
+            setError(`Ошибка сервера: ${errorData.error || 'Неизвестная ошибка'}`);
+          }
         } else if (response.status === 404) {
-          setError('Клиент не найден в AmoCRM. Проверьте номер телефона в системе');
+          setError('Клиент не найден в AmoCRM');
         } else {
-          setError(errorData.error || 'Ошибка загрузки данных из AmoCRM');
+          setError(errorData.error || 'Ошибка загрузки данных');
         }
         return;
       }
