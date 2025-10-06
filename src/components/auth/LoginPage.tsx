@@ -19,10 +19,12 @@ interface LoginPageProps {
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
-
+  const [step, setStep] = useState<'phone' | 'code'>('phone');
+  const [smsInfo, setSmsInfo] = useState<string>('');
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -53,9 +55,63 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setLoading(true);
     setError('');
 
-    setTimeout(() => {
-      onLogin(digits);
-    }, 500);
+    try {
+      const response = await fetch('https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'request-sms', phone: digits })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setStep('code');
+        if (!data.sms_sent && data.code) {
+          setSmsInfo(`Код для входа: ${data.code}`);
+        } else {
+          setSmsInfo('Код отправлен на ваш телефон');
+        }
+      } else {
+        setError(data.error || 'Ошибка при отправке SMS');
+      }
+    } catch (err) {
+      setError('Ошибка соединения с сервером');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (code.length !== 4) {
+      setError('Введите 4-значный код из SMS');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const digits = phone.replace(/\D/g, '');
+      const response = await fetch('https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify-sms', phone: digits, code })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        onLogin(digits);
+      } else {
+        setError(data.error || 'Неверный код');
+      }
+    } catch (err) {
+      setError('Ошибка соединения с сервером');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,61 +122,133 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             <Icon name="Wallet" size={32} className="text-white" />
           </div>
           <CardTitle className="text-3xl font-montserrat">
-            Вход в личный кабинет
+            {step === 'phone' ? 'Вход в личный кабинет' : 'Подтверждение входа'}
           </CardTitle>
           <CardDescription>
-            Введите номер телефона, указанный при оформлении займа
+            {step === 'phone' 
+              ? 'Введите номер телефона, указанный при оформлении займа'
+              : 'Введите код из SMS для входа в кабинет'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handlePhoneSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Номер телефона</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+7 (999) 123-45-67"
-                value={phone}
-                onChange={handlePhoneChange}
-                disabled={loading}
-                className="text-lg"
-                autoComplete="tel"
-                autoFocus
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
-                <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
-                <p className="text-sm text-destructive">{error}</p>
+          {step === 'phone' ? (
+            <form onSubmit={handlePhoneSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Номер телефона</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+7 (999) 123-45-67"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  disabled={loading}
+                  className="text-lg"
+                  autoComplete="tel"
+                  autoFocus
+                />
               </div>
-            )}
 
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                  Вход...
-                </>
-              ) : (
-                <>
-                  <Icon name="LogIn" size={20} className="mr-2" />
-                  Войти
-                </>
+              {error && (
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
+                  <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
               )}
-            </Button>
 
-            <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
-              <Icon name="Info" size={18} className="text-accent flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-muted-foreground">
-                Используйте номер телефона, указанный при оформлении займа
-              </p>
-            </div>
-          </form>
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                    Отправка SMS...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="MessageSquare" size={20} className="mr-2" />
+                    Получить код
+                  </>
+                )}
+              </Button>
+
+              <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
+                <Icon name="Info" size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  Используйте номер телефона, указанный при оформлении займа
+                </p>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleCodeSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Код из SMS</Label>
+                <Input
+                  id="code"
+                  type="text"
+                  placeholder="1234"
+                  value={code}
+                  onChange={(e) => {
+                    setCode(e.target.value.replace(/\D/g, '').slice(0, 4));
+                    setError('');
+                  }}
+                  disabled={loading}
+                  className="text-lg text-center tracking-widest"
+                  maxLength={4}
+                  autoFocus
+                />
+              </div>
+
+              {smsInfo && (
+                <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-center gap-2">
+                  <Icon name="CheckCircle" size={18} className="text-accent flex-shrink-0" />
+                  <p className="text-sm text-accent">{smsInfo}</p>
+                </div>
+              )}
+
+              {error && (
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
+                  <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                    Проверка...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="LogIn" size={20} className="mr-2" />
+                    Войти
+                  </>
+                )}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setStep('phone');
+                  setCode('');
+                  setError('');
+                  setSmsInfo('');
+                }}
+              >
+                <Icon name="ChevronLeft" size={18} className="mr-2" />
+                Изменить номер
+              </Button>
+            </form>
+          )}
 
           <div className="mt-6 space-y-4">
             <div className="relative">

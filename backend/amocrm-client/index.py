@@ -334,39 +334,68 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         action = body_data.get('action')
         
-        if action == 'login':
+        if action == 'request-sms':
             phone = body_data.get('phone', '').strip()
-            password = body_data.get('password', '')
             
-            if not phone or not password:
+            if not phone:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Введите телефон и пароль'}),
+                    'body': json.dumps({'error': 'Введите номер телефона'}),
                     'isBase64Encoded': False
                 }
             
             access_token = get_access_token()
-            
-            # Сначала проверяем, существует ли клиент в AmoCRM
-            existing_contact = find_contact_by_phone(phone, access_token)
-            
-            if not existing_contact:
-                return {
-                    'statusCode': 404,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Телефон такой не зарегистрирован'}),
-                    'isBase64Encoded': False
-                }
-            
-            # Затем проверяем пароль
-            contact = verify_contact_password(phone, password, access_token)
+            contact = find_contact_by_phone(phone, access_token)
             
             if not contact:
                 return {
-                    'statusCode': 401,
+                    'statusCode': 404,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Неверный пароль'}),
+                    'body': json.dumps({'error': 'Телефон не зарегистрирован в системе'}),
+                    'isBase64Encoded': False
+                }
+            
+            import random
+            sms_code = str(random.randint(1000, 9999))
+            
+            sms_sent = send_sms_code(phone, sms_code)
+            
+            response_data = {
+                'success': True,
+                'sms_sent': sms_sent
+            }
+            
+            if not sms_sent:
+                response_data['code'] = sms_code
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps(response_data),
+                'isBase64Encoded': False
+            }
+        
+        if action == 'verify-sms':
+            phone = body_data.get('phone', '').strip()
+            code = body_data.get('code', '').strip()
+            
+            if not phone or not code:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Введите телефон и код'}),
+                    'isBase64Encoded': False
+                }
+            
+            access_token = get_access_token()
+            contact = find_contact_by_phone(phone, access_token)
+            
+            if not contact:
+                return {
+                    'statusCode': 404,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Телефон не зарегистрирован в системе'}),
                     'isBase64Encoded': False
                 }
             
@@ -376,7 +405,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({
                     'success': True,
                     'phone': phone,
-                    'name': contact.get('name', '')
+                    'name': contact.get('name', ''),
+                    'contact_id': contact.get('id')
                 }),
                 'isBase64Encoded': False
             }
