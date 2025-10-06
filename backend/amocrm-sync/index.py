@@ -543,8 +543,11 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             status_color = status_info.get('color', '#cccccc')
             pipeline_name = pipeline_info.get('name', f'Воронка #{pipeline_id}')
             
+            print(f'[DEBUG] Lead {lead["id"]}: status_name="{status_name}", checking overdue...')
+            
             if 'просроч' in status_name.lower() or 'займ просрочен' in status_name.lower():
                 loan_status = 'overdue'
+                print(f'[DEBUG] Lead {lead["id"]}: MATCHED as overdue!')
             
             overdue_days = 0
             penalty = 0
@@ -559,7 +562,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                     
                     penalty = int(loan_amount * 0.01 * overdue_days)
                     
-                    print(f'[DEBUG] Loan {lead["id"]}: overdue since {overdue_start_date.strftime("%d.%m.%Y")}, days={overdue_days}, penalty={penalty}')
+                    print(f'[DEBUG] Loan {lead["id"]}: overdue since {overdue_start_date.strftime("%d.%m.%Y")}, days={overdue_days}, penalty={penalty}, loan_amount={loan_amount}')
                 except Exception as e:
                     print(f'[ERROR] Failed to calculate overdue for loan {lead["id"]}: {e}')
             
