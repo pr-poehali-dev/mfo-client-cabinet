@@ -557,7 +557,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                     if overdue_days < 1:
                         overdue_days = 1
                     
-                    penalty = int(loan_amount * 0.20 * overdue_days / 365)
+                    penalty = int(loan_amount * 0.01 * overdue_days)
                     
                     print(f'[DEBUG] Loan {lead["id"]}: overdue since {overdue_start_date.strftime("%d.%m.%Y")}, days={overdue_days}, penalty={penalty}')
                 except Exception as e:
