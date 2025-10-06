@@ -552,10 +552,10 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                 try:
                     overdue_start_date = datetime.fromtimestamp(updated_at)
                     now = datetime.now()
-                    overdue_days = (now - overdue_start_date).days
+                    overdue_days = (now - overdue_start_date).days + 1
                     
-                    if overdue_days < 0:
-                        overdue_days = 0
+                    if overdue_days < 1:
+                        overdue_days = 1
                     
                     penalty = int(loan_amount * 0.20 * overdue_days / 365)
                     
