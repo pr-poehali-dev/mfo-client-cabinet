@@ -38,7 +38,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    api_key = os.environ.get('SMSRU_API_KEY', '688D03C6-7BED-71DE-A598-77639078F685')
+    api_key = os.environ.get('SMSRU_API_KEY')
+    
+    if not api_key:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': 'SMSRU_API_KEY not configured'}),
+            'isBase64Encoded': False
+        }
     
     try:
         body_data = json.loads(event.get('body', '{}'))

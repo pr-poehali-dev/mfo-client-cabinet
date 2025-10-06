@@ -25,6 +25,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [smsInfo, setSmsInfo] = useState<string>('');
+  const [storedCode, setStoredCode] = useState<string>('');
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -56,10 +57,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setError('');
 
     try {
-      const response = await fetch('https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850', {
+      const response = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'request-sms', phone: digits })
+        body: JSON.stringify({ action: 'send', phone: digits })
       });
 
       const responseText = await response.text();
@@ -75,7 +76,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
       if (response.ok && data.success) {
         setStep('code');
-        if (!data.sms_sent && data.code) {
+        setStoredCode(data.code || '');
+        if (data.code) {
           setSmsInfo(`Код для входа: ${data.code}`);
         } else {
           setSmsInfo('Код отправлен на ваш телефон');
@@ -103,10 +105,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
     try {
       const digits = phone.replace(/\D/g, '');
-      const response = await fetch('https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850', {
+      const response = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify-sms', phone: digits, code })
+        body: JSON.stringify({ action: 'verify', phone: digits, code, stored_code: storedCode })
       });
 
       const responseText = await response.text();
