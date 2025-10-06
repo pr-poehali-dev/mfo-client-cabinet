@@ -1,0 +1,24 @@
+{
+  "tests": [
+    {
+      "name": "Test OPTIONS for CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Test update without phone",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "first_name": "Иван",
+        "last_name": "Иванов"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

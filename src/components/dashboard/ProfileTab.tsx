@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
 import {
@@ -37,6 +38,15 @@ const ProfileTab = ({
   const [uploading, setUploading] = useState(false);
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editData, setEditData] = useState({
+    firstName: clientFirstName,
+    lastName: clientLastName,
+    middleName: clientMiddleName,
+    email: clientEmail,
+    birthDate: ''
+  });
+  const [saving, setSaving] = useState(false);
 
   const defaultMaleAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=male&backgroundColor=c0aede';
   const defaultFemaleAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=female&backgroundColor=b6e3f4';
@@ -58,6 +68,16 @@ const ProfileTab = ({
   ];
 
   const currentAvatar = customAvatar || (clientGender === 'female' ? defaultFemaleAvatar : defaultMaleAvatar);
+
+  useEffect(() => {
+    setEditData({
+      firstName: clientFirstName,
+      lastName: clientLastName,
+      middleName: clientMiddleName,
+      email: clientEmail,
+      birthDate: ''
+    });
+  }, [clientFirstName, clientLastName, clientMiddleName, clientEmail]);
 
   const getInitials = () => {
     if (clientFirstName && clientLastName) {
@@ -121,6 +141,47 @@ const ProfileTab = ({
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleSaveProfile = async () => {
+    if (!clientPhone) {
+      toast.error('Номер телефона не найден');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch('https://functions.poehali.dev/9edfcddf-aeb9-4d91-8ca8-9a0af13c0697', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: clientPhone,
+          first_name: editData.firstName,
+          last_name: editData.lastName,
+          middle_name: editData.middleName,
+          email: editData.email,
+          birth_date: editData.birthDate
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка сохранения');
+      }
+
+      toast.success('Данные успешно обновлены в AmoCRM!');
+      setIsEditMode(false);
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error(`Не удалось сохранить данные: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleUploadDocuments = async () => {
@@ -214,32 +275,141 @@ const ProfileTab = ({
         
         <CardContent className="relative space-y-6">
           <div className="p-5 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-xl border border-primary/20">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg">
-                <Icon name="User" size={20} className="text-primary" />
-              </div>
-              Личные данные
-            </h3>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Фамилия</Label>
-                <div className="p-3 bg-background/60 rounded-lg border border-border/50">
-                  <p className="font-semibold">{clientLastName || '-'}</p>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg">
+                  <Icon name="User" size={20} className="text-primary" />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Имя</Label>
-                <div className="p-3 bg-background/60 rounded-lg border border-border/50">
-                  <p className="font-semibold">{clientFirstName || '-'}</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="middleName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Отчество</Label>
-                <div className="p-3 bg-background/60 rounded-lg border border-border/50">
-                  <p className="font-semibold">{clientMiddleName || '-'}</p>
-                </div>
-              </div>
+                Личные данные
+              </h3>
+              {!isEditMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditMode(true)}
+                  className="gap-2"
+                >
+                  <Icon name="Edit" size={16} />
+                  Редактировать
+                </Button>
+              )}
             </div>
+            
+            {isEditMode ? (
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Фамилия</Label>
+                    <Input
+                      id="lastName"
+                      value={editData.lastName}
+                      onChange={(e) => setEditData({...editData, lastName: e.target.value})}
+                      placeholder="Иванов"
+                      className="bg-background/60"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Имя</Label>
+                    <Input
+                      id="firstName"
+                      value={editData.firstName}
+                      onChange={(e) => setEditData({...editData, firstName: e.target.value})}
+                      placeholder="Иван"
+                      className="bg-background/60"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="middleName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Отчество</Label>
+                    <Input
+                      id="middleName"
+                      value={editData.middleName}
+                      onChange={(e) => setEditData({...editData, middleName: e.target.value})}
+                      placeholder="Иванович"
+                      className="bg-background/60"
+                    />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={editData.email}
+                      onChange={(e) => setEditData({...editData, email: e.target.value})}
+                      placeholder="example@mail.com"
+                      className="bg-background/60"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="birthDate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Дата рождения</Label>
+                    <Input
+                      id="birthDate"
+                      type="date"
+                      value={editData.birthDate}
+                      onChange={(e) => setEditData({...editData, birthDate: e.target.value})}
+                      className="bg-background/60"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                  >
+                    {saving ? (
+                      <>
+                        <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                        Сохранение...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="Save" size={18} className="mr-2" />
+                        Сохранить
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditMode(false);
+                      setEditData({
+                        firstName: clientFirstName,
+                        lastName: clientLastName,
+                        middleName: clientMiddleName,
+                        email: clientEmail,
+                        birthDate: ''
+                      });
+                    }}
+                    disabled={saving}
+                  >
+                    Отмена
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Фамилия</Label>
+                  <div className="p-3 bg-background/60 rounded-lg border border-border/50">
+                    <p className="font-semibold">{clientLastName || '-'}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Имя</Label>
+                  <div className="p-3 bg-background/60 rounded-lg border border-border/50">
+                    <p className="font-semibold">{clientFirstName || '-'}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="middleName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Отчество</Label>
+                  <div className="p-3 bg-background/60 rounded-lg border border-border/50">
+                    <p className="font-semibold">{clientMiddleName || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="p-5 bg-gradient-to-br from-secondary/5 to-primary/5 rounded-xl border border-secondary/20">
