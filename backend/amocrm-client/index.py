@@ -116,13 +116,13 @@ def verify_contact_password(phone: str, password: str, access_token: str) -> Opt
 
 def get_contact_leads(contact_id: int, access_token: str) -> list:
     """
-    Business: Получает сделки контакта из amoCRM
+    Business: Получает сделки контакта из amoCRM с полными данными
     Args: contact_id - ID контакта, access_token - токен доступа
-    Returns: Список сделок
+    Returns: Список сделок с custom_fields
     """
     domain = os.environ.get('AMOCRM_DOMAIN')
     
-    url = f'https://{domain}/api/v4/leads?filter[contacts][0]={contact_id}'
+    url = f'https://{domain}/api/v4/leads?filter[contacts][0]={contact_id}&with=contacts'
     
     req = urllib.request.Request(
         url,
@@ -135,7 +135,27 @@ def get_contact_leads(contact_id: int, access_token: str) -> list:
     with urllib.request.urlopen(req) as response:
         result = json.loads(response.read().decode('utf-8'))
         if result.get('_embedded') and result['_embedded'].get('leads'):
-            return result['_embedded']['leads']
+            leads = result['_embedded']['leads']
+            
+            for lead in leads:
+                lead_id = lead['id']
+                detail_url = f'https://{domain}/api/v4/leads/{lead_id}'
+                detail_req = urllib.request.Request(
+                    detail_url,
+                    headers={
+                        'Authorization': f'Bearer {access_token}',
+                        'Content-Type': 'application/json'
+                    }
+                )
+                
+                try:
+                    with urllib.request.urlopen(detail_req) as detail_response:
+                        lead_detail = json.loads(detail_response.read().decode('utf-8'))
+                        lead['custom_fields_values'] = lead_detail.get('custom_fields_values', [])
+                except:
+                    lead['custom_fields_values'] = []
+            
+            return leads
         return []
 
 def send_sms_code(phone: str, code: str) -> bool:
@@ -588,7 +608,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'price': lead.get('price', 0),
                 'status_id': lead.get('status_id'),
                 'created_at': lead.get('created_at'),
-                'updated_at': lead.get('updated_at')
+                'updated_at': lead.get('updated_at'),
+                'custom_fields_values': lead.get('custom_fields_values', [])
             }
             for lead in leads
         ]
