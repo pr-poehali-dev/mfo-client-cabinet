@@ -91,8 +91,8 @@ const ProfileInfoCard = ({
           </div>
           
           {isEditMode ? (
-            <div className="space-y-4">
-              <div className="grid md:grid-cols-3 gap-4">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="lastName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Фамилия</Label>
                   <Input
@@ -124,7 +124,7 @@ const ProfileInfoCard = ({
                   />
                 </div>
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</Label>
                   <Input
@@ -147,7 +147,7 @@ const ProfileInfoCard = ({
                   />
                 </div>
               </div>
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
                 <Button
                   onClick={onSave}
                   disabled={saving}
@@ -169,29 +169,30 @@ const ProfileInfoCard = ({
                   variant="outline"
                   onClick={onCancelEdit}
                   disabled={saving}
+                  className="sm:w-auto"
                 >
                   Отмена
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <Label htmlFor="lastName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Фамилия</Label>
                 <div className="p-3 bg-background/60 rounded-lg border border-border/50">
-                  <p className="font-semibold">{clientLastName || '-'}</p>
+                  <p className="font-semibold break-words">{clientLastName || '-'}</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Имя</Label>
                 <div className="p-3 bg-background/60 rounded-lg border border-border/50">
-                  <p className="font-semibold">{clientFirstName || '-'}</p>
+                  <p className="font-semibold break-words">{clientFirstName || '-'}</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="middleName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Отчество</Label>
                 <div className="p-3 bg-background/60 rounded-lg border border-border/50">
-                  <p className="font-semibold">{clientMiddleName || '-'}</p>
+                  <p className="font-semibold break-words">{clientMiddleName || '-'}</p>
                 </div>
               </div>
             </div>
@@ -205,15 +206,15 @@ const ProfileInfoCard = ({
             </div>
             Контактная информация
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="phone" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
                 <Icon name="Phone" size={14} />
                 Телефон
               </Label>
               <div className="p-3 bg-background/60 rounded-lg border border-border/50 flex items-center gap-3">
-                <Icon name="Phone" size={18} className="text-accent" />
-                <p className="font-semibold">{formatPhone(clientPhone) || '-'}</p>
+                <Icon name="Phone" size={18} className="text-accent shrink-0" />
+                <p className="font-semibold break-all">{formatPhone(clientPhone) || '-'}</p>
               </div>
             </div>
             <div className="space-y-2">
@@ -222,8 +223,8 @@ const ProfileInfoCard = ({
                 Email
               </Label>
               <div className="p-3 bg-background/60 rounded-lg border border-border/50 flex items-center gap-3">
-                <Icon name="Mail" size={18} className="text-accent" />
-                <p className="font-semibold truncate">{clientEmail || 'Не указан'}</p>
+                <Icon name="Mail" size={18} className="text-accent shrink-0" />
+                <p className="font-semibold break-all">{clientEmail || 'Не указан'}</p>
               </div>
             </div>
           </div>

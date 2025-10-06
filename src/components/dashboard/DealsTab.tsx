@@ -30,23 +30,33 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   
   const filteredDeals = sortedDeals;
 
+  const activeDeals = filteredDeals.filter(deal => deal.status_name !== 'Заявка отклонена');
+  const rejectedDeals = filteredDeals.filter(deal => deal.status_name === 'Заявка отклонена');
+
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold font-montserrat">Ваши заявки</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold font-montserrat mb-2">Ваши заявки</h2>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-muted-foreground flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                Активных: {activeDeals.length}
+              </div>
+              {rejectedDeals.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  · Отклонённых: {rejectedDeals.length}
+                </div>
+              )}
+            </div>
+          </div>
           
           <NewApplicationDialog 
             clientPhone={clientPhone}
             onApplicationSubmit={onApplicationSubmit}
             canSubmitNewApplication={canSubmitNewApplication}
           />
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="text-sm text-muted-foreground">
-            Всего заявок: {filteredDeals.length}
-          </div>
         </div>
       </div>
 

@@ -28,18 +28,18 @@ const RegularDealCard = ({ deal }: RegularDealCardProps) => {
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       
       <CardHeader className="relative pb-4">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20">
-                <Icon name="FileText" size={20} className="text-primary" />
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 shadow-sm">
+                <Icon name="FileText" size={22} className="text-primary" />
               </div>
-              <Badge variant="outline" className="text-xs font-mono">#{deal.id}</Badge>
+              <Badge variant="outline" className="text-xs font-mono px-2.5">#{deal.id}</Badge>
             </div>
-            <CardTitle className="text-xl mb-3 truncate">{deal.name}</CardTitle>
+            <CardTitle className="text-lg sm:text-xl mb-3 break-words">{deal.name}</CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
               <div 
-                className="px-4 py-1.5 rounded-full text-sm font-semibold border-2 shadow-sm"
+                className="px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold border-2 shadow-sm"
                 style={{ 
                   backgroundColor: bgColor,
                   borderColor: borderColor,
@@ -48,15 +48,15 @@ const RegularDealCard = ({ deal }: RegularDealCardProps) => {
               >
                 {deal.status_name}
               </div>
-              <Badge variant="secondary" className="text-xs px-3">
+              <Badge variant="secondary" className="text-xs px-2.5 sm:px-3">
                 <Icon name="GitBranch" size={12} className="mr-1.5" />
                 {deal.pipeline_name}
               </Badge>
             </div>
           </div>
-          <div className="text-right shrink-0">
+          <div className="text-left sm:text-right shrink-0">
             <p className="text-xs text-muted-foreground mb-1">Сумма</p>
-            <p className="text-3xl font-bold font-montserrat bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <p className="text-2xl sm:text-3xl font-bold font-montserrat bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               {(deal.price || 0).toLocaleString('ru-RU')} ₽
             </p>
           </div>
@@ -72,7 +72,7 @@ const RegularDealCard = ({ deal }: RegularDealCardProps) => {
           />
         )}
         
-        <div className="grid grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/20 rounded-xl">
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
               <Icon name="Calendar" size={14} />
@@ -95,13 +95,13 @@ const RegularDealCard = ({ deal }: RegularDealCardProps) => {
               <Icon name="Info" size={16} className="text-primary" />
               Детали заявки
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
               {deal.custom_fields.map((field, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border/30">
+                <div key={idx} className="flex items-start gap-2.5 sm:gap-3 p-3 bg-muted/30 rounded-xl border border-border/30">
                   <Icon name="ChevronRight" size={16} className="text-primary mt-0.5 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs text-muted-foreground mb-0.5">{field.field_name}</p>
-                    <p className="font-medium text-sm truncate">
+                    <p className="font-medium text-sm break-words">
                       {field.values && field.values.length > 0 
                         ? String(field.values[0].value) 
                         : '-'}

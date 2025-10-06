@@ -29,17 +29,17 @@ const Header = ({ lastUpdate, loading, notifications, onRefresh, onLogout }: Hea
   const unreadCount = notifications.filter(n => !n.read).length;
   
   return (
-    <div className="sticky top-0 z-50 backdrop-blur-lg bg-background/80 border-b border-border">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary via-primary/90 to-secondary flex items-center justify-center shadow-lg shadow-primary/30 border-2 border-background">
-              <Icon name="CheckCircle" size={28} className="text-white" />
+    <div className="sticky top-0 z-50 backdrop-blur-lg bg-background/95 border-b border-border shadow-sm">
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary via-primary/90 to-secondary flex items-center justify-center shadow-lg shadow-primary/30 border-2 border-background shrink-0">
+              <Icon name="CheckCircle" size={24} className="text-white sm:w-7 sm:h-7" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">Личный кабинет</h1>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-bold tracking-tight truncate">Личный кабинет</h1>
               {lastUpdate && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <p className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">
                   <Icon name="Clock" size={11} />
                   {lastUpdate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                 </p>
@@ -47,26 +47,26 @@ const Header = ({ lastUpdate, loading, notifications, onRefresh, onLogout }: Hea
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <Popover>
             <PopoverTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="relative"
+                className="relative h-9 w-9 sm:h-10 sm:w-10"
                 title="Уведомления"
               >
-                <Icon name="Bell" size={20} />
+                <Icon name="Bell" size={18} className="sm:w-5 sm:h-5" />
                 {unreadCount > 0 && (
                   <Badge 
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs"
+                    className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 bg-red-500 text-white text-[10px] sm:text-xs"
                   >
                     {unreadCount}
                   </Badge>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 p-0" align="end">
               <div className="p-4 border-b border-border">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Icon name="Bell" size={18} />
@@ -139,19 +139,20 @@ const Header = ({ lastUpdate, loading, notifications, onRefresh, onLogout }: Hea
             onClick={onRefresh}
             disabled={loading}
             title="Обновить данные из AmoCRM"
+            className="h-9 w-9 sm:h-10 sm:w-10"
           >
-            <Icon name={loading ? 'Loader2' : 'RefreshCw'} size={20} className={loading ? 'animate-spin' : ''} />
+            <Icon name={loading ? 'Loader2' : 'RefreshCw'} size={18} className={`${loading ? 'animate-spin' : ''} sm:w-5 sm:h-5`} />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 sm:h-10 sm:w-10">
+                <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
                   <AvatarImage src="" />
-                  <AvatarFallback className="bg-primary text-white font-semibold">АИ</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-white font-semibold text-xs sm:text-sm">АИ</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-48 sm:w-56">
               <DropdownMenuLabel>Мой аккаунт</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onRefresh} disabled={loading}>
