@@ -90,6 +90,11 @@ const Index = () => {
       }
     });
     
+    newNotifications.sort((a, b) => {
+      const priorityOrder = { 'warning': 0, 'info': 1, 'success': 2 };
+      return priorityOrder[a.type] - priorityOrder[b.type];
+    });
+    
     return newNotifications;
   };
 
@@ -217,7 +222,13 @@ const Index = () => {
       setLoans(mappedLeads);
       setPayments([]);
       setDocuments([]);
-      setNotifications(paymentNotifications);
+      setNotifications(prev => {
+        const welcomeNotif = prev.find(n => n.id.startsWith('welcome-'));
+        if (welcomeNotif) {
+          return [welcomeNotif, ...paymentNotifications];
+        }
+        return paymentNotifications;
+      });
       setLastUpdate(new Date());
       
     } catch (err) {
@@ -239,7 +250,6 @@ const Index = () => {
       if (savedName) {
         setClientName(savedName);
       }
-      fetchAmoCRMData(savedPhone);
       
       if (isNewRegistration === 'true') {
         setNotifications([{
@@ -253,7 +263,7 @@ const Index = () => {
         localStorage.removeItem('newRegistration');
       }
       
-
+      fetchAmoCRMData(savedPhone);
     }
   }, []);
 
