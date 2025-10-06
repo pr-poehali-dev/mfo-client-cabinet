@@ -83,7 +83,7 @@ export const useAmoCRM = () => {
     const loanTerm = loanTermField?.values?.[0]?.value || '30';
     const termDays = parseInt(String(loanTerm).replace(/\D/g, '')) || 30;
     
-    return {
+    const dealData: any = {
       id: lead.id,
       name: lead.name || 'Заявка',
       status: lead.status_name,
@@ -111,6 +111,15 @@ export const useAmoCRM = () => {
       custom_fields: customFields,
       custom_fields_values: customFields
     };
+    
+    if (lead.overdue_days !== undefined) {
+      dealData.overdue_days = lead.overdue_days;
+    }
+    if (lead.penalty !== undefined) {
+      dealData.penalty = lead.penalty;
+    }
+    
+    return dealData;
   };
 
   const fetchAmoCRMData = async (phone: string) => {
@@ -171,6 +180,7 @@ export const useAmoCRM = () => {
       
       console.log(`Loaded ${mappedLeads.length} deals for ${data.name}`);
       console.log('Статусы всех заявок:', mappedLeads.map(d => ({ id: d.id, status: d.status_name })));
+      console.log('Полные данные заявок:', mappedLeads);
       
       const paymentNotifications = checkPaymentDeadlines(mappedLeads);
       
