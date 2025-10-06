@@ -83,7 +83,11 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           setSmsInfo('Код отправлен на ваш телефон');
         }
       } else {
-        setError(data.error || 'Ошибка при отправке SMS');
+        if (response.status === 404 || data.not_found) {
+          setError('Клиент с таким номером не найден в системе. Обратитесь в службу поддержки для получения доступа.');
+        } else {
+          setError(data.error || 'Ошибка при отправке SMS');
+        }
       }
     } catch (err) {
       setError('Ошибка соединения с сервером');

@@ -71,6 +71,104 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         clean_phone = phone.replace('+', '').replace(' ', '').replace('(', '').replace(')', '').replace('-', '')
         
         if action == 'send':
+            amocrm_domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
+            amocrm_token = os.environ.get('AMOCRM_ACCESS_TOKEN') or os.environ.get('ACCESS_TOKEN', '')
+            
+            if not amocrm_token:
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': 'AmoCRM не настроен'}),
+                    'isBase64Encoded': False
+                }
+            
+            print(f'[SMS-AUTH] Проверка клиента в AmoCRM: {clean_phone}')
+            
+            contact_url = f'https://{amocrm_domain}/api/v4/contacts?query={clean_phone}'
+            contact_req = urllib.request.Request(
+                contact_url,
+                headers={'Authorization': f'Bearer {amocrm_token}'}
+            )
+            
+            try:
+                with urllib.request.urlopen(contact_req, timeout=10) as response:
+                    response_text = response.read().decode()
+                    
+                    if not response_text:
+                        print(f'[SMS-AUTH] Пустой ответ от AmoCRM')
+                        return {
+                            'statusCode': 404,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'body': json.dumps({
+                                'error': 'Клиент с таким номером не найден в системе. Обратитесь в поддержку.',
+                                'not_found': True
+                            }),
+                            'isBase64Encoded': False
+                        }
+                    
+                    contacts_data = json.loads(response_text)
+                
+                contacts = contacts_data.get('_embedded', {}).get('contacts', [])
+                
+                if not contacts:
+                    print(f'[SMS-AUTH] Клиент не найден в AmoCRM: {clean_phone}')
+                    return {
+                        'statusCode': 404,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({
+                            'error': 'Клиент с таким номером не найден в системе. Обратитесь в поддержку.',
+                            'not_found': True
+                        }),
+                        'isBase64Encoded': False
+                    }
+                
+                print(f'[SMS-AUTH] Клиент найден в AmoCRM: {contacts[0].get("name")} (ID: {contacts[0].get("id")})')
+                
+            except urllib.error.HTTPError as e:
+                print(f'[SMS-AUTH] Ошибка проверки AmoCRM: {e.code}')
+                if e.code == 401:
+                    return {
+                        'statusCode': 500,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({'error': 'Ошибка авторизации в AmoCRM. Проверьте токен AMOCRM_ACCESS_TOKEN'}),
+                        'isBase64Encoded': False
+                    }
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': 'Ошибка проверки данных в AmoCRM'}),
+                    'isBase64Encoded': False
+                }
+            except json.JSONDecodeError as e:
+                print(f'[SMS-AUTH] Ошибка парсинга JSON от AmoCRM: {e}')
+                return {
+                    'statusCode': 404,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({
+                        'error': 'Клиент с таким номером не найден в системе. Обратитесь в поддержку.',
+                        'not_found': True
+                    }),
+                    'isBase64Encoded': False
+                }
+            
             sms_code = str(random.randint(1000, 9999))
             
             message = f'Ваш код для входа: {sms_code}'

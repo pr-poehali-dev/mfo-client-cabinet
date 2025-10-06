@@ -7,16 +7,16 @@
       "expectedStatus": 200
     },
     {
-      "name": "Test send SMS",
+      "name": "Test send SMS - client not found",
       "method": "POST",
       "path": "/",
       "body": {
         "phone": "79991234567",
         "action": "send"
       },
-      "expectedStatus": 200,
+      "expectedStatus": 404,
       "expectedBody": {
-        "success": true
+        "not_found": true
       },
       "bodyMatcher": "partial"
     }
