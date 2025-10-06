@@ -82,6 +82,24 @@
   s.src='https://gso.amocrm.ru/js/button.js';
   d.head&&d.head.appendChild(s)
 }(window,0,'amoSocialButton',0,0,'amo_social_button'));
+
+// Apply custom styles to AmoCRM widget
+setTimeout(function() {
+  var style = document.createElement('style');
+  style.innerHTML = `
+    /* Force hide branding */
+    iframe[id*="amo"] { pointer-events: auto !important; }
+    #amo_social_button a[href*="amocrm"],
+    #amo_social_button div[class*="branding"],
+    #amo_social_button div[class*="footer"] {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+    }
+  `;
+  document.head.appendChild(style);
+}, 2000);
 </script>
 <!-- /AmoCRM Chat Widget -->
 </body>
