@@ -106,18 +106,28 @@ const Index = () => {
       setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
       
-      const mappedLeads = (data.leads || []).map((lead: any) => ({
-        id: lead.id,
-        name: lead.name || 'Заявка',
-        status: lead.status_id === 142 ? 'approved' : 
-               lead.status_id === 143 ? 'rejected' : 'pending',
-        statusLabel: lead.status_id === 142 ? 'Одобрена' : 
-                    lead.status_id === 143 ? 'Отклонена' : 'На рассмотрении',
-        amount: lead.price || 0,
-        term: 30,
-        date: lead.created_at ? new Date(lead.created_at * 1000).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
-        description: lead.name || 'Заявка на займ'
-      }));
+      const mappedLeads = (data.leads || []).map((lead: any) => {
+        const customFields = lead.custom_fields_values || [];
+        const loanTermField = customFields.find((f: any) => 
+          f.field_name === 'Срок займа' || f.field_code === 'LOAN_TERM'
+        );
+        const loanTerm = loanTermField?.values?.[0]?.value || '30';
+        const termDays = parseInt(String(loanTerm).replace(/\D/g, '')) || 30;
+        
+        return {
+          id: lead.id,
+          name: lead.name || 'Заявка',
+          status: lead.status_id === 142 ? 'approved' : 
+                 lead.status_id === 143 ? 'rejected' : 'pending',
+          statusLabel: lead.status_id === 142 ? 'Одобрена' : 
+                      lead.status_id === 143 ? 'Отклонена' : 'На рассмотрении',
+          amount: lead.price || 0,
+          term: termDays,
+          date: lead.created_at ? new Date(lead.created_at * 1000).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
+          description: lead.name || 'Заявка на займ',
+          custom_fields_values: customFields
+        };
+      });
       
       console.log(`Loaded ${mappedLeads.length} deals for ${data.name}`);
       
