@@ -7,8 +7,8 @@ interface OverdueLoanCardProps {
 }
 
 const OverdueLoanCard = ({ loan }: OverdueLoanCardProps) => {
-  const overdueDays = 15;
-  const penalty = Math.round(loan.amount * 0.001 * overdueDays);
+  const overdueDays = (loan as any).overdue_days || 0;
+  const penalty = (loan as any).penalty || Math.round(loan.amount * 0.001 * overdueDays);
   const totalDebt = loan.amount - loan.paid + penalty;
 
   return (

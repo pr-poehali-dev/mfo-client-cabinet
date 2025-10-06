@@ -8,10 +8,24 @@ interface OverdueDealCardProps {
 }
 
 const OverdueDealCard = ({ deal }: OverdueDealCardProps) => {
+  const overdueDaysFromBackend = (deal as any).overdue_days;
+  const penaltyFromBackend = (deal as any).penalty;
+  
   const loanTermField = deal.custom_fields?.find(f => f.field_name === 'Срок займа' || f.field_code === 'LOAN_TERM')?.values?.[0]?.value || '30';
   const loanTermDays = parseInt(String(loanTermField).replace(/\D/g, '')) || 30;
   
   const calculateOverdueDays = () => {
+    if (overdueDaysFromBackend !== undefined) {
+      const createdDate = new Date(deal.created_at.split(' ')[0].split('.').reverse().join('-'));
+      const dueDate = new Date(createdDate);
+      dueDate.setDate(dueDate.getDate() + loanTermDays);
+      
+      return {
+        overdueDays: overdueDaysFromBackend,
+        dueDate: dueDate.toLocaleDateString('ru-RU')
+      };
+    }
+    
     const createdDate = new Date(deal.created_at.split(' ')[0].split('.').reverse().join('-'));
     const dueDate = new Date(createdDate);
     dueDate.setDate(dueDate.getDate() + loanTermDays);
@@ -37,9 +51,9 @@ const OverdueDealCard = ({ deal }: OverdueDealCardProps) => {
     }, 1000 * 60 * 60 * 6);
     
     return () => clearInterval(timer);
-  }, [deal.created_at, loanTermDays]);
+  }, [deal.created_at, loanTermDays, overdueDaysFromBackend]);
 
-  const penalty = Math.round(deal.price * 0.001 * overdueInfo.overdueDays);
+  const penalty = penaltyFromBackend !== undefined ? penaltyFromBackend : Math.round(deal.price * 0.001 * overdueInfo.overdueDays);
   const totalDebt = deal.price + penalty;
 
   return (

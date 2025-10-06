@@ -4,7 +4,7 @@ import urllib.request
 import urllib.error
 import base64
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 TOKEN_CACHE = {}
 
@@ -521,17 +521,6 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             if paid_amount == 0:
                 paid_amount = int(loan_amount * 0.2) if loan_status == 'active' else loan_amount
             
-            loans.append({
-                'id': str(lead['id']),
-                'amount': loan_amount,
-                'paid': paid_amount,
-                'status': loan_status,
-                'date': datetime.fromtimestamp(created_at).strftime('%d.%m.%Y'),
-                'nextPayment': next_payment_date if loan_status == 'active' else '-',
-                'rate': rate,
-                'name': lead.get('name', f'Займ #{lead["id"]}')
-            })
-            
             pipeline_info = pipelines_map.get(pipeline_id, {})
             status_info = pipeline_info.get('statuses', {}).get(status_id, {})
             status_name = status_info.get('name', 'Неизвестный статус')
@@ -541,7 +530,42 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             if 'просроч' in status_name.lower() or 'займ просрочен' in status_name.lower():
                 loan_status = 'overdue'
             
-            deals.append({
+            overdue_days = 0
+            penalty = 0
+            if loan_status == 'overdue':
+                try:
+                    payment_date_parts = next_payment_date.split('.')
+                    if len(payment_date_parts) == 3:
+                        payment_date = datetime(
+                            int(payment_date_parts[2]),
+                            int(payment_date_parts[1]),
+                            int(payment_date_parts[0])
+                        )
+                        now = datetime.now()
+                        if now > payment_date:
+                            overdue_days = (now - payment_date).days
+                            penalty = int(loan_amount * 0.20 * overdue_days / 365)
+                except Exception as e:
+                    print(f'[ERROR] Failed to calculate overdue: {e}')
+            
+            loan_data = {
+                'id': str(lead['id']),
+                'amount': loan_amount,
+                'paid': paid_amount,
+                'status': loan_status,
+                'date': datetime.fromtimestamp(created_at).strftime('%d.%m.%Y'),
+                'nextPayment': next_payment_date if loan_status == 'active' else '-',
+                'rate': rate,
+                'name': lead.get('name', f'Займ #{lead["id"]}')
+            }
+            
+            if loan_status == 'overdue':
+                loan_data['overdue_days'] = overdue_days
+                loan_data['penalty'] = penalty
+            
+            loans.append(loan_data)
+            
+            deal_data = {
                 'id': str(lead['id']),
                 'name': lead.get('name', f'Сделка #{lead["id"]}'),
                 'status': loan_status,
@@ -555,7 +579,13 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                 'created_at': datetime.fromtimestamp(created_at).strftime('%d.%m.%Y %H:%M'),
                 'updated_at': datetime.fromtimestamp(updated_at).strftime('%d.%m.%Y %H:%M'),
                 'custom_fields': custom_fields
-            })
+            }
+            
+            if loan_status == 'overdue':
+                deal_data['overdue_days'] = overdue_days
+                deal_data['penalty'] = penalty
+            
+            deals.append(deal_data)
             
             if loan_status in ['active', 'completed']:
                 payment_count = 3 if loan_status == 'completed' else 2
