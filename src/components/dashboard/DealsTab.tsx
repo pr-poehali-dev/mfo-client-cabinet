@@ -17,10 +17,10 @@ interface DealsTabProps {
 const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) => {
   const [showRejected, setShowRejected] = useState(false);
   
-  const hasRejectedDeal = deals.some(deal => 
-    deal.status_name === 'Заявка отклонена' || 
-    deal.status_name === 'Заявка на займ заявка отклонена'
-  );
+  const isRejectedStatus = (statusName: string) => 
+    statusName.toLowerCase().includes('отклонена');
+  
+  const hasRejectedDeal = deals.some(deal => isRejectedStatus(deal.status_name));
   const hasApprovedDeal = deals.some(deal => deal.status_name === 'Заявка одобрена');
   const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
 
@@ -29,7 +29,7 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
     if (statusName === 'Заявка на согласование') return 2;
     if (statusName === 'Заявка на рассмотрение') return 3;
     if (statusName === 'Поступила заявка') return 4;
-    if (statusName === 'Заявка отклонена' || statusName === 'Заявка на займ заявка отклонена') return 99;
+    if (isRejectedStatus(statusName)) return 99;
     return 5;
   };
 
@@ -48,14 +48,8 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   
   const filteredDeals = sortedDeals;
 
-  const activeDeals = filteredDeals.filter(deal => 
-    deal.status_name !== 'Заявка отклонена' && 
-    deal.status_name !== 'Заявка на займ заявка отклонена'
-  );
-  const rejectedDeals = filteredDeals.filter(deal => 
-    deal.status_name === 'Заявка отклонена' || 
-    deal.status_name === 'Заявка на займ заявка отклонена'
-  );
+  const activeDeals = filteredDeals.filter(deal => !isRejectedStatus(deal.status_name));
+  const rejectedDeals = filteredDeals.filter(deal => isRejectedStatus(deal.status_name));
 
   return (
     <div className="space-y-4 animate-fade-in">
