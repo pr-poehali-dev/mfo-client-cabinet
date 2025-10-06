@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 
 interface LoginPageProps {
-  onLogin: (phone: string) => void;
+  onLogin: (phone: string, clientName?: string) => void;
 }
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
@@ -26,6 +26,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [smsInfo, setSmsInfo] = useState<string>('');
   const [storedCode, setStoredCode] = useState<string>('');
+  const [clientName, setClientName] = useState<string>('');
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -77,6 +78,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       if (response.ok && data.success) {
         setStep('code');
         setStoredCode(data.code || '');
+        setClientName(data.client_name || '');
         if (data.code) {
           setSmsInfo(`Код для входа: ${data.code}`);
         } else {
@@ -112,7 +114,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       const response = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify', phone: digits, code, stored_code: storedCode })
+        body: JSON.stringify({ action: 'verify', phone: digits, code, stored_code: storedCode, client_name: clientName })
       });
 
       const responseText = await response.text();
@@ -127,7 +129,11 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       }
 
       if (response.ok && data.success) {
-        onLogin(digits);
+        const finalName = data.client_name || clientName || '';
+        if (finalName) {
+          localStorage.setItem('clientName', finalName);
+        }
+        onLogin(digits, finalName);
       } else {
         setError(data.error || 'Неверный код');
       }

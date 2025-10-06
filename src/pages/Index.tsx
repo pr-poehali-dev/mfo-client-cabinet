@@ -163,11 +163,15 @@ const Index = () => {
 
   useEffect(() => {
     const savedPhone = localStorage.getItem('userPhone');
+    const savedName = localStorage.getItem('clientName');
     const isNewRegistration = localStorage.getItem('newRegistration');
     
     if (savedPhone) {
       setUserPhone(savedPhone);
       setIsAuthenticated(true);
+      if (savedName) {
+        setClientName(savedName);
+      }
       fetchAmoCRMData(savedPhone);
       
       if (isNewRegistration === 'true') {
@@ -186,10 +190,14 @@ const Index = () => {
     }
   }, []);
 
-  const handleLogin = (phone: string) => {
+  const handleLogin = (phone: string, name?: string) => {
     setUserPhone(phone);
     setIsAuthenticated(true);
     localStorage.setItem('userPhone', phone);
+    if (name) {
+      setClientName(name);
+      localStorage.setItem('clientName', name);
+    }
     fetchAmoCRMData(phone);
   };
 
@@ -197,6 +205,7 @@ const Index = () => {
     setIsAuthenticated(false);
     setUserPhone('');
     localStorage.removeItem('userPhone');
+    localStorage.removeItem('clientName');
     
     setLoans([]);
     setPayments([]);
@@ -319,6 +328,17 @@ const Index = () => {
       />
 
       <div className="container mx-auto px-4 py-8">
+        {clientName && (
+          <div className="mb-6 p-6 bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/30 rounded-xl">
+            <h2 className="text-2xl font-montserrat font-bold text-white">
+              Здравствуйте, {clientName.split(' ')[0]}! 👋
+            </h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              Рады видеть вас в личном кабинете
+            </p>
+          </div>
+        )}
+        
         {error && (
           <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-center gap-3">
             <Icon name="AlertCircle" size={20} className="text-yellow-500" />

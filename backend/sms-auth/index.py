@@ -131,7 +131,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'isBase64Encoded': False
                     }
                 
-                print(f'[SMS-AUTH] Клиент найден в AmoCRM: {contacts[0].get("name")} (ID: {contacts[0].get("id")})')
+                client_name = contacts[0].get('name', 'Клиент')
+                client_id = contacts[0].get('id')
+                print(f'[SMS-AUTH] Клиент найден в AmoCRM: {client_name} (ID: {client_id})')
                 
             except urllib.error.HTTPError as e:
                 print(f'[SMS-AUTH] Ошибка проверки AmoCRM: {e.code}')
@@ -198,7 +200,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'success': True,
                         'message': 'SMS отправлена',
                         'code': sms_code,
-                        'phone': clean_phone
+                        'phone': clean_phone,
+                        'client_name': client_name
                     }),
                     'isBase64Encoded': False
                 }
@@ -230,6 +233,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             if code == stored_code:
+                stored_name = body_data.get('client_name', 'Клиент')
                 return {
                     'statusCode': 200,
                     'headers': {
@@ -238,7 +242,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     },
                     'body': json.dumps({
                         'success': True,
-                        'verified': True
+                        'verified': True,
+                        'client_name': stored_name
                     }),
                     'isBase64Encoded': False
                 }
