@@ -538,11 +538,8 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             status_color = status_info.get('color', '#cccccc')
             pipeline_name = pipeline_info.get('name', f'Воронка #{pipeline_id}')
             
-            print(f'[DEBUG] Lead {lead["id"]}: status_id={status_id}, status_name="{status_name}", current loan_status={loan_status}')
-            
             if 'просроч' in status_name.lower() or 'займ просрочен' in status_name.lower():
                 loan_status = 'overdue'
-                print(f'[DEBUG] Changed loan_status to overdue for lead {lead["id"]}')
             
             deals.append({
                 'id': str(lead['id']),

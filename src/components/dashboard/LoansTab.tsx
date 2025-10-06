@@ -11,8 +11,6 @@ interface LoansTabProps {
 }
 
 const LoansTab = ({ loans }: LoansTabProps) => {
-  console.log('LoansTab loans:', loans);
-  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-blue-500';
