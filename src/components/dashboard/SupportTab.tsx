@@ -19,6 +19,10 @@ const SupportTab = ({ clientPhone, contactId, onMessagesUpdate }: SupportTabProp
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previousManagerMessagesCount = useRef(0);
+  
+  useEffect(() => {
+    console.log('SupportTab contactId changed:', contactId);
+  }, [contactId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
