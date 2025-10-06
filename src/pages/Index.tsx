@@ -182,44 +182,7 @@ const Index = () => {
         localStorage.removeItem('newRegistration');
       }
       
-      const checkForUpdates = () => {
-        const hasUpdate = localStorage.getItem(`amocrm_update_${savedPhone}`);
-        const lastCheck = localStorage.getItem(`amocrm_last_update_${savedPhone}`);
-        const now = Date.now();
-        
-        if (hasUpdate && (!lastCheck || now - parseInt(lastCheck) > 5000)) {
-          console.log('[UPDATE] Обнаружено изменение статуса в AmoCRM, обновляю данные...');
-          
-          fetchAmoCRMData(savedPhone);
-          
-          localStorage.setItem(`amocrm_last_update_${savedPhone}`, now.toString());
-          localStorage.removeItem(`amocrm_update_${savedPhone}`);
-          
-          setNotifications(prev => [{
-            id: 'status-update-' + Date.now(),
-            title: '📢 Обновление статуса',
-            message: 'Статус вашей заявки был изменён в AmoCRM',
-            date: new Date().toLocaleDateString('ru-RU'),
-            read: false,
-            type: 'info'
-          }, ...prev]);
-          
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Обновление статуса заявки', {
-              body: 'Статус вашей заявки был обновлён в системе',
-              icon: '/favicon.ico'
-            });
-          }
-        }
-      };
-      
-      if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-      }
-      
-      const intervalId = setInterval(checkForUpdates, 40 * 60 * 1000);
-      
-      return () => clearInterval(intervalId);
+
     }
   }, []);
 
