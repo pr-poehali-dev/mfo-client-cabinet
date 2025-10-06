@@ -16,12 +16,19 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   const hasApprovedDeal = deals.some(deal => deal.status_name === 'Заявка одобрена');
   const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
 
-  const nonRejectedDeals = deals.filter(deal => deal.status_name !== 'Заявка отклонена');
-  const hasOtherDeals = nonRejectedDeals.length > 0;
+  const sortedDeals = [...deals].sort((a, b) => {
+    const aRejected = a.status_name === 'Заявка отклонена';
+    const bRejected = b.status_name === 'Заявка отклонена';
+    
+    if (aRejected && !bRejected) return 1;
+    if (!aRejected && bRejected) return -1;
+    
+    const aDate = new Date(a.created_at.split('.').reverse().join('-'));
+    const bDate = new Date(b.created_at.split('.').reverse().join('-'));
+    return bDate.getTime() - aDate.getTime();
+  });
   
-  const filteredDeals = hasOtherDeals 
-    ? nonRejectedDeals 
-    : deals;
+  const filteredDeals = sortedDeals;
 
   return (
     <div className="space-y-4 animate-fade-in">
