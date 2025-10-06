@@ -52,23 +52,6 @@ const ApprovedDealCard = ({ deal }: ApprovedDealCardProps) => {
           <div>
             <h3 className="text-xl sm:text-2xl font-bold text-green-400 mb-3 sm:mb-4">Заявка одобрена!</h3>
             
-            <div className="mb-4">
-              <div className="p-4 bg-gradient-to-br from-green-500/10 via-green-500/5 to-green-500/10 rounded-xl border-2 border-green-500/30">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shrink-0 animate-pulse">
-                    <Icon name="Check" size={24} className="text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-base sm:text-lg font-bold text-green-400 mb-1">Деньги отправлены на ваш счёт</p>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                      <Icon name="Clock" size={14} />
-                      Время зачисления от 20 минут
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
             <div className="grid gap-3 sm:gap-4 text-left max-w-md mx-auto">
               <div className="p-3 sm:p-4 bg-muted/20 rounded-xl border border-border/30">
                 <p className="text-xs text-muted-foreground mb-1">Одобренная сумма</p>
