@@ -8,7 +8,7 @@ interface ReviewTimerProps {
 }
 
 const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
-  const [timeLeft, setTimeLeft] = useState(600);
+  const [timeLeft, setTimeLeft] = useState(1200);
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
       const created = parseCreatedDate();
       const now = new Date();
       const elapsed = Math.floor((now.getTime() - created.getTime()) / 1000);
-      const remaining = Math.max(0, 600 - elapsed);
+      const remaining = Math.max(0, 1200 - elapsed);
       
       setTimeLeft(remaining);
       setIsExpired(remaining === 0);
@@ -53,7 +53,7 @@ const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const progress = (timeLeft / 600) * 100;
+  const progress = (timeLeft / 1200) * 100;
 
   return (
     <div className="mb-4 p-5 bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/10 rounded-xl border-2 border-primary/30 relative overflow-hidden">
