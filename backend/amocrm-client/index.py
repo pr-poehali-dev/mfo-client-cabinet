@@ -7,9 +7,14 @@ from datetime import datetime, timedelta
 
 def get_access_token() -> str:
     """
-    Business: Получает актуальный access_token для amoCRM через refresh_token
+    Business: Получает access_token для amoCRM (поддерживает долгосрочные токены и OAuth)
     Returns: Access token string
     """
+    long_lived_token = os.environ.get('AMOCRM_ACCESS_TOKEN')
+    
+    if long_lived_token:
+        return long_lived_token
+    
     domain = os.environ.get('AMOCRM_DOMAIN')
     client_id = os.environ.get('AMOCRM_CLIENT_ID')
     client_secret = os.environ.get('AMOCRM_CLIENT_SECRET')
@@ -17,7 +22,7 @@ def get_access_token() -> str:
     redirect_uri = os.environ.get('AMOCRM_REDIRECT_URI')
     
     if not all([domain, client_id, client_secret, refresh_token, redirect_uri]):
-        raise ValueError('AmoCRM credentials not configured')
+        raise ValueError('AmoCRM credentials not configured: set AMOCRM_ACCESS_TOKEN or OAuth credentials')
     
     url = f'https://{domain}/oauth2/access_token'
     data = {
