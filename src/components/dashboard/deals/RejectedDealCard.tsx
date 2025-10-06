@@ -11,12 +11,8 @@ const RejectedDealCard = ({ deal }: RejectedDealCardProps) => {
     <Card className="border-red-500/30 bg-red-950/20 backdrop-blur-md overflow-hidden opacity-70">
       <CardContent className="p-4 sm:p-6 md:p-8">
         <div className="text-center space-y-4 sm:space-y-6">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative">
-            <img 
-              src="/img/6c48b6b5-6279-4336-b7cd-e14f0bd52e47.jpg" 
-              alt="Заявка отклонена" 
-              className="w-full h-full object-cover rounded-2xl opacity-90"
-            />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-red-500/20 flex items-center justify-center border-4 border-red-500/30">
+            <Icon name="X" size={32} className="text-red-500 sm:w-10 sm:h-10" />
           </div>
           
           <div>
@@ -33,7 +29,7 @@ const RejectedDealCard = ({ deal }: RejectedDealCardProps) => {
           <div className="p-3 sm:p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-yellow-400">
               <Icon name="Clock" size={20} className="shrink-0" />
-              <p className="font-semibold text-sm sm:text-base text-center">Повторная подача через 30 дней</p>
+              <p className="font-semibold text-sm sm:text-base text-center">Повторная подача через 5 дней</p>
             </div>
           </div>
         </div>
