@@ -18,6 +18,7 @@ const SupportTab = ({ clientPhone, contactId, onMessagesUpdate }: SupportTabProp
           hash:"b37e36919def34b9611aaa7217bddca108a91f825271662291e9fb95592a2baa",
           locale:"ru",
           inline:true,
+          autoOpen:true,
           setMeta:function(p){
             this.params=(this.params||[]).concat([p])
           }
@@ -35,7 +36,15 @@ const SupportTab = ({ clientPhone, contactId, onMessagesUpdate }: SupportTabProp
     
     document.body.appendChild(script);
     
+    // Открываем чат автоматически после загрузки
+    const openTimer = setTimeout(() => {
+      if (typeof window.amoSocialButton === 'function') {
+        window.amoSocialButton('open');
+      }
+    }, 1500);
+    
     return () => {
+      clearTimeout(openTimer);
       const amoChatScript = document.getElementById('amo_social_button_script');
       if (amoChatScript) {
         amoChatScript.remove();
