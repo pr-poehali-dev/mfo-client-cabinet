@@ -5,6 +5,7 @@ import ApprovedDealCard from './deals/ApprovedDealCard';
 import RejectedDealCard from './deals/RejectedDealCard';
 import RegularDealCard from './deals/RegularDealCard';
 import EmptyDealsCard from './deals/EmptyDealsCard';
+import OverdueDealCard from './deals/OverdueDealCard';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 
@@ -133,7 +134,7 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
               {showOverdue && (
                 <div className="grid gap-6 animate-fade-in">
                   {overdueDeals.map((deal) => (
-                    <ApprovedDealCard key={deal.id} deal={deal} />
+                    <OverdueDealCard key={deal.id} deal={deal} />
                   ))}
                 </div>
               )}
