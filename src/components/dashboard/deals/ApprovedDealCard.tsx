@@ -52,6 +52,13 @@ const ApprovedDealCard = ({ deal }: ApprovedDealCardProps) => {
           <div>
             <h3 className="text-xl sm:text-2xl font-bold text-green-400 mb-3 sm:mb-4">Заявка одобрена!</h3>
             
+            <div className="mb-4 p-4 bg-blue-500/10 rounded-xl border-2 border-blue-500/30 flex items-center justify-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <Icon name="Check" size={20} className="text-blue-400 animate-pulse" />
+              </div>
+              <p className="text-base sm:text-lg font-semibold text-blue-400">Идет согласование договора</p>
+            </div>
+            
             <div className="grid gap-3 sm:gap-4 text-left max-w-md mx-auto">
               <div className="p-3 sm:p-4 bg-muted/20 rounded-xl border border-border/30">
                 <p className="text-xs text-muted-foreground mb-1">Одобренная сумма</p>
