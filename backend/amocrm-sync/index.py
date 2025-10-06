@@ -95,7 +95,7 @@ def handle_create_deal(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
-        access_token = TOKEN_CACHE.get('access_token') or os.environ.get('ACCESS_TOKEN', '')
+        access_token = TOKEN_CACHE.get('access_token') or os.environ.get('AMOCRM_ACCESS_TOKEN') or os.environ.get('ACCESS_TOKEN', '')
         
         if not access_token:
             return {
@@ -294,7 +294,7 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
                     'isBase64Encoded': False
                 }
             
-            access_token = TOKEN_CACHE.get('access_token') or os.environ.get('ACCESS_TOKEN', '')
+            access_token = TOKEN_CACHE.get('access_token') or os.environ.get('AMOCRM_ACCESS_TOKEN') or os.environ.get('ACCESS_TOKEN', '')
             if not access_token:
                 print('[PUT] ACCESS_TOKEN not configured')
                 return {
@@ -350,10 +350,10 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
         }
     
     domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
-    access_token = TOKEN_CACHE.get('access_token') or os.environ.get('ACCESS_TOKEN', '')
+    access_token = TOKEN_CACHE.get('access_token') or os.environ.get('AMOCRM_ACCESS_TOKEN') or os.environ.get('ACCESS_TOKEN', '')
     
     if not access_token:
-        print('[WARNING] ACCESS_TOKEN not set, trying to refresh from AMOCRM_REFRESH_TOKEN')
+        print('[WARNING] AMOCRM_ACCESS_TOKEN not set, trying to refresh from AMOCRM_REFRESH_TOKEN')
         tokens = refresh_access_token()
         if tokens:
             access_token = tokens['access_token']
