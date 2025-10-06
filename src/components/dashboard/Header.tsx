@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,15 +9,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import Icon from '@/components/ui/icon';
+import { AppNotification } from './types';
+
 interface HeaderProps {
   lastUpdate: Date | null;
   loading: boolean;
+  notifications: AppNotification[];
   onRefresh: () => void;
   onLogout: () => void;
 }
 
-const Header = ({ lastUpdate, loading, onRefresh, onLogout }: HeaderProps) => {
+const Header = ({ lastUpdate, loading, notifications, onRefresh, onLogout }: HeaderProps) => {
+  const unreadCount = notifications.filter(n => !n.read).length;
+  
   return (
     <div className="sticky top-0 z-50 backdrop-blur-lg bg-background/80 border-b border-border">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -37,6 +48,91 @@ const Header = ({ lastUpdate, loading, onRefresh, onLogout }: HeaderProps) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="relative"
+                title="Уведомления"
+              >
+                <Icon name="Bell" size={20} />
+                {unreadCount > 0 && (
+                  <Badge 
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs"
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0" align="end">
+              <div className="p-4 border-b border-border">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Icon name="Bell" size={18} />
+                  Уведомления
+                  {unreadCount > 0 && (
+                    <Badge variant="secondary" className="ml-auto">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </h3>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Icon name="BellOff" size={32} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Нет уведомлений</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {notifications.map((notification) => (
+                      <div 
+                        key={notification.id}
+                        className={`p-4 hover:bg-muted/50 transition-colors ${
+                          !notification.read ? 'bg-primary/5' : ''
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg ${
+                            notification.type === 'warning' ? 'bg-yellow-500/10' :
+                            notification.type === 'success' ? 'bg-green-500/10' :
+                            'bg-blue-500/10'
+                          }`}>
+                            <Icon 
+                              name={
+                                notification.type === 'warning' ? 'AlertTriangle' :
+                                notification.type === 'success' ? 'CheckCircle' :
+                                'Info'
+                              }
+                              size={18}
+                              className={
+                                notification.type === 'warning' ? 'text-yellow-500' :
+                                notification.type === 'success' ? 'text-green-500' :
+                                'text-blue-500'
+                              }
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm mb-1">
+                              {notification.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {notification.date}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+          
           <Button 
             variant="ghost" 
             size="icon"

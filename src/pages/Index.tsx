@@ -28,6 +28,71 @@ const Index = () => {
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
+  const checkPaymentDeadlines = (dealsData: Deal[]) => {
+    const newNotifications: AppNotification[] = [];
+    
+    dealsData.forEach(deal => {
+      if (deal.status_name === 'Заявка одобрена') {
+        const loanTermField = deal.custom_fields?.find(f => 
+          f.field_name === 'Срок займа' || f.field_code === 'LOAN_TERM'
+        )?.values?.[0]?.value || '30';
+        
+        const loanTermDays = parseInt(String(loanTermField).replace(/\D/g, '')) || 30;
+        
+        const createdDate = new Date(deal.created_at.split(' ')[0].split('.').reverse().join('-'));
+        const dueDate = new Date(createdDate);
+        dueDate.setDate(dueDate.getDate() + loanTermDays);
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        const diffTime = dueDate.getTime() - today.getTime();
+        const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (daysLeft <= 0) {
+          newNotifications.push({
+            id: `overdue-${deal.id}`,
+            title: '🚨 Просроченный платеж!',
+            message: `Займ на сумму ${deal.price.toLocaleString('ru-RU')} ₽ просрочен. Пожалуйста, погасите задолженность как можно скорее.`,
+            date: new Date().toLocaleDateString('ru-RU'),
+            read: false,
+            type: 'warning'
+          });
+        } else if (daysLeft === 1) {
+          newNotifications.push({
+            id: `urgent-${deal.id}`,
+            title: '⚠️ Срочно! Завтра выплата',
+            message: `Завтра последний день выплаты займа на сумму ${deal.price.toLocaleString('ru-RU')} ₽. Не забудьте погасить!`,
+            date: new Date().toLocaleDateString('ru-RU'),
+            read: false,
+            type: 'warning'
+          });
+        } else if (daysLeft <= 3) {
+          newNotifications.push({
+            id: `soon-${deal.id}`,
+            title: '⏰ Выплата через 3 дня',
+            message: `Осталось ${daysLeft} дня до выплаты займа на сумму ${deal.price.toLocaleString('ru-RU')} ₽. Подготовьте средства.`,
+            date: new Date().toLocaleDateString('ru-RU'),
+            read: false,
+            type: 'warning'
+          });
+        } else if (daysLeft <= 7) {
+          newNotifications.push({
+            id: `reminder-${deal.id}`,
+            title: '📅 Напоминание о выплате',
+            message: `Осталось ${daysLeft} дней до выплаты займа на сумму ${deal.price.toLocaleString('ru-RU')} ₽.`,
+            date: new Date().toLocaleDateString('ru-RU'),
+            read: false,
+            type: 'info'
+          });
+        }
+      }
+    });
+    
+    return newNotifications;
+  };
+
   const fetchAmoCRMData = async (phone: string) => {
     try {
       setLoading(true);
@@ -146,11 +211,13 @@ const Index = () => {
       
       console.log(`Loaded ${mappedLeads.length} deals for ${data.name}`);
       
+      const paymentNotifications = checkPaymentDeadlines(mappedLeads);
+      
       setDeals(mappedLeads);
       setLoans(mappedLeads);
       setPayments([]);
       setDocuments([]);
-      setNotifications([]);
+      setNotifications(paymentNotifications);
       setLastUpdate(new Date());
       
     } catch (err) {
@@ -292,18 +359,24 @@ const Index = () => {
         description: lead.name || 'Заявка на займ'
       }));
       
+      const paymentNotificationsRefresh = checkPaymentDeadlines(mappedLeads);
+      const refreshNotifications = [
+        {
+          id: Date.now().toString(),
+          title: 'Данные обновлены',
+          message: `Загружено заявок: ${mappedLeads.length}`,
+          date: new Date().toLocaleDateString('ru-RU'),
+          read: false,
+          type: 'success' as const
+        },
+        ...paymentNotificationsRefresh
+      ];
+      
       setDeals(mappedLeads);
       setLoans(mappedLeads);
       setPayments([]);
       setDocuments([]);
-      setNotifications([{
-        id: Date.now().toString(),
-        title: 'Данные обновлены',
-        message: `Загружено заявок: ${mappedLeads.length}`,
-        date: new Date().toLocaleDateString('ru-RU'),
-        read: false,
-        type: 'success'
-      }]);
+      setNotifications(refreshNotifications);
       setLastUpdate(new Date());
       
     } catch (err) {
@@ -323,6 +396,7 @@ const Index = () => {
       <Header 
         lastUpdate={lastUpdate}
         loading={loading}
+        notifications={notifications}
         onRefresh={refreshData}
         onLogout={handleLogout}
       />
