@@ -404,6 +404,22 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             response_text = response.read().decode()
             print(f'[DEBUG] Response status: {response.status}')
             print(f'[DEBUG] Response length: {len(response_text)}')
+            
+            if response.status == 204 or not response_text:
+                print(f'[DEBUG] No contacts found (status 204 or empty response)')
+                return {
+                    'statusCode': 404,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({
+                        'error': 'Client not found in AmoCRM',
+                        'phone_searched': client_phone
+                    }),
+                    'isBase64Encoded': False
+                }
+            
             if response_text:
                 print(f'[DEBUG] Response preview: {response_text[:200]}')
             contacts_data = json.loads(response_text)
