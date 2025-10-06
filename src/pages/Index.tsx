@@ -40,7 +40,18 @@ const Index = () => {
       );
       
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          setError('Ошибка сервера. Попробуйте позже');
+          setLoans([]);
+          setPayments([]);
+          setDeals([]);
+          setNotifications([]);
+          return;
+        }
+        
         if (response.status === 401) {
           setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
         } else if (response.status === 500 && errorData.message?.includes('credentials')) {
@@ -57,7 +68,19 @@ const Index = () => {
         return;
       }
       
-      const data = await response.json();
+      const responseText = await response.text();
+      if (!responseText) {
+        setError('Пустой ответ от сервера');
+        setLoans([]);
+        setPayments([]);
+        setDeals([]);
+        setNotifications([]);
+        return;
+      }
+      
+      console.log('Response from server:', responseText);
+      const data = JSON.parse(responseText);
+      console.log('Parsed data:', data);
       
       setClientName(data.name || 'Клиент');
       setClientFirstName(data.first_name || '');
@@ -166,7 +189,14 @@ const Index = () => {
       );
       
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          setError('Ошибка сервера. Попробуйте позже');
+          return;
+        }
+        
         if (response.status === 401) {
           setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
         } else if (response.status === 500 && errorData.message?.includes('credentials')) {
@@ -179,7 +209,13 @@ const Index = () => {
         return;
       }
       
-      const data = await response.json();
+      const responseText = await response.text();
+      if (!responseText) {
+        setError('Пустой ответ от сервера');
+        return;
+      }
+      
+      const data = JSON.parse(responseText);
       
       setClientName(data.name || 'Клиент');
       setClientFirstName(data.first_name || '');

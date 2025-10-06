@@ -62,7 +62,16 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         body: JSON.stringify({ action: 'request-sms', phone: digits })
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        setError('Ошибка сервера. Попробуйте позже');
+        setLoading(false);
+        return;
+      }
 
       if (response.ok && data.success) {
         setStep('code');
@@ -100,7 +109,16 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         body: JSON.stringify({ action: 'verify-sms', phone: digits, code })
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        setError('Ошибка сервера. Попробуйте позже');
+        setLoading(false);
+        return;
+      }
 
       if (response.ok && data.success) {
         onLogin(digits);
