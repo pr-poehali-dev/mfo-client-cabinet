@@ -16,12 +16,20 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   const hasApprovedDeal = deals.some(deal => deal.status_name === 'Заявка одобрена');
   const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
 
+  const getStatusPriority = (statusName: string): number => {
+    if (statusName === 'Заявка одобрена') return 1;
+    if (statusName === 'Заявка на рассмотрение') return 2;
+    if (statusName === 'Заявка отклонена') return 4;
+    return 3;
+  };
+
   const sortedDeals = [...deals].sort((a, b) => {
-    const aRejected = a.status_name === 'Заявка отклонена';
-    const bRejected = b.status_name === 'Заявка отклонена';
+    const aPriority = getStatusPriority(a.status_name);
+    const bPriority = getStatusPriority(b.status_name);
     
-    if (aRejected && !bRejected) return 1;
-    if (!aRejected && bRejected) return -1;
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
     
     const aDate = new Date(a.created_at.split('.').reverse().join('-'));
     const bDate = new Date(b.created_at.split('.').reverse().join('-'));
