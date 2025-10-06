@@ -34,10 +34,13 @@ def get_access_token() -> str:
     }
     
     try:
+        import urllib.parse
+        encoded_data = urllib.parse.urlencode(data).encode('utf-8')
+        
         req = urllib.request.Request(
             url,
-            data=json.dumps(data).encode('utf-8'),
-            headers={'Content-Type': 'application/json'},
+            data=encoded_data,
+            headers={'Content-Type': 'application/x-www-form-urlencoded'},
             method='POST'
         )
         
