@@ -36,6 +36,7 @@ const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
     };
 
     const created = parseCreatedDate();
+    let intervalId: NodeJS.Timeout;
     
     const calculateTimeLeft = () => {
       const now = new Date();
@@ -45,15 +46,15 @@ const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
       setTimeLeft(remaining);
       setIsExpired(remaining === 0);
       
-      if (remaining === 0) {
-        clearInterval(interval);
+      if (remaining === 0 && intervalId) {
+        clearInterval(intervalId);
       }
     };
 
     calculateTimeLeft();
-    const interval = setInterval(calculateTimeLeft, 5000);
+    intervalId = setInterval(calculateTimeLeft, 5000);
     
-    return () => clearInterval(interval);
+    return () => clearInterval(intervalId);
   }, [createdAt]);
 
   const minutes = Math.floor(timeLeft / 60);
