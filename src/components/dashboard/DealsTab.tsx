@@ -79,23 +79,26 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
         <EmptyDealsCard totalDeals={deals.length} />
       ) : (
         <>
-          <div className="grid gap-6">
-            {activeDeals.map((deal) => {
-              const isApproved = deal.status_name === 'Заявка одобрена';
-              
-              return (
-                <div key={deal.id}>
-                  {isApproved ? (
-                    <ApprovedDealCard deal={deal} />
-                  ) : (
-                    <RegularDealCard deal={deal} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          {activeDeals.length > 0 && (
+            <div className="grid gap-6">
+              {activeDeals.map((deal) => {
+                const isApproved = deal.status_name === 'Заявка одобрена';
+                
+                return (
+                  <div key={deal.id}>
+                    {isApproved ? (
+                      <ApprovedDealCard deal={deal} />
+                    ) : (
+                      <RegularDealCard deal={deal} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-          <div className="mt-8">
+          {rejectedDeals.length > 0 && (
+            <div className={activeDeals.length > 0 ? "mt-8" : ""}>
             <Button
               variant="outline"
               onClick={() => setShowRejected(!showRejected)}
@@ -125,7 +128,8 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
                 <p className="text-muted-foreground">Нет отклонённых заявок</p>
               </div>
             )}
-          </div>
+            </div>
+          )}
         </>
       )}
     </div>
