@@ -5,7 +5,7 @@ import Header from '@/components/dashboard/Header';
 import ProfileTab from '@/components/dashboard/ProfileTab';
 import DealsTab from '@/components/dashboard/DealsTab';
 import LoginPage from '@/components/auth/LoginPage';
-import { Loan, Payment, Notification, Deal, Document } from '@/components/dashboard/types';
+import { Loan, Payment, AppNotification, Deal, Document } from '@/components/dashboard/types';
 import DocumentsTab from '@/components/dashboard/DocumentsTab';
 
 const Index = () => {
@@ -14,7 +14,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('applications');
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [clientName, setClientName] = useState('');

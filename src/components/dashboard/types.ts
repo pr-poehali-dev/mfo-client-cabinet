@@ -18,7 +18,7 @@ export interface Payment {
   loan_id?: string;
 }
 
-export interface Notification {
+export interface AppNotification {
   id: string;
   title: string;
   message: string;
