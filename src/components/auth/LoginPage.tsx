@@ -270,25 +270,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             </form>
           )}
 
-          <div className="mt-6 space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border/50" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">или</span>
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              className="w-full border-primary/30 hover:bg-primary/10 text-lg py-6"
-              onClick={() => window.location.href = '/registration.html'}
-            >
-              <Icon name="UserPlus" size={20} className="mr-2" />
-              Подать заявку на займ
-            </Button>
-
+          <div className="mt-6">
             <p className="text-sm text-muted-foreground text-center">
               Нет доступа к кабинету?{' '}
               <Dialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen}>
