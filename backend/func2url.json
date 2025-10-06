@@ -1,4 +1,8 @@
 {
+  "sms-auth": "https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea",
+  "amocrm-refresh-token": "https://functions.poehali.dev/0e07c821-d6dd-4cd5-bd67-33460bb682f2",
+  "amocrm-oauth": "https://functions.poehali.dev/b606a5ce-1f02-4153-880c-1ef13da82764",
+  "amocrm-webhook": "https://functions.poehali.dev/bd0bdc19-11b1-4a01-97b6-5ea59c1f5500",
   "amocrm-client": "https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850",
   "amocrm-sync": "https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5"
 }

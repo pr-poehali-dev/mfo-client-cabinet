@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест интеграций</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e5e7eb;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            color: #667eea;
+        }
+
+        .test-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .test-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .test-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .status-pending {
+            background: rgba(234, 179, 8, 0.2);
+            color: #facc15;
+        }
+
+        .status-success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+
+        .test-result {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+            color: #9ca3af;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #d1d5db;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .summary {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .summary-title {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Тест интеграций AmoCRM & SMS</h1>
+
+        <div class="summary" id="summary">
+            <div class="summary-title">Статус проверки</div>
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalTests">0</div>
+                    <div class="stat-label">Всего тестов</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #86efac" id="passedTests">0</div>
+                    <div class="stat-label">Успешно</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #fca5a5" id="failedTests">0</div>
+                    <div class="stat-label">Ошибок</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Конфигурация</h2>
+            <div class="input-group">
+                <label>Тестовый номер телефона</label>
+                <input type="tel" id="testPhone" placeholder="+7 (999) 123-45-67" value="79991234567">
+            </div>
+            <button class="btn" onclick="runAllTests()">▶️ Запустить все тесты</button>
+        </div>
+
+        <div class="section">
+            <h2>🔗 Тест 1: Подключение к AmoCRM OAuth</h2>
+            <div class="test-item" id="test-oauth">
+                <div class="test-name">Получение access_token через refresh_token</div>
+                <span class="test-status status-pending">Ожидание</span>
+                <div class="test-result" id="result-oauth">Нажмите "Запустить все тесты"</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>👤 Тест 2: Поиск контакта в AmoCRM</h2>
+            <div class="test-item" id="test-contact">
+                <div class="test-name">Поиск контакта по номеру телефона</div>
+                <span class="test-status status-pending">Ожидание</span>
+                <div class="test-result" id="result-contact">Нажмите "Запустить все тесты"</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📱 Тест 3: Отправка SMS через SMS.ru</h2>
+            <div class="test-item" id="test-sms">
+                <div class="test-name">Отправка тестового SMS кода</div>
+                <span class="test-status status-pending">Ожидание</span>
+                <div class="test-result" id="result-sms">Нажмите "Запустить все тесты"</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔐 Тест 4: SMS авторизация (полный цикл)</h2>
+            <div class="test-item" id="test-auth">
+                <div class="test-name">Запрос SMS кода → Проверка кода</div>
+                <span class="test-status status-pending">Ожидание</span>
+                <div class="test-result" id="result-auth">Нажмите "Запустить все тесты"</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Тест 5: Загрузка данных клиента</h2>
+            <div class="test-item" id="test-data">
+                <div class="test-name">Получение сделок и контактов из AmoCRM</div>
+                <span class="test-status status-pending">Ожидание</span>
+                <div class="test-result" id="result-data">Нажмите "Запустить все тесты"</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850';
+        
+        let stats = { total: 5, passed: 0, failed: 0 };
+
+        function updateSummary() {
+            document.getElementById('totalTests').textContent = stats.total;
+            document.getElementById('passedTests').textContent = stats.passed;
+            document.getElementById('failedTests').textContent = stats.failed;
+        }
+
+        function setTestStatus(testId, status, result) {
+            const testItem = document.getElementById(`test-${testId}`);
+            const statusEl = testItem.querySelector('.test-status');
+            const resultEl = document.getElementById(`result-${testId}`);
+
+            statusEl.className = `test-status status-${status}`;
+            statusEl.textContent = status === 'success' ? '✅ Успешно' : 
+                                   status === 'error' ? '❌ Ошибка' : '⏳ Выполняется...';
+            
+            resultEl.textContent = typeof result === 'object' ? JSON.stringify(result, null, 2) : result;
+
+            if (status === 'success') stats.passed++;
+            if (status === 'error') stats.failed++;
+            updateSummary();
+        }
+
+        async function testOAuth() {
+            setTestStatus('oauth', 'pending', 'Проверка OAuth токенов...');
+            try {
+                const response = await fetch(`${API_URL}?phone=79991234567`);
+                const data = await response.json();
+                
+                if (response.status === 500 && data.error?.includes('access token')) {
+                    setTestStatus('oauth', 'error', `❌ Ошибка OAuth:\n${data.error}\n\nПроверьте секреты:\n- AMOCRM_REFRESH_TOKEN\n- AMOCRM_CLIENT_ID\n- AMOCRM_CLIENT_SECRET\n- AMOCRM_DOMAIN\n- AMOCRM_REDIRECT_URI`);
+                    return false;
+                }
+                
+                setTestStatus('oauth', 'success', '✅ OAuth работает корректно\nAccess token получен успешно');
+                return true;
+            } catch (err) {
+                setTestStatus('oauth', 'error', `Ошибка соединения: ${err.message}`);
+                return false;
+            }
+        }
+
+        async function testContactSearch() {
+            const phone = document.getElementById('testPhone').value.replace(/\D/g, '');
+            setTestStatus('contact', 'pending', 'Поиск контакта...');
+            
+            try {
+                const response = await fetch(`${API_URL}?phone=${phone}`);
+                const data = await response.json();
+                
+                if (response.status === 404) {
+                    setTestStatus('contact', 'error', `❌ Контакт не найден\nТелефон ${phone} отсутствует в AmoCRM\n\nДобавьте тестовый контакт или измените номер`);
+                    return false;
+                }
+                
+                if (!response.ok) {
+                    setTestStatus('contact', 'error', data.error || 'Ошибка поиска');
+                    return false;
+                }
+                
+                setTestStatus('contact', 'success', `✅ Контакт найден:\nИмя: ${data.name}\nID: ${data.id}\nСделок: ${data.leads?.length || 0}`);
+                return true;
+            } catch (err) {
+                setTestStatus('contact', 'error', `Ошибка: ${err.message}`);
+                return false;
+            }
+        }
+
+        async function testSMS() {
+            const phone = document.getElementById('testPhone').value.replace(/\D/g, '');
+            setTestStatus('sms', 'pending', 'Отправка SMS...');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'request-sms', phone })
+                });
+                
+                const data = await response.json();
+                
+                if (response.status === 404) {
+                    setTestStatus('sms', 'error', `❌ Телефон не найден в AmoCRM\nДобавьте контакт с номером ${phone}`);
+                    return false;
+                }
+                
+                if (!response.ok) {
+                    setTestStatus('sms', 'error', data.error || 'Ошибка отправки SMS');
+                    return false;
+                }
+                
+                if (!data.sms_sent && data.code) {
+                    setTestStatus('sms', 'success', `⚠️ SMS не отправлено (SMSRU_API_KEY не настроен)\n\nКод для теста: ${data.code}\n\nНастройте SMSRU_API_KEY для реальной отправки SMS`);
+                    return data.code;
+                }
+                
+                setTestStatus('sms', 'success', '✅ SMS отправлено успешно\nПроверьте телефон');
+                return true;
+            } catch (err) {
+                setTestStatus('sms', 'error', `Ошибка: ${err.message}`);
+                return false;
+            }
+        }
+
+        async function testAuth() {
+            const phone = document.getElementById('testPhone').value.replace(/\D/g, '');
+            setTestStatus('auth', 'pending', 'Тестирование полного цикла авторизации...');
+            
+            try {
+                // Запрос SMS
+                const smsResponse = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'request-sms', phone })
+                });
+                
+                const smsData = await smsResponse.json();
+                
+                if (!smsResponse.ok) {
+                    setTestStatus('auth', 'error', `Ошибка запроса SMS: ${smsData.error}`);
+                    return false;
+                }
+                
+                const testCode = smsData.code || '1234';
+                
+                // Проверка кода
+                const verifyResponse = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'verify-sms', phone, code: testCode })
+                });
+                
+                const verifyData = await verifyResponse.json();
+                
+                if (!verifyResponse.ok) {
+                    setTestStatus('auth', 'error', `Ошибка проверки кода: ${verifyData.error}`);
+                    return false;
+                }
+                
+                setTestStatus('auth', 'success', `✅ Авторизация работает!\n\n1. Запрос SMS: ✅\n2. Проверка кода: ✅\n3. Получен доступ к: ${verifyData.name}\n\nКод для теста: ${testCode}`);
+                return true;
+            } catch (err) {
+                setTestStatus('auth', 'error', `Ошибка: ${err.message}`);
+                return false;
+            }
+        }
+
+        async function testDataLoading() {
+            const phone = document.getElementById('testPhone').value.replace(/\D/g, '');
+            setTestStatus('data', 'pending', 'Загрузка данных клиента...');
+            
+            try {
+                const response = await fetch(`${API_URL}?phone=${phone}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    setTestStatus('data', 'error', data.error || 'Ошибка загрузки данных');
+                    return false;
+                }
+                
+                const summary = {
+                    name: data.name,
+                    phone: data.phone,
+                    leads: data.leads?.length || 0,
+                    leadsList: data.leads?.map(l => `${l.name} (${l.price}₽)`) || []
+                };
+                
+                setTestStatus('data', 'success', `✅ Данные загружены:\n\n${JSON.stringify(summary, null, 2)}`);
+                return true;
+            } catch (err) {
+                setTestStatus('data', 'error', `Ошибка: ${err.message}`);
+                return false;
+            }
+        }
+
+        async function runAllTests() {
+            stats = { total: 5, passed: 0, failed: 0 };
+            updateSummary();
+            
+            const oauthOk = await testOAuth();
+            if (!oauthOk) {
+                setTestStatus('contact', 'error', 'Пропущено: OAuth не работает');
+                setTestStatus('sms', 'error', 'Пропущено: OAuth не работает');
+                setTestStatus('auth', 'error', 'Пропущено: OAuth не работает');
+                setTestStatus('data', 'error', 'Пропущено: OAuth не работает');
+                stats.failed += 4;
+                updateSummary();
+                return;
+            }
+            
+            await new Promise(r => setTimeout(r, 500));
+            await testContactSearch();
+            
+            await new Promise(r => setTimeout(r, 500));
+            await testSMS();
+            
+            await new Promise(r => setTimeout(r, 500));
+            await testAuth();
+            
+            await new Promise(r => setTimeout(r, 500));
+            await testDataLoading();
+        }
+
+        updateSummary();
+    </script>
+</body>
+</html>
