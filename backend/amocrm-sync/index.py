@@ -534,19 +534,18 @@ def handler(event: Dict[str, Any], context: Any, _retry_count: int = 0) -> Dict[
             penalty = 0
             if loan_status == 'overdue':
                 try:
-                    payment_date_parts = next_payment_date.split('.')
-                    if len(payment_date_parts) == 3:
-                        payment_date = datetime(
-                            int(payment_date_parts[2]),
-                            int(payment_date_parts[1]),
-                            int(payment_date_parts[0])
-                        )
-                        now = datetime.now()
-                        if now > payment_date:
-                            overdue_days = (now - payment_date).days
-                            penalty = int(loan_amount * 0.20 * overdue_days / 365)
+                    overdue_start_date = datetime.fromtimestamp(updated_at)
+                    now = datetime.now()
+                    overdue_days = (now - overdue_start_date).days
+                    
+                    if overdue_days < 0:
+                        overdue_days = 0
+                    
+                    penalty = int(loan_amount * 0.20 * overdue_days / 365)
+                    
+                    print(f'[DEBUG] Loan {lead["id"]}: overdue since {overdue_start_date.strftime("%d.%m.%Y")}, days={overdue_days}, penalty={penalty}')
                 except Exception as e:
-                    print(f'[ERROR] Failed to calculate overdue: {e}')
+                    print(f'[ERROR] Failed to calculate overdue for loan {lead["id"]}: {e}')
             
             loan_data = {
                 'id': str(lead['id']),
