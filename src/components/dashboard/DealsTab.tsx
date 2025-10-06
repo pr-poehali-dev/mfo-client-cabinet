@@ -17,6 +17,8 @@ interface DealsTabProps {
 const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) => {
   const [showRejected, setShowRejected] = useState(false);
   
+  console.log('Все заявки и их статусы:', deals.map(d => ({ id: d.id, status: d.status_name })));
+  
   const hasRejectedDeal = deals.some(deal => deal.status_name === 'Заявка отклонена');
   const hasApprovedDeal = deals.some(deal => deal.status_name === 'Заявка одобрена');
   const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
