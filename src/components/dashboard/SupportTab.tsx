@@ -10,6 +10,9 @@ interface SupportTabProps {
 
 const SupportTab = ({ clientPhone, contactId, onMessagesUpdate }: SupportTabProps) => {
   useEffect(() => {
+    const container = document.getElementById('amo_chat_container');
+    if (!container) return;
+
     const script = document.createElement('script');
     script.innerHTML = `
       (function(a,m,o,c,r,m){
@@ -30,29 +33,23 @@ const SupportTab = ({ clientPhone, contactId, onMessagesUpdate }: SupportTabProp
         s.async=true;
         s.id=m+'_script';
         s.src='https://gso.amocrm.ru/js/button.js';
-        d.head&&d.head.appendChild(s)
+        if(d.head){d.head.appendChild(s)}
       }(window,0,'amoSocialButton',0,0,'amo_social_button'));
     `;
     
-    document.body.appendChild(script);
-    
-    // Открываем чат автоматически после загрузки
-    const openTimer = setTimeout(() => {
-      if (typeof window.amoSocialButton === 'function') {
-        window.amoSocialButton('open');
-      }
-    }, 1500);
+    container.appendChild(script);
     
     return () => {
-      clearTimeout(openTimer);
       const amoChatScript = document.getElementById('amo_social_button_script');
       if (amoChatScript) {
         amoChatScript.remove();
       }
-      const amoChatContainer = document.getElementById('amo_social_button');
-      if (amoChatContainer) {
-        amoChatContainer.remove();
-      }
+      const widgets = document.querySelectorAll('[id^="amo"]');
+      widgets.forEach(widget => {
+        if (widget.id !== 'amo_chat_container') {
+          widget.remove();
+        }
+      });
     };
   }, []);
 
@@ -72,8 +69,8 @@ const SupportTab = ({ clientPhone, contactId, onMessagesUpdate }: SupportTabProp
         </CardHeader>
         <CardContent className="space-y-4">
           <div 
-            id="amo_social_button" 
-            className="min-h-[600px] w-full bg-muted/20 rounded-xl border border-border/30"
+            id="amo_chat_container" 
+            className="min-h-[700px] w-full"
           />
         </CardContent>
       </Card>
