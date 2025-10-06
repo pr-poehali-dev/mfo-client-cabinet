@@ -75,10 +75,22 @@ const SupportTab = ({ clientPhone, contactId, onMessagesUpdate }: SupportTabProp
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !contactId) return;
+    if (!newMessage.trim()) {
+      toast.error('Введите сообщение');
+      return;
+    }
+    
+    if (!contactId) {
+      toast.error('Не удалось определить ID контакта. Перезагрузите страницу');
+      console.error('contactId is empty:', contactId);
+      return;
+    }
 
     try {
       setSending(true);
+      
+      console.log('Sending message:', { contact_id: contactId, message: newMessage.trim() });
+      
       const response = await fetch(
         'https://functions.poehali.dev/b8a1856f-8ba7-482b-b70e-c9e1916ac7bd',
         {
@@ -91,11 +103,16 @@ const SupportTab = ({ clientPhone, contactId, onMessagesUpdate }: SupportTabProp
         }
       );
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Ошибка отправки сообщения');
+        const errorData = await response.json();
+        console.error('Send error:', errorData);
+        throw new Error(errorData.error || 'Ошибка отправки сообщения');
       }
 
       const data = await response.json();
+      console.log('Send response:', data);
       
       if (data.success) {
         setMessages(prev => [...prev, {

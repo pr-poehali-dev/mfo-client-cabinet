@@ -175,7 +175,7 @@ export const useAmoCRM = () => {
       
       return {
         clientData: {
-          id: data.id,
+          id: String(data.id || ''),
           name: data.name || 'Клиент',
           first_name: data.first_name || '',
           last_name: data.last_name || '',
