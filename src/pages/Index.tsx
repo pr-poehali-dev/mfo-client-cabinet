@@ -36,7 +36,7 @@ const Index = () => {
       const cleanPhone = phone.replace(/\D/g, '');
       
       const response = await fetch(
-        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
+        `https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850?phone=${cleanPhone}`
       );
       
       if (!response.ok) {
@@ -67,21 +67,24 @@ const Index = () => {
       setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
       
-      const uniqueDeals = Array.from(
-        new Map((data.deals || []).map((deal: Deal) => [deal.id, deal])).values()
-      );
-      const uniqueLoans = Array.from(
-        new Map((data.loans || []).map((loan: Loan) => [loan.id, loan])).values()
-      );
-      const uniquePayments = Array.from(
-        new Map((data.payments || []).map((payment: Payment) => [payment.id, payment])).values()
-      );
+      const mappedLeads = (data.leads || []).map((lead: any) => ({
+        id: lead.id,
+        name: lead.name || 'Заявка',
+        status: lead.status_id === 142 ? 'approved' : 
+               lead.status_id === 143 ? 'rejected' : 'pending',
+        statusLabel: lead.status_id === 142 ? 'Одобрена' : 
+                    lead.status_id === 143 ? 'Отклонена' : 'На рассмотрении',
+        amount: lead.price || 0,
+        term: 30,
+        date: lead.created_at ? new Date(lead.created_at * 1000).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
+        description: lead.name || 'Заявка на займ'
+      }));
       
-      setLoans(uniqueLoans);
-      setPayments(uniquePayments);
-      setDeals(uniqueDeals);
-      setDocuments(data.documents || []);
-      setNotifications(data.notifications || []);
+      setDeals(mappedLeads);
+      setLoans(mappedLeads);
+      setPayments([]);
+      setDocuments([]);
+      setNotifications([]);
       setLastUpdate(new Date());
       
     } catch (err) {
@@ -159,7 +162,7 @@ const Index = () => {
       const cleanPhone = userPhone.replace(/\D/g, '');
       
       const response = await fetch(
-        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
+        `https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850?phone=${cleanPhone}`
       );
       
       if (!response.ok) {
@@ -186,28 +189,31 @@ const Index = () => {
       setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
       
-      const uniqueDeals = Array.from(
-        new Map((data.deals || []).map((deal: Deal) => [deal.id, deal])).values()
-      );
-      const uniqueLoans = Array.from(
-        new Map((data.loans || []).map((loan: Loan) => [loan.id, loan])).values()
-      );
-      const uniquePayments = Array.from(
-        new Map((data.payments || []).map((payment: Payment) => [payment.id, payment])).values()
-      );
+      const mappedLeads = (data.leads || []).map((lead: any) => ({
+        id: lead.id,
+        name: lead.name || 'Заявка',
+        status: lead.status_id === 142 ? 'approved' : 
+               lead.status_id === 143 ? 'rejected' : 'pending',
+        statusLabel: lead.status_id === 142 ? 'Одобрена' : 
+                    lead.status_id === 143 ? 'Отклонена' : 'На рассмотрении',
+        amount: lead.price || 0,
+        term: 30,
+        date: lead.created_at ? new Date(lead.created_at * 1000).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
+        description: lead.name || 'Заявка на займ'
+      }));
       
-      setLoans(uniqueLoans);
-      setPayments(uniquePayments);
-      setDeals(uniqueDeals);
-      setDocuments(data.documents || []);
+      setDeals(mappedLeads);
+      setLoans(mappedLeads);
+      setPayments([]);
+      setDocuments([]);
       setNotifications([{
         id: Date.now().toString(),
         title: 'Данные обновлены',
-        message: `Загружено заявок: ${uniqueDeals.length}`,
+        message: `Загружено заявок: ${mappedLeads.length}`,
         date: new Date().toLocaleDateString('ru-RU'),
         read: false,
         type: 'success'
-      }, ...data.notifications || []]);
+      }]);
       setLastUpdate(new Date());
       
     } catch (err) {
