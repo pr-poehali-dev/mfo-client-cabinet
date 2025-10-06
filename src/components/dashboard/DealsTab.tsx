@@ -95,32 +95,37 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
             })}
           </div>
 
-          {rejectedDeals.length > 0 && (
-            <div className="mt-8">
-              <Button
-                variant="outline"
-                onClick={() => setShowRejected(!showRejected)}
-                className="w-full mb-4 flex items-center justify-between gap-2 h-12 text-muted-foreground hover:text-foreground"
-              >
-                <div className="flex items-center gap-2">
-                  <Icon name="XCircle" size={18} className="text-red-500" />
-                  <span>Отклонённые заявки ({rejectedDeals.length})</span>
-                </div>
-                <Icon 
-                  name={showRejected ? "ChevronUp" : "ChevronDown"} 
-                  size={18} 
-                />
-              </Button>
+          <div className="mt-8">
+            <Button
+              variant="outline"
+              onClick={() => setShowRejected(!showRejected)}
+              className="w-full mb-4 flex items-center justify-between gap-2 h-12 text-muted-foreground hover:text-foreground"
+            >
+              <div className="flex items-center gap-2">
+                <Icon name="XCircle" size={18} className="text-red-500" />
+                <span>Отклонённые заявки ({rejectedDeals.length})</span>
+              </div>
+              <Icon 
+                name={showRejected ? "ChevronUp" : "ChevronDown"} 
+                size={18} 
+              />
+            </Button>
 
-              {showRejected && (
-                <div className="grid gap-6 animate-fade-in">
-                  {rejectedDeals.map((deal) => (
-                    <RejectedDealCard key={deal.id} deal={deal} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+            {showRejected && rejectedDeals.length > 0 && (
+              <div className="grid gap-6 animate-fade-in">
+                {rejectedDeals.map((deal) => (
+                  <RejectedDealCard key={deal.id} deal={deal} />
+                ))}
+              </div>
+            )}
+            
+            {showRejected && rejectedDeals.length === 0 && (
+              <div className="p-8 text-center bg-muted/20 rounded-xl border border-border/30">
+                <Icon name="CheckCircle" size={48} className="mx-auto mb-3 text-green-500" />
+                <p className="text-muted-foreground">Нет отклонённых заявок</p>
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
