@@ -4,6 +4,7 @@ import Icon from '@/components/ui/icon';
 import Header from '@/components/dashboard/Header';
 import ProfileTab from '@/components/dashboard/ProfileTab';
 import DealsTab from '@/components/dashboard/DealsTab';
+import SupportTab from '@/components/dashboard/SupportTab';
 import LoginPage from '@/components/auth/LoginPage';
 import { Loan, Payment, AppNotification, Deal } from '@/components/dashboard/types';
 
@@ -22,6 +23,7 @@ const Index = () => {
   const [clientGender, setClientGender] = useState<'male' | 'female'>('male');
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
+  const [contactId, setContactId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -173,6 +175,7 @@ const Index = () => {
       setClientGender(data.gender || 'male');
       setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
+      setContactId(data.id || '');
       
       const mappedLeads = (data.leads || []).map((lead: any) => {
         const customFields = lead.custom_fields_values || [];
@@ -292,6 +295,7 @@ const Index = () => {
     setClientGender('male');
     setClientPhone('');
     setClientEmail('');
+    setContactId('');
     setError('');
     setLastUpdate(null);
   };
@@ -351,6 +355,7 @@ const Index = () => {
       setClientGender(data.gender || 'male');
       setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
+      setContactId(data.id || '');
       
       const mappedLeads = (data.leads || []).map((lead: any) => ({
         id: lead.id,
@@ -435,10 +440,14 @@ const Index = () => {
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto rounded-xl">
+          <TabsList className="grid w-full grid-cols-3 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto rounded-xl">
             <TabsTrigger value="applications" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="FileText" size={18} />
               <span className="hidden sm:inline">Заявки</span>
+            </TabsTrigger>
+            <TabsTrigger value="support" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
+              <Icon name="MessageCircle" size={18} />
+              <span className="hidden sm:inline">Поддержка</span>
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="User" size={18} />
@@ -451,6 +460,13 @@ const Index = () => {
               deals={deals} 
               clientPhone={clientPhone}
               onApplicationSubmit={() => fetchAmoCRMData(userPhone)}
+            />
+          </TabsContent>
+
+          <TabsContent value="support">
+            <SupportTab 
+              clientPhone={clientPhone}
+              contactId={contactId}
             />
           </TabsContent>
 

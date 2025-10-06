@@ -59,3 +59,11 @@ export interface Document {
   uploaded_at: string;
   type: 'contract' | 'agreement' | 'other';
 }
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  created_at: number;
+  author_id: number;
+  is_client: boolean;
+}
