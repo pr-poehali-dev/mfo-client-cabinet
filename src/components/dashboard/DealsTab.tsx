@@ -17,6 +17,7 @@ interface DealsTabProps {
 const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) => {
   const [showRejected, setShowRejected] = useState(false);
   const [showApproved, setShowApproved] = useState(true);
+  const [showOverdue, setShowOverdue] = useState(true);
   
   const isRejectedStatus = (statusName: string) => 
     statusName.toLowerCase().includes('отклонена');
@@ -24,11 +25,15 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   const isApprovedStatus = (statusName: string) => 
     statusName.toLowerCase().includes('одобрена');
   
+  const isOverdueStatus = (statusName: string) => 
+    statusName.toLowerCase().includes('просрочк');
+  
   const hasRejectedDeal = deals.some(deal => isRejectedStatus(deal.status_name));
   const hasApprovedDeal = deals.some(deal => isApprovedStatus(deal.status_name));
   const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
 
   const getStatusPriority = (statusName: string): number => {
+    if (isOverdueStatus(statusName)) return 0;
     if (isApprovedStatus(statusName)) return 1;
     if (statusName === 'Заявка на согласование') return 2;
     if (statusName === 'Заявка на рассмотрение') return 3;
@@ -52,9 +57,12 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   
   const filteredDeals = sortedDeals;
 
-  const approvedDeals = filteredDeals.filter(deal => isApprovedStatus(deal.status_name));
+  const overdueDeals = filteredDeals.filter(deal => isOverdueStatus(deal.status_name));
+  const approvedDeals = filteredDeals.filter(deal => isApprovedStatus(deal.status_name) && !isOverdueStatus(deal.status_name));
   const activeDeals = filteredDeals.filter(deal => 
-    !isRejectedStatus(deal.status_name) && !isApprovedStatus(deal.status_name)
+    !isRejectedStatus(deal.status_name) && 
+    !isApprovedStatus(deal.status_name) && 
+    !isOverdueStatus(deal.status_name)
   );
   const rejectedDeals = filteredDeals.filter(deal => isRejectedStatus(deal.status_name));
 
@@ -64,16 +72,23 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold font-montserrat mb-2">Ваши заявки</h2>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              {overdueDeals.length > 0 && (
+                <div className="text-sm text-red-500 flex items-center gap-1.5 font-semibold">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  Просрочка: {overdueDeals.length}
+                </div>
+              )}
               {approvedDeals.length > 0 && (
                 <div className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  {overdueDeals.length > 0 && <span>·</span>}
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   Одобренных: {approvedDeals.length}
                 </div>
               )}
               {activeDeals.length > 0 && (
                 <div className="text-sm text-muted-foreground flex items-center gap-1.5">
-                  {approvedDeals.length > 0 && <span>·</span>}
+                  {(approvedDeals.length > 0 || overdueDeals.length > 0) && <span>·</span>}
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   Активных: {activeDeals.length}
                 </div>
@@ -94,10 +109,37 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
         </div>
       </div>
 
-      {activeDeals.length === 0 && rejectedDeals.length === 0 && approvedDeals.length === 0 ? (
+      {activeDeals.length === 0 && rejectedDeals.length === 0 && approvedDeals.length === 0 && overdueDeals.length === 0 ? (
         <EmptyDealsCard totalDeals={deals.length} />
       ) : (
         <>
+          {overdueDeals.length > 0 && (
+            <div className="mb-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowOverdue(!showOverdue)}
+                className="w-full mb-4 flex items-center justify-between gap-2 h-12 bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:text-red-700"
+              >
+                <div className="flex items-center gap-2">
+                  <Icon name="AlertCircle" size={18} className="text-red-500" />
+                  <span className="font-semibold">🚨 Просрочка ({overdueDeals.length})</span>
+                </div>
+                <Icon 
+                  name={showOverdue ? "ChevronUp" : "ChevronDown"} 
+                  size={18} 
+                />
+              </Button>
+
+              {showOverdue && (
+                <div className="grid gap-6 animate-fade-in">
+                  {overdueDeals.map((deal) => (
+                    <ApprovedDealCard key={deal.id} deal={deal} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {approvedDeals.length > 0 && (
             <div className="mb-6">
               <Button
