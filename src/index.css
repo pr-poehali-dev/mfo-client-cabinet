@@ -87,3 +87,43 @@ div[id*="amo"] a[href*="amocrm"] {
   height: 0 !important;
   overflow: hidden !important;
 }
+
+/* Custom AmoCRM chat colors */
+#amo_social_button .amo-button__icon,
+#amo_social_button button[class*="button"],
+div[id*="amo"] button[class*="button"],
+div[id*="amo"] .amo-button__icon {
+  background: linear-gradient(
+    135deg,
+    hsl(16, 100%, 60%) 0%,
+    hsl(199, 100%, 55%) 100%
+  ) !important;
+  box-shadow: 0 4px 20px rgba(255, 102, 51, 0.3) !important;
+}
+
+div[id*="amo"] [class*="header"],
+div[id*="amo"] .amo-chat__header {
+  background: linear-gradient(
+    135deg,
+    hsl(16, 100%, 60%) 0%,
+    hsl(199, 100%, 55%) 100%
+  ) !important;
+}
+
+div[id*="amo"] [class*="message--outgoing"],
+div[id*="amo"] .amo-message--outgoing {
+  background: linear-gradient(
+    135deg,
+    hsl(16, 100%, 60%) 0%,
+    hsl(199, 100%, 55%) 100%
+  ) !important;
+}
+
+div[id*="amo"] button[class*="send"],
+div[id*="amo"] .amo-button--send {
+  background: linear-gradient(
+    135deg,
+    hsl(16, 100%, 60%) 0%,
+    hsl(199, 100%, 55%) 100%
+  ) !important;
+}
