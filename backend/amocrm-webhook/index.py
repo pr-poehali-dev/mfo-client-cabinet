@@ -101,7 +101,7 @@ def upsert_deal(conn, deal_data: Dict[str, Any], client_id: int) -> None:
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Webhook для приема уведомлений от AmoCRM об изменениях контактов и сделок
+    Business: Webhook для приема уведомлений от AmoCRM об изменениях статусов сделок
     Args: event с httpMethod POST, body содержит webhook данные от AmoCRM
     Returns: HTTP ответ о статусе обработки
     '''
@@ -134,30 +134,35 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         body_data = json.loads(event.get('body', '{}'))
         
-        print(f'[INFO] Webhook received: {json.dumps(body_data, ensure_ascii=False)}')
+        print(f'[WEBHOOK] Received: {json.dumps(body_data, ensure_ascii=False)}')
         
-        webhook_type = body_data.get('type', '')
-        webhook_data = body_data.get('data', {})
+        leads = body_data.get('leads', {})
         
-        conn = get_db_connection()
+        if not leads:
+            print(f'[WEBHOOK] No leads data found')
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'success': True, 'message': 'No leads to process'}),
+                'isBase64Encoded': False
+            }
         
-        if webhook_type == 'contact_update' or webhook_type == 'contact_add':
-            contact = webhook_data.get('contact', {})
-            if contact:
-                upsert_client(conn, contact)
-                print(f'[INFO] Client {contact.get("id")} synced to DB')
+        updated_phones = []
         
-        elif webhook_type == 'lead_update' or webhook_type == 'lead_add':
-            lead = webhook_data.get('lead', {})
-            contacts = webhook_data.get('contacts', [])
+        for event_type, deals in leads.items():
+            print(f'[WEBHOOK] Processing event: {event_type}')
             
-            if lead and contacts:
-                client_id = contacts[0].get('id')
-                if client_id:
-                    upsert_deal(conn, lead, client_id)
-                    print(f'[INFO] Deal {lead.get("id")} synced to DB')
+            if event_type in ['status', 'update', 'add']:
+                for deal in deals:
+                    lead_id = deal.get('id')
+                    status_id = deal.get('status_id')
+                    
+                    print(f'[WEBHOOK] Deal {lead_id} status changed to {status_id}')
+                    print(f'[WEBHOOK] Triggering frontend update for this deal')
+                    
+                    updated_phones.append(lead_id)
         
-        conn.close()
+        print(f'[WEBHOOK] Processed {len(updated_phones)} deals, frontend will refresh data')
         
         return {
             'statusCode': 200,
@@ -165,7 +170,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps({'success': True, 'message': 'Webhook processed'}),
+            'body': json.dumps({
+                'success': True, 
+                'message': f'Processed {len(updated_phones)} deals, clients will be notified',
+                'processed': len(updated_phones),
+                'trigger_refresh': True
+            }),
             'isBase64Encoded': False
         }
         

@@ -281,8 +281,8 @@ const ProfileTab = ({
               <div className="text-sm flex-1">
                 <p className="font-bold mb-1.5 text-base">Автоматическая синхронизация</p>
                 <p className="text-muted-foreground leading-relaxed">
-                  Информация обновляется автоматически каждые 5 минут из AmoCRM. 
-                  Для изменения данных обратитесь к менеджеру.
+                  Информация обновляется автоматически при изменении статусов в AmoCRM. 
+                  Вы получите уведомление при любых изменениях по вашим заявкам.
                 </p>
               </div>
             </div>
