@@ -9,14 +9,16 @@ import { ChatMessage } from './types';
 interface SupportTabProps {
   clientPhone: string;
   contactId: string;
+  onMessagesUpdate?: (count: number) => void;
 }
 
-const SupportTab = ({ clientPhone, contactId }: SupportTabProps) => {
+const SupportTab = ({ clientPhone, contactId, onMessagesUpdate }: SupportTabProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const previousManagerMessagesCount = useRef(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,7 +50,23 @@ const SupportTab = ({ clientPhone, contactId }: SupportTabProps) => {
       }
 
       const data = await response.json();
-      setMessages(data.messages || []);
+      const newMessages = data.messages || [];
+      setMessages(newMessages);
+      
+      const managerMessages = newMessages.filter((msg: ChatMessage) => !msg.is_client);
+      const currentManagerCount = managerMessages.length;
+      
+      if (currentManagerCount > previousManagerMessagesCount.current) {
+        const newManagerMessages = currentManagerCount - previousManagerMessagesCount.current;
+        if (onMessagesUpdate && previousManagerMessagesCount.current > 0) {
+          onMessagesUpdate(newManagerMessages);
+          toast.success(`Новое сообщение от менеджера`, {
+            description: managerMessages[managerMessages.length - 1]?.text.slice(0, 50) + '...'
+          });
+        }
+      }
+      
+      previousManagerMessagesCount.current = currentManagerCount;
     } catch (error) {
       console.error('Load messages error:', error);
     } finally {

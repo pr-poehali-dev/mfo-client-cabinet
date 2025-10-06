@@ -27,6 +27,14 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
+  
+  useEffect(() => {
+    if (activeTab === 'support') {
+      setUnreadMessagesCount(0);
+    }
+  }, [activeTab]);
 
   const checkPaymentDeadlines = (dealsData: Deal[]) => {
     const newNotifications: AppNotification[] = [];
@@ -445,9 +453,14 @@ const Index = () => {
               <Icon name="FileText" size={18} />
               <span className="hidden sm:inline">Заявки</span>
             </TabsTrigger>
-            <TabsTrigger value="support" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
+            <TabsTrigger value="support" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg relative">
               <Icon name="MessageCircle" size={18} />
               <span className="hidden sm:inline">Поддержка</span>
+              {unreadMessagesCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
+                  {unreadMessagesCount}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="User" size={18} />
@@ -467,6 +480,11 @@ const Index = () => {
             <SupportTab 
               clientPhone={clientPhone}
               contactId={contactId}
+              onMessagesUpdate={(count) => {
+                if (activeTab !== 'support') {
+                  setUnreadMessagesCount(prev => prev + count);
+                }
+              }}
             />
           </TabsContent>
 
