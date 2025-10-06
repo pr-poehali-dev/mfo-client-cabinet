@@ -21,6 +21,13 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   const [showOverdue, setShowOverdue] = useState(true);
   
   console.log('📋 Все заявки и их статусы:', deals.map(d => ({ id: d.id, status: d.status_name })));
+  console.log('🔍 DEBUG: Проверяем каждую заявку на просрочку:');
+  deals.forEach(deal => {
+    const isOverdue = deal.status_name.toLowerCase().includes('просрочк') || 
+                      deal.status_name.toLowerCase().includes('просроч') ||
+                      deal.status_name.toLowerCase() === 'просрочка';
+    console.log(`  - Заявка #${deal.id}: "${deal.status_name}" → ${isOverdue ? '🚨 ПРОСРОЧКА' : '✅ не просрочка'}`);
+  });
   
   const isRejectedStatus = (statusName: string) => 
     statusName.toLowerCase().includes('отклонена');
