@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Deal } from './types';
 import NewApplicationDialog from './deals/NewApplicationDialog';
 import ApprovedDealCard from './deals/ApprovedDealCard';
 import RejectedDealCard from './deals/RejectedDealCard';
 import RegularDealCard from './deals/RegularDealCard';
 import EmptyDealsCard from './deals/EmptyDealsCard';
+import Icon from '@/components/ui/icon';
+import { Button } from '@/components/ui/button';
 
 interface DealsTabProps {
   deals: Deal[];
@@ -12,6 +15,8 @@ interface DealsTabProps {
 }
 
 const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) => {
+  const [showRejected, setShowRejected] = useState(false);
+  
   const hasRejectedDeal = deals.some(deal => deal.status_name === 'Заявка отклонена');
   const hasApprovedDeal = deals.some(deal => deal.status_name === 'Заявка одобрена');
   const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
@@ -70,40 +75,53 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
         </div>
       </div>
 
-      {filteredDeals.length === 0 ? (
+      {activeDeals.length === 0 && rejectedDeals.length === 0 ? (
         <EmptyDealsCard totalDeals={deals.length} />
       ) : (
-        <div className="grid gap-6">
-          {filteredDeals.map((deal, index) => {
-            const isRejected = deal.status_name === 'Заявка отклонена';
-            const isApproved = deal.status_name === 'Заявка одобрена';
-            const prevDeal = index > 0 ? filteredDeals[index - 1] : null;
-            const prevRejected = prevDeal ? prevDeal.status_name === 'Заявка отклонена' : false;
-            const showDivider = isRejected && !prevRejected;
+        <>
+          <div className="grid gap-6">
+            {activeDeals.map((deal) => {
+              const isApproved = deal.status_name === 'Заявка одобрена';
+              
+              return (
+                <div key={deal.id}>
+                  {isApproved ? (
+                    <ApprovedDealCard deal={deal} />
+                  ) : (
+                    <RegularDealCard deal={deal} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
 
-            return (
-              <div key={deal.id}>
-                {showDivider && (
-                  <div className="flex items-center gap-4 my-8">
-                    <div className="flex-1 h-px bg-border"></div>
-                    <span className="text-sm font-medium text-muted-foreground px-3">
-                      Отклонённые заявки
-                    </span>
-                    <div className="flex-1 h-px bg-border"></div>
-                  </div>
-                )}
-                
-                {isApproved ? (
-                  <ApprovedDealCard deal={deal} />
-                ) : isRejected ? (
-                  <RejectedDealCard deal={deal} />
-                ) : (
-                  <RegularDealCard deal={deal} />
-                )}
-              </div>
-            );
-          })}
-        </div>
+          {rejectedDeals.length > 0 && (
+            <div className="mt-8">
+              <Button
+                variant="outline"
+                onClick={() => setShowRejected(!showRejected)}
+                className="w-full mb-4 flex items-center justify-between gap-2 h-12 text-muted-foreground hover:text-foreground"
+              >
+                <div className="flex items-center gap-2">
+                  <Icon name="XCircle" size={18} className="text-red-500" />
+                  <span>Отклонённые заявки ({rejectedDeals.length})</span>
+                </div>
+                <Icon 
+                  name={showRejected ? "ChevronUp" : "ChevronDown"} 
+                  size={18} 
+                />
+              </Button>
+
+              {showRejected && (
+                <div className="grid gap-6 animate-fade-in">
+                  {rejectedDeals.map((deal) => (
+                    <RejectedDealCard key={deal.id} deal={deal} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
