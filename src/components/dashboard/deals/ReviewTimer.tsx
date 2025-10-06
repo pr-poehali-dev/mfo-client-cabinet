@@ -35,18 +35,23 @@ const ReviewTimer = ({ dealId, amount, createdAt }: ReviewTimerProps) => {
       }
     };
 
+    const created = parseCreatedDate();
+    
     const calculateTimeLeft = () => {
-      const created = parseCreatedDate();
       const now = new Date();
       const elapsed = Math.floor((now.getTime() - created.getTime()) / 1000);
       const remaining = Math.max(0, 1200 - elapsed);
       
       setTimeLeft(remaining);
       setIsExpired(remaining === 0);
+      
+      if (remaining === 0) {
+        clearInterval(interval);
+      }
     };
 
     calculateTimeLeft();
-    const interval = setInterval(calculateTimeLeft, 1000);
+    const interval = setInterval(calculateTimeLeft, 5000);
     
     return () => clearInterval(interval);
   }, [createdAt]);

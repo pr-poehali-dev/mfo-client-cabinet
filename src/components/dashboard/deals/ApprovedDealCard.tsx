@@ -36,7 +36,7 @@ const ApprovedDealCard = ({ deal }: ApprovedDealCardProps) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown(calculateDaysLeft());
-    }, 1000 * 60 * 60);
+    }, 1000 * 60 * 60 * 6);
     
     return () => clearInterval(timer);
   }, [deal.created_at, loanTermDays]);
