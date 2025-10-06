@@ -661,9 +661,37 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'custom_fields_values': lead.get('custom_fields_values', [])
         })
     
+    custom_fields = contact.get('custom_fields_values', [])
+    
+    email = ''
+    gender = 'male'
+    first_name = ''
+    last_name = ''
+    middle_name = ''
+    
+    for field in custom_fields:
+        if field.get('field_code') == 'EMAIL':
+            email = field.get('values', [{}])[0].get('value', '')
+    
+    name_parts = contact.get('name', '').split()
+    if len(name_parts) >= 3:
+        last_name = name_parts[0]
+        first_name = name_parts[1]
+        middle_name = name_parts[2]
+    elif len(name_parts) == 2:
+        last_name = name_parts[0]
+        first_name = name_parts[1]
+    elif len(name_parts) == 1:
+        first_name = name_parts[0]
+    
     client_data = {
         'id': contact['id'],
         'name': contact.get('name', ''),
+        'first_name': first_name,
+        'last_name': last_name,
+        'middle_name': middle_name,
+        'email': email,
+        'gender': gender,
         'phone': phone,
         'leads': enriched_leads
     }
