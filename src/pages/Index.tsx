@@ -217,7 +217,7 @@ const Index = () => {
         Notification.requestPermission();
       }
       
-      const intervalId = setInterval(checkForUpdates, 5000);
+      const intervalId = setInterval(checkForUpdates, 40 * 60 * 1000);
       
       return () => clearInterval(intervalId);
     }
