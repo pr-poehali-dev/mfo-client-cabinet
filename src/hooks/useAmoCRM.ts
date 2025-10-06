@@ -170,6 +170,7 @@ export const useAmoCRM = () => {
       const mappedLeads = (data.leads || []).map(mapLeadData);
       
       console.log(`Loaded ${mappedLeads.length} deals for ${data.name}`);
+      console.log('Статусы всех заявок:', mappedLeads.map(d => ({ id: d.id, status: d.status_name })));
       
       const paymentNotifications = checkPaymentDeadlines(mappedLeads);
       
