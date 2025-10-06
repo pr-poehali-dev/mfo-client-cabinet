@@ -71,3 +71,19 @@
     font-family: "Montserrat", sans-serif;
   }
 }
+
+/* Hide AmoCRM branding */
+#amo-social-button a[href*="amocrm"],
+#amo-social-button .amo-button__footer,
+#amo-social-button .amo-button__branding,
+#amo_social_button a[href*="amocrm"],
+#amo_social_button .amo-button__footer,
+#amo_social_button .amo-button__branding,
+div[class*="amocrm"] a[href*="amocrm"],
+div[id*="amo"] a[href*="amocrm"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
