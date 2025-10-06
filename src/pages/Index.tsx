@@ -5,8 +5,7 @@ import Header from '@/components/dashboard/Header';
 import ProfileTab from '@/components/dashboard/ProfileTab';
 import DealsTab from '@/components/dashboard/DealsTab';
 import LoginPage from '@/components/auth/LoginPage';
-import { Loan, Payment, Notification, Deal, Document } from '@/components/dashboard/types';
-import DocumentsTab from '@/components/dashboard/DocumentsTab';
+import { Loan, Payment, Notification, Deal } from '@/components/dashboard/types';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,7 +15,6 @@ const Index = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [clientName, setClientName] = useState('');
   const [clientFirstName, setClientFirstName] = useState('');
   const [clientLastName, setClientLastName] = useState('');
@@ -36,22 +34,11 @@ const Index = () => {
       const cleanPhone = phone.replace(/\D/g, '');
       
       const response = await fetch(
-        `https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850?phone=${cleanPhone}`
+        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
       );
       
       if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          setError('Ошибка сервера. Попробуйте позже');
-          setLoans([]);
-          setPayments([]);
-          setDeals([]);
-          setNotifications([]);
-          return;
-        }
-        
+        const errorData = await response.json();
         if (response.status === 401) {
           setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
         } else if (response.status === 500 && errorData.message?.includes('credentials')) {
@@ -68,19 +55,7 @@ const Index = () => {
         return;
       }
       
-      const responseText = await response.text();
-      if (!responseText) {
-        setError('Пустой ответ от сервера');
-        setLoans([]);
-        setPayments([]);
-        setDeals([]);
-        setNotifications([]);
-        return;
-      }
-      
-      console.log('Response from server:', responseText);
-      const data = JSON.parse(responseText);
-      console.log('Parsed data:', data);
+      const data = await response.json();
       
       setClientName(data.name || 'Клиент');
       setClientFirstName(data.first_name || '');
@@ -90,24 +65,20 @@ const Index = () => {
       setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
       
-      const mappedLeads = (data.leads || []).map((lead: any) => ({
-        id: lead.id,
-        name: lead.name || 'Заявка',
-        status: lead.status_id === 142 ? 'approved' : 
-               lead.status_id === 143 ? 'rejected' : 'pending',
-        statusLabel: lead.status_id === 142 ? 'Одобрена' : 
-                    lead.status_id === 143 ? 'Отклонена' : 'На рассмотрении',
-        amount: lead.price || 0,
-        term: 30,
-        date: lead.created_at ? new Date(lead.created_at * 1000).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
-        description: lead.name || 'Заявка на займ'
-      }));
+      const uniqueDeals = Array.from(
+        new Map((data.deals || []).map((deal: Deal) => [deal.id, deal])).values()
+      );
+      const uniqueLoans = Array.from(
+        new Map((data.loans || []).map((loan: Loan) => [loan.id, loan])).values()
+      );
+      const uniquePayments = Array.from(
+        new Map((data.payments || []).map((payment: Payment) => [payment.id, payment])).values()
+      );
       
-      setDeals(mappedLeads);
-      setLoans(mappedLeads);
-      setPayments([]);
-      setDocuments([]);
-      setNotifications([]);
+      setLoans(uniqueLoans);
+      setPayments(uniquePayments);
+      setDeals(uniqueDeals);
+      setNotifications(data.notifications || []);
       setLastUpdate(new Date());
       
     } catch (err) {
@@ -120,24 +91,10 @@ const Index = () => {
 
   useEffect(() => {
     const savedPhone = localStorage.getItem('userPhone');
-    const isNewRegistration = localStorage.getItem('newRegistration');
-    
     if (savedPhone) {
       setUserPhone(savedPhone);
       setIsAuthenticated(true);
       fetchAmoCRMData(savedPhone);
-      
-      if (isNewRegistration === 'true') {
-        setNotifications([{
-          id: 'welcome-' + Date.now(),
-          title: '🎉 Добро пожаловать!',
-          message: 'Ваша заявка успешно принята в обработку. Мы свяжемся с вами в ближайшее время.',
-          date: new Date().toLocaleDateString('ru-RU'),
-          read: false,
-          type: 'success'
-        }]);
-        localStorage.removeItem('newRegistration');
-      }
       
       const intervalId = setInterval(() => {
         fetchAmoCRMData(savedPhone);
@@ -163,7 +120,6 @@ const Index = () => {
     setPayments([]);
     setNotifications([]);
     setDeals([]);
-    setDocuments([]);
     setClientName('');
     setClientFirstName('');
     setClientLastName('');
@@ -185,18 +141,11 @@ const Index = () => {
       const cleanPhone = userPhone.replace(/\D/g, '');
       
       const response = await fetch(
-        `https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850?phone=${cleanPhone}`
+        `https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5?phone=${cleanPhone}`
       );
       
       if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          setError('Ошибка сервера. Попробуйте позже');
-          return;
-        }
-        
+        const errorData = await response.json();
         if (response.status === 401) {
           setError('⚠️ Токен AmoCRM устарел. Обновите секрет ACCESS_TOKEN в настройках проекта');
         } else if (response.status === 500 && errorData.message?.includes('credentials')) {
@@ -209,13 +158,7 @@ const Index = () => {
         return;
       }
       
-      const responseText = await response.text();
-      if (!responseText) {
-        setError('Пустой ответ от сервера');
-        return;
-      }
-      
-      const data = JSON.parse(responseText);
+      const data = await response.json();
       
       setClientName(data.name || 'Клиент');
       setClientFirstName(data.first_name || '');
@@ -225,31 +168,27 @@ const Index = () => {
       setClientPhone(data.phone || cleanPhone);
       setClientEmail(data.email || '');
       
-      const mappedLeads = (data.leads || []).map((lead: any) => ({
-        id: lead.id,
-        name: lead.name || 'Заявка',
-        status: lead.status_id === 142 ? 'approved' : 
-               lead.status_id === 143 ? 'rejected' : 'pending',
-        statusLabel: lead.status_id === 142 ? 'Одобрена' : 
-                    lead.status_id === 143 ? 'Отклонена' : 'На рассмотрении',
-        amount: lead.price || 0,
-        term: 30,
-        date: lead.created_at ? new Date(lead.created_at * 1000).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
-        description: lead.name || 'Заявка на займ'
-      }));
+      const uniqueDeals = Array.from(
+        new Map((data.deals || []).map((deal: Deal) => [deal.id, deal])).values()
+      );
+      const uniqueLoans = Array.from(
+        new Map((data.loans || []).map((loan: Loan) => [loan.id, loan])).values()
+      );
+      const uniquePayments = Array.from(
+        new Map((data.payments || []).map((payment: Payment) => [payment.id, payment])).values()
+      );
       
-      setDeals(mappedLeads);
-      setLoans(mappedLeads);
-      setPayments([]);
-      setDocuments([]);
+      setLoans(uniqueLoans);
+      setPayments(uniquePayments);
+      setDeals(uniqueDeals);
       setNotifications([{
         id: Date.now().toString(),
         title: 'Данные обновлены',
-        message: `Загружено заявок: ${mappedLeads.length}`,
+        message: `Загружено заявок: ${uniqueDeals.length}`,
         date: new Date().toLocaleDateString('ru-RU'),
         read: false,
         type: 'success'
-      }]);
+      }, ...data.notifications || []]);
       setLastUpdate(new Date());
       
     } catch (err) {
@@ -291,14 +230,10 @@ const Index = () => {
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto rounded-xl">
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-card/50 backdrop-blur-sm p-1 h-auto rounded-xl">
             <TabsTrigger value="applications" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="FileText" size={18} />
               <span className="hidden sm:inline">Заявки</span>
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
-              <Icon name="FolderOpen" size={18} />
-              <span className="hidden sm:inline">Документы</span>
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary py-3 rounded-lg">
               <Icon name="User" size={18} />
@@ -311,14 +246,6 @@ const Index = () => {
               deals={deals} 
               clientPhone={clientPhone}
               onApplicationSubmit={() => fetchAmoCRMData(userPhone)}
-            />
-          </TabsContent>
-
-          <TabsContent value="documents">
-            <DocumentsTab 
-              documents={documents} 
-              clientName={clientName}
-              clientPhone={clientPhone}
             />
           </TabsContent>
 

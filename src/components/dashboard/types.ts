@@ -49,13 +49,3 @@ export interface Deal {
     }>;
   }>;
 }
-
-export interface Document {
-  id: string;
-  name: string;
-  file_url: string;
-  file_name: string;
-  file_size: number;
-  uploaded_at: string;
-  type: 'contract' | 'agreement' | 'other';
-}
