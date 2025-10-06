@@ -57,7 +57,7 @@ const RegularDealCard = ({ deal }: RegularDealCardProps) => {
           <div className="text-right shrink-0">
             <p className="text-xs text-muted-foreground mb-1">Сумма</p>
             <p className="text-3xl font-bold font-montserrat bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              {deal.price.toLocaleString('ru-RU')} ₽
+              {(deal.price || 0).toLocaleString('ru-RU')} ₽
             </p>
           </div>
         </div>
