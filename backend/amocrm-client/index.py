@@ -114,6 +114,46 @@ def verify_contact_password(phone: str, password: str, access_token: str) -> Opt
         
         return None
 
+def get_pipelines_and_statuses(access_token: str) -> dict:
+    """
+    Business: Получает воронки и статусы из AmoCRM
+    Args: access_token - токен доступа
+    Returns: Словарь с информацией о воронках и статусах
+    """
+    domain = os.environ.get('AMOCRM_DOMAIN')
+    
+    url = f'https://{domain}/api/v4/leads/pipelines'
+    
+    req = urllib.request.Request(
+        url,
+        headers={
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+    )
+    
+    try:
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            pipelines = {}
+            
+            if result.get('_embedded') and result['_embedded'].get('pipelines'):
+                for pipeline in result['_embedded']['pipelines']:
+                    pipelines[pipeline['id']] = {
+                        'name': pipeline['name'],
+                        'statuses': {}
+                    }
+                    
+                    for status in pipeline.get('_embedded', {}).get('statuses', []):
+                        pipelines[pipeline['id']]['statuses'][status['id']] = {
+                            'name': status['name'],
+                            'color': status['color']
+                        }
+            
+            return pipelines
+    except:
+        return {}
+
 def get_contact_leads(contact_id: int, access_token: str) -> list:
     """
     Business: Получает сделки контакта из amoCRM с полными данными
@@ -596,23 +636,36 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     leads = get_contact_leads(contact['id'], access_token)
+    pipelines = get_pipelines_and_statuses(access_token)
+    
+    enriched_leads = []
+    for lead in leads:
+        pipeline_id = lead.get('pipeline_id')
+        status_id = lead.get('status_id')
+        
+        pipeline_info = pipelines.get(pipeline_id, {})
+        status_info = pipeline_info.get('statuses', {}).get(status_id, {})
+        
+        enriched_leads.append({
+            'id': lead['id'],
+            'name': lead.get('name', ''),
+            'price': lead.get('price', 0),
+            'status_id': status_id,
+            'status_name': status_info.get('name', 'Неизвестно'),
+            'status_color': status_info.get('color', '#cccccc'),
+            'pipeline_id': pipeline_id,
+            'pipeline_name': pipeline_info.get('name', 'Основная воронка'),
+            'created_at': lead.get('created_at'),
+            'updated_at': lead.get('updated_at'),
+            'responsible_user_id': lead.get('responsible_user_id'),
+            'custom_fields_values': lead.get('custom_fields_values', [])
+        })
     
     client_data = {
         'id': contact['id'],
         'name': contact.get('name', ''),
         'phone': phone,
-        'leads': [
-            {
-                'id': lead['id'],
-                'name': lead.get('name', ''),
-                'price': lead.get('price', 0),
-                'status_id': lead.get('status_id'),
-                'created_at': lead.get('created_at'),
-                'updated_at': lead.get('updated_at'),
-                'custom_fields_values': lead.get('custom_fields_values', [])
-            }
-            for lead in leads
-        ]
+        'leads': enriched_leads
     }
     
     return {
