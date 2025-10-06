@@ -117,14 +117,29 @@ const Index = () => {
         return {
           id: lead.id,
           name: lead.name || 'Заявка',
-          status: lead.status_id === 142 ? 'approved' : 
-                 lead.status_id === 143 ? 'rejected' : 'pending',
-          statusLabel: lead.status_id === 142 ? 'Одобрена' : 
-                      lead.status_id === 143 ? 'Отклонена' : 'На рассмотрении',
+          status: lead.status_name,
+          status_id: lead.status_id,
+          status_name: lead.status_name || 'На рассмотрении',
+          status_color: lead.status_color || '#cccccc',
+          pipeline_id: lead.pipeline_id,
+          pipeline_name: lead.pipeline_name || 'Основная воронка',
+          price: lead.price || 0,
           amount: lead.price || 0,
           term: termDays,
+          created_at: lead.created_at ? new Date(lead.created_at * 1000).toLocaleDateString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          }) : new Date().toLocaleDateString('ru-RU'),
+          updated_at: lead.updated_at ? new Date(lead.updated_at * 1000).toLocaleDateString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          }) : new Date().toLocaleDateString('ru-RU'),
           date: lead.created_at ? new Date(lead.created_at * 1000).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
           description: lead.name || 'Заявка на займ',
+          responsible_user_id: lead.responsible_user_id,
+          custom_fields: customFields,
           custom_fields_values: customFields
         };
       });
