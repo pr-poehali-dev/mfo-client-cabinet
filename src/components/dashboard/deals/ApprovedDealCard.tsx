@@ -52,11 +52,28 @@ const ApprovedDealCard = ({ deal }: ApprovedDealCardProps) => {
           <div>
             <h3 className="text-xl sm:text-2xl font-bold text-green-400 mb-3 sm:mb-4">Заявка одобрена!</h3>
             
-            <div className="mb-4 p-4 bg-blue-500/10 rounded-xl border-2 border-blue-500/30 flex items-center justify-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <Icon name="Check" size={20} className="text-blue-400 animate-pulse" />
+            <div className="mb-4 space-y-3">
+              <div className="p-4 bg-blue-500/10 rounded-xl border-2 border-blue-500/30 flex items-center justify-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                  <Icon name="Check" size={20} className="text-blue-400 animate-pulse" />
+                </div>
+                <p className="text-base sm:text-lg font-semibold text-blue-400">Идет согласование договора</p>
               </div>
-              <p className="text-base sm:text-lg font-semibold text-blue-400">Идет согласование договора</p>
+              
+              <div className="p-4 bg-gradient-to-br from-green-500/10 via-blue-500/10 to-green-500/10 rounded-xl border-2 border-green-500/30">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center shrink-0 animate-pulse">
+                    <Icon name="Banknote" size={20} className="text-white" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base sm:text-lg font-bold text-green-400 mb-1">Идет зачисление займа</p>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                      <Icon name="Clock" size={14} />
+                      Ожидайте от 15 до 30 минут
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div className="grid gap-3 sm:gap-4 text-left max-w-md mx-auto">
