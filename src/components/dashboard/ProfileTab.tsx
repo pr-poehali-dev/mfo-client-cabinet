@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import ProfileInfoCard from './profile/ProfileInfoCard';
-import DocumentsUploadSection from './profile/DocumentsUploadSection';
 import AvatarDialog from './profile/AvatarDialog';
 
 interface ProfileTabProps {
@@ -23,9 +22,6 @@ const ProfileTab = ({
   clientPhone, 
   clientEmail 
 }: ProfileTabProps) => {
-  const [passportPhoto, setPassportPhoto] = useState<File | null>(null);
-  const [selfiePhoto, setSelfiePhoto] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -69,38 +65,7 @@ const ProfileTab = ({
     });
   }, [clientFirstName, clientLastName, clientMiddleName, clientEmail]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'passport' | 'selfie') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Можно загружать только изображения');
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Размер файла не должен превышать 10 МБ');
-      return;
-    }
-
-    if (type === 'passport') {
-      setPassportPhoto(file);
-    } else {
-      setSelfiePhoto(file);
-    }
-  };
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = (reader.result as string).split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
 
   const handleSaveProfile = async () => {
     if (!clientPhone) {
@@ -143,61 +108,7 @@ const ProfileTab = ({
     }
   };
 
-  const handleUploadDocuments = async () => {
-    console.log('[UPLOAD] Starting upload process');
-    console.log('[UPLOAD] Passport photo:', passportPhoto);
-    console.log('[UPLOAD] Selfie photo:', selfiePhoto);
-    console.log('[UPLOAD] Client phone:', clientPhone);
-    
-    if (!passportPhoto || !selfiePhoto) {
-      toast.error('Загрузите оба документа');
-      return;
-    }
 
-    setUploading(true);
-    try {
-      console.log('[UPLOAD] Converting files to base64...');
-      const passportBase64 = await fileToBase64(passportPhoto);
-      const selfieBase64 = await fileToBase64(selfiePhoto);
-      
-      console.log('[UPLOAD] Passport base64 length:', passportBase64.length);
-      console.log('[UPLOAD] Selfie base64 length:', selfieBase64.length);
-
-      const payload = {
-        phone: clientPhone,
-        passport: passportBase64,
-        selfie: selfieBase64
-      };
-      
-      console.log('[UPLOAD] Sending request to AmoCRM...');
-      console.log('[UPLOAD] Payload:', { ...payload, passport: `${passportBase64.substring(0, 50)}...`, selfie: `${selfieBase64.substring(0, 50)}...` });
-
-      const response = await fetch('https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      console.log('[UPLOAD] Response status:', response.status);
-      const responseData = await response.json();
-      console.log('[UPLOAD] Response data:', responseData);
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Ошибка загрузки');
-      }
-
-      toast.success('Документы успешно отправлены в AmoCRM!');
-      setPassportPhoto(null);
-      setSelfiePhoto(null);
-    } catch (error) {
-      console.error('[UPLOAD] Error:', error);
-      toast.error(`Не удалось отправить документы: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
@@ -228,14 +139,6 @@ const ProfileTab = ({
         onCancelEdit={handleCancelEdit}
         onSave={handleSaveProfile}
         onAvatarClick={() => setIsAvatarDialogOpen(true)}
-      />
-
-      <DocumentsUploadSection
-        passportPhoto={passportPhoto}
-        selfiePhoto={selfiePhoto}
-        uploading={uploading}
-        onFileChange={handleFileChange}
-        onUpload={handleUploadDocuments}
       />
 
       <AvatarDialog
