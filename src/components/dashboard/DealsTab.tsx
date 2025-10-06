@@ -54,19 +54,34 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
         <EmptyDealsCard totalDeals={deals.length} />
       ) : (
         <div className="grid gap-6">
-          {filteredDeals.map((deal) => {
+          {filteredDeals.map((deal, index) => {
             const isRejected = deal.status_name === 'Заявка отклонена';
             const isApproved = deal.status_name === 'Заявка одобрена';
+            const prevDeal = index > 0 ? filteredDeals[index - 1] : null;
+            const prevRejected = prevDeal ? prevDeal.status_name === 'Заявка отклонена' : false;
+            const showDivider = isRejected && !prevRejected;
 
-            if (isApproved) {
-              return <ApprovedDealCard key={deal.id} deal={deal} />;
-            }
-
-            if (isRejected) {
-              return <RejectedDealCard key={deal.id} deal={deal} />;
-            }
-
-            return <RegularDealCard key={deal.id} deal={deal} />;
+            return (
+              <div key={deal.id}>
+                {showDivider && (
+                  <div className="flex items-center gap-4 my-8">
+                    <div className="flex-1 h-px bg-border"></div>
+                    <span className="text-sm font-medium text-muted-foreground px-3">
+                      Отклонённые заявки
+                    </span>
+                    <div className="flex-1 h-px bg-border"></div>
+                  </div>
+                )}
+                
+                {isApproved ? (
+                  <ApprovedDealCard deal={deal} />
+                ) : isRejected ? (
+                  <RejectedDealCard deal={deal} />
+                ) : (
+                  <RegularDealCard deal={deal} />
+                )}
+              </div>
+            );
           })}
         </div>
       )}
