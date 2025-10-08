@@ -19,6 +19,7 @@ const ClientCabinet = () => {
   const navigate = useNavigate();
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
+  const [clientFullName, setClientFullName] = useState('');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,6 +27,7 @@ const ClientCabinet = () => {
   useEffect(() => {
     const phone = localStorage.getItem('clientPhone');
     const name = localStorage.getItem('clientName');
+    const fullName = localStorage.getItem('clientFullName');
     
     if (!phone) {
       navigate('/login');
@@ -34,15 +36,18 @@ const ClientCabinet = () => {
 
     setClientPhone(phone);
     setClientName(name || 'Клиент');
-    loadDeals(phone);
+    setClientFullName(fullName || '');
+    loadDeals(phone, fullName || '');
   }, [navigate]);
 
-  const loadDeals = async (phone: string) => {
+  const loadDeals = async (phone: string, fullName: string) => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch(`https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${phone}`);
+      const encodedName = encodeURIComponent(fullName);
+      const url = `https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${phone}${fullName ? `&full_name=${encodedName}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.success) {
@@ -64,12 +69,13 @@ const ClientCabinet = () => {
   const handleLogout = () => {
     localStorage.removeItem('clientPhone');
     localStorage.removeItem('clientName');
+    localStorage.removeItem('clientFullName');
     navigate('/login');
   };
 
   const handleRefresh = () => {
     if (clientPhone) {
-      loadDeals(clientPhone);
+      loadDeals(clientPhone, clientFullName);
     }
   };
 

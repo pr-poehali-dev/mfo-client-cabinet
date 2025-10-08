@@ -10,6 +10,7 @@ import Icon from '@/components/ui/icon';
 const ClientLogin = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,14 +36,17 @@ const ClientLogin = () => {
     setError('');
 
     const cleanPhone = phone.replace(/\D/g, '');
+    const encodedName = encodeURIComponent(fullName.trim());
 
     try {
-      const response = await fetch(`https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${cleanPhone}`);
+      const url = `https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${cleanPhone}${fullName ? `&full_name=${encodedName}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.success && data.client) {
         localStorage.setItem('clientPhone', cleanPhone);
         localStorage.setItem('clientName', data.client.name);
+        localStorage.setItem('clientFullName', fullName.trim());
         navigate('/cabinet');
       } else {
         setError(data.error || 'Клиент не найден в AmoCRM');
@@ -65,7 +69,7 @@ const ClientLogin = () => {
             Личный кабинет
           </CardTitle>
           <CardDescription>
-            Введите номер телефона для входа
+            Введите номер телефона и ФИО для входа
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -84,6 +88,22 @@ const ClientLogin = () => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Фамилия Имя Отчество</Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="Иванов Иван Иванович"
+                value={fullName}
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  setError('');
+                }}
+                required
+                className="text-lg"
+              />
+            </div>
+
             {error && (
               <Alert className="bg-red-500/10 border-red-500/30">
                 <Icon name="AlertCircle" size={18} className="text-red-500" />
@@ -95,7 +115,7 @@ const ClientLogin = () => {
 
             <Button
               type="submit"
-              disabled={loading || phone.length < 18}
+              disabled={loading || phone.length < 18 || fullName.trim().length < 3}
               className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
             >
               {loading ? (
