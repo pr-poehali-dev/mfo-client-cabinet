@@ -9,6 +9,8 @@ import AmoCRMSetup from "./pages/AmoCRMSetup";
 import TestAmoCRM from "./pages/TestAmoCRM";
 import CleanupDeals from "./pages/CleanupDeals";
 import SyncAmoCRM from "./pages/SyncAmoCRM";
+import ClientLogin from "./pages/ClientLogin";
+import ClientCabinet from "./pages/ClientCabinet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/amocrm-setup" element={<AmoCRMSetup />} />
           <Route path="/test-amocrm" element={<TestAmoCRM />} />
           <Route path="/cleanup-deals" element={<CleanupDeals />} />
+          <Route path="/login" element={<ClientLogin />} />
+          <Route path="/cabinet" element={<ClientCabinet />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
