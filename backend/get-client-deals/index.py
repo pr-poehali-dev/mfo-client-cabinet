@@ -51,6 +51,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    if not full_name:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'success': False, 'error': 'ФИО обязательно'}),
+            'isBase64Encoded': False
+        }
+    
     amocrm_domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
     amocrm_token = os.environ.get('AMOCRM_ACCESS_TOKEN', '')
     
@@ -63,6 +71,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     normalized_phone = normalize_phone(phone)
+    normalized_full_name = normalize_name(full_name)
     
     headers = {
         'Authorization': f'Bearer {amocrm_token}',
@@ -145,11 +154,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         contact_id = matched_contact.get('id')
         contact_name = matched_contact.get('name', 'Клиент')
         
-        # Получаем все сделки из AmoCRM
+        # Получаем ТОЛЬКО сделки этого контакта через фильтр AmoCRM
         all_leads_response = requests.get(
             f'https://{amocrm_domain}/api/v4/leads',
             headers=headers,
-            params={'limit': 250, 'with': 'contacts'},
+            params={'filter[contacts][0]': contact_id, 'limit': 250},
             timeout=10
         )
         
@@ -169,54 +178,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         all_leads_data = all_leads_response.json()
         all_leads = all_leads_data.get('_embedded', {}).get('leads', [])
         
-        # Фильтруем сделки по номеру телефона и ФИО
+        # Все полученные сделки уже отфильтрованы AmoCRM по contact_id
+        # Это гарантирует, что показываются ТОЛЬКО сделки этого клиента
         deals: List[Dict[str, Any]] = []
         for lead in all_leads:
-            # Проверяем, есть ли в сделке наш контакт
-            lead_contacts = lead.get('_embedded', {}).get('contacts', [])
-            
-            match_found = False
-            for lead_contact in lead_contacts:
-                # Получаем полные данные контакта сделки
-                lead_contact_detail = requests.get(
-                    f'https://{amocrm_domain}/api/v4/contacts/{lead_contact.get("id")}',
-                    headers=headers,
-                    timeout=10
-                )
-                
-                if lead_contact_detail.status_code == 200:
-                    lead_contact_data = lead_contact_detail.json()
-                    
-                    # Проверяем телефон
-                    for field in lead_contact_data.get('custom_fields_values', []):
-                        if field.get('field_code') == 'PHONE':
-                            for value in field.get('values', []):
-                                contact_phone = normalize_phone(value.get('value', ''))
-                                if contact_phone == normalized_phone:
-                                    # Если передано ФИО, проверяем его
-                                    if full_name:
-                                        lead_contact_name = lead_contact_data.get('name', '')
-                                        if normalize_name(lead_contact_name) == normalize_name(full_name):
-                                            match_found = True
-                                            break
-                                    else:
-                                        match_found = True
-                                        break
-                        if match_found:
-                            break
-                if match_found:
-                    break
-            
-            if match_found:
-                deals.append({
-                    'id': lead.get('id'),
-                    'name': lead.get('name', 'Заявка'),
-                    'price': lead.get('price', 0),
-                    'status_id': lead.get('status_id'),
-                    'pipeline_id': lead.get('pipeline_id'),
-                    'created_at': lead.get('created_at'),
-                    'updated_at': lead.get('updated_at')
-                })
+            deals.append({
+                'id': lead.get('id'),
+                'name': lead.get('name', 'Заявка'),
+                'price': lead.get('price', 0),
+                'status_id': lead.get('status_id'),
+                'pipeline_id': lead.get('pipeline_id'),
+                'created_at': lead.get('created_at'),
+                'updated_at': lead.get('updated_at')
+            })
         
         return {
             'statusCode': 200,
