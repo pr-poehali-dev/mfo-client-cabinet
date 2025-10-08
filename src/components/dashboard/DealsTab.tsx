@@ -104,11 +104,23 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
             </div>
           </div>
           
-          <NewApplicationDialog 
-            clientPhone={clientPhone}
-            onApplicationSubmit={onApplicationSubmit}
-            canSubmitNewApplication={canSubmitNewApplication}
-          />
+          {canSubmitNewApplication ? (
+            <NewApplicationDialog 
+              clientPhone={clientPhone}
+              onApplicationSubmit={onApplicationSubmit}
+              canSubmitNewApplication={canSubmitNewApplication}
+            />
+          ) : (
+            <div className="flex flex-col items-end gap-2">
+              <Button disabled className="bg-gradient-to-r from-primary to-secondary opacity-50 cursor-not-allowed">
+                <Icon name="Lock" size={18} className="mr-2" />
+                Подать заявку
+              </Button>
+              <p className="text-xs text-muted-foreground text-right max-w-xs">
+                У вас уже есть одобренный займ. Погасите его, чтобы подать новую заявку.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
