@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import AmoCRMSetup from "./pages/AmoCRMSetup";
 import TestAmoCRM from "./pages/TestAmoCRM";
 import CleanupDeals from "./pages/CleanupDeals";
+import AdminCleanup from "./pages/AdminCleanup";
 import SyncAmoCRM from "./pages/SyncAmoCRM";
 import ClientLogin from "./pages/ClientLogin";
 import ClientCabinet from "./pages/ClientCabinet";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/amocrm-setup" element={<AmoCRMSetup />} />
           <Route path="/test-amocrm" element={<TestAmoCRM />} />
           <Route path="/cleanup-deals" element={<CleanupDeals />} />
+          <Route path="/admin-cleanup" element={<AdminCleanup />} />
           <Route path="/login" element={<ClientLogin />} />
           <Route path="/cabinet" element={<ClientCabinet />} />
           <Route path="/distribution" element={<DealsDistribution />} />
