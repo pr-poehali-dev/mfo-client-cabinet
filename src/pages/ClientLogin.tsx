@@ -37,24 +37,18 @@ const ClientLogin = () => {
     const cleanPhone = phone.replace(/\D/g, '');
 
     try {
-      const response = await fetch('https://functions.poehali.dev/40525570-e354-46cc-9a4e-8d464ca14921', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ phone: cleanPhone })
-      });
-
+      const response = await fetch(`https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${cleanPhone}`);
       const data = await response.json();
 
       if (data.success && data.client) {
-        localStorage.setItem('clientData', JSON.stringify(data.client));
+        localStorage.setItem('clientPhone', cleanPhone);
+        localStorage.setItem('clientName', data.client.name);
         navigate('/cabinet');
       } else {
-        setError(data.error || 'Клиент не найден');
+        setError(data.error || 'Клиент не найден в AmoCRM');
       }
     } catch (err) {
-      setError('Ошибка подключения');
+      setError('Ошибка подключения к AmoCRM');
     } finally {
       setLoading(false);
     }

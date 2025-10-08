@@ -7,66 +7,78 @@ import Icon from '@/components/ui/icon';
 
 interface Deal {
   id: number;
-  amocrm_id: number;
   name: string;
   price: number;
-  status: string;
-  created_at: string;
-  client_name: string;
-  client_phone: string;
-}
-
-interface ClientData {
-  id: number;
-  name: string;
-  phone: string;
+  status_id: number;
+  pipeline_id: number;
+  created_at: number;
+  updated_at: number;
 }
 
 const ClientCabinet = () => {
   const navigate = useNavigate();
-  const [clientData, setClientData] = useState<ClientData | null>(null);
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const storedData = localStorage.getItem('clientData');
-    if (!storedData) {
+    const phone = localStorage.getItem('clientPhone');
+    const name = localStorage.getItem('clientName');
+    
+    if (!phone) {
       navigate('/login');
       return;
     }
 
-    const client: ClientData = JSON.parse(storedData);
-    setClientData(client);
-    loadDeals(client.id);
+    setClientPhone(phone);
+    setClientName(name || 'Клиент');
+    loadDeals(phone);
   }, [navigate]);
 
-  const loadDeals = async (clientId: number) => {
+  const loadDeals = async (phone: string) => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch(
-        `https://functions.poehali.dev/f9d7139b-9387-46c7-be03-87947f532a1b?client_id=${clientId}`
-      );
-
+      const response = await fetch(`https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${phone}`);
       const data = await response.json();
 
       if (data.success) {
         setDeals(data.deals || []);
+        if (data.client?.name) {
+          setClientName(data.client.name);
+          localStorage.setItem('clientName', data.client.name);
+        }
       } else {
-        setError(data.error || 'Ошибка загрузки заявок');
+        setError(data.error || 'Ошибка загрузки заявок из AmoCRM');
       }
     } catch (err) {
-      setError('Ошибка подключения');
+      setError('Ошибка подключения к AmoCRM');
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('clientData');
+    localStorage.removeItem('clientPhone');
+    localStorage.removeItem('clientName');
     navigate('/login');
+  };
+
+  const handleRefresh = () => {
+    if (clientPhone) {
+      loadDeals(clientPhone);
+    }
+  };
+
+  const formatPhone = (phone: string) => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 11) {
+      return `+${digits[0]} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9, 11)}`;
+    }
+    return phone;
   };
 
   const formatPrice = (price: number) => {
@@ -77,8 +89,8 @@ const ClientCabinet = () => {
     }).format(price);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString('ru-RU', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -87,19 +99,23 @@ const ClientCabinet = () => {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    const statusMap: Record<string, string> = {
-      'Новая заявка': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-      'В работе': 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-      'Выполнена': 'bg-green-500/20 text-green-300 border-green-500/30',
-      'Отменена': 'bg-red-500/20 text-red-300 border-red-500/30'
+  const getStatusColor = (statusId: number) => {
+    const statusMap: Record<number, string> = {
+      142: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      143: 'bg-green-500/20 text-green-300 border-green-500/30',
+      144: 'bg-red-500/20 text-red-300 border-red-500/30'
     };
-    return statusMap[status] || 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+    return statusMap[statusId] || 'bg-gray-500/20 text-gray-300 border-gray-500/30';
   };
 
-  if (!clientData) {
-    return null;
-  }
+  const getStatusName = (statusId: number) => {
+    const statusNames: Record<number, string> = {
+      142: 'Новая заявка',
+      143: 'Успешно реализовано',
+      144: 'Неуспешно реализовано'
+    };
+    return statusNames[statusId] || `Статус ${statusId}`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] p-4">
@@ -113,10 +129,10 @@ const ClientCabinet = () => {
                 </div>
                 <div>
                   <CardTitle className="text-2xl font-montserrat">
-                    {clientData.name}
+                    {clientName}
                   </CardTitle>
                   <CardDescription className="text-lg">
-                    {clientData.phone}
+                    {formatPhone(clientPhone)}
                   </CardDescription>
                 </div>
               </div>
@@ -134,13 +150,26 @@ const ClientCabinet = () => {
 
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-2xl font-montserrat flex items-center gap-2">
-              <Icon name="FileText" size={28} />
-              Мои заявки
-            </CardTitle>
-            <CardDescription>
-              Всего заявок: {deals.length}
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl font-montserrat flex items-center gap-2">
+                  <Icon name="FileText" size={28} />
+                  Мои заявки из AmoCRM
+                </CardTitle>
+                <CardDescription>
+                  Всего заявок: {deals.length}
+                </CardDescription>
+              </div>
+              <Button
+                onClick={handleRefresh}
+                disabled={loading}
+                variant="outline"
+                className="border-border/50"
+              >
+                <Icon name="RefreshCw" size={18} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Обновить
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -157,7 +186,7 @@ const ClientCabinet = () => {
             ) : deals.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Icon name="Inbox" size={48} className="mx-auto mb-4 opacity-50" />
-                <p className="text-lg">У вас пока нет заявок</p>
+                <p className="text-lg">У вас пока нет заявок в AmoCRM</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -168,8 +197,8 @@ const ClientCabinet = () => {
                         <div className="flex-1 space-y-3">
                           <div className="flex items-center gap-3">
                             <h3 className="text-xl font-semibold">{deal.name}</h3>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(deal.status)}`}>
-                              {deal.status}
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(deal.status_id)}`}>
+                              {getStatusName(deal.status_id)}
                             </span>
                           </div>
                           
@@ -188,7 +217,7 @@ const ClientCabinet = () => {
 
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Icon name="Hash" size={14} />
-                            <span>ID заявки: {deal.amocrm_id}</span>
+                            <span>ID заявки: {deal.id}</span>
                           </div>
                         </div>
                       </div>

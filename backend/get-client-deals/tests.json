@@ -1,12 +1,9 @@
 {
   "tests": [
     {
-      "name": "Client login with phone",
-      "method": "POST",
-      "path": "/",
-      "body": {
-        "phone": "79999999999"
-      },
+      "name": "Get client deals by phone",
+      "method": "GET",
+      "path": "/?phone=79999999999",
       "expectedStatus": 200,
       "expectedBody": {
         "success": true
