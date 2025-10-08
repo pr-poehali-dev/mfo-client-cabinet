@@ -129,73 +129,88 @@ export const useAmoCRM = () => {
       
       const cleanPhone = phone.replace(/\D/g, '');
       
+      const dealsResponse = await fetch(
+        `https://functions.poehali.dev/2fbf226c-26a9-4dd5-966d-b851b1be5d94?phone=${cleanPhone}`
+      );
+      
+      if (!dealsResponse.ok) {
+        setError('Ошибка загрузки сделок');
+        return null;
+      }
+      
+      const dealsData = await dealsResponse.json();
+      const deals = (dealsData.deals || []).map((deal: any) => ({
+        id: String(deal.id),
+        name: deal.name || 'Заявка',
+        status: deal.status,
+        status_id: deal.status_id,
+        status_name: deal.status_name || 'На рассмотрении',
+        status_color: deal.status_color || '#cccccc',
+        pipeline_id: deal.pipeline_id,
+        pipeline_name: deal.pipeline_name || 'Основная воронка',
+        price: deal.price || 0,
+        amount: deal.price || 0,
+        term: deal.custom_fields?.loan_term || 30,
+        created_at: deal.created_at ? new Date(deal.created_at).toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }) : new Date().toLocaleDateString('ru-RU'),
+        updated_at: deal.updated_at ? new Date(deal.updated_at).toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }) : new Date().toLocaleDateString('ru-RU'),
+        date: deal.created_at ? new Date(deal.created_at).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
+        description: deal.name || 'Заявка на займ',
+        responsible_user_id: deal.responsible_user_id,
+        custom_fields: deal.custom_fields || {},
+        custom_fields_values: []
+      }));
+      
       const response = await fetch(
         `https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850?phone=${cleanPhone}`
       );
       
-      if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          setError('Ошибка сервера. Попробуйте позже');
-          return null;
-        }
-        
-        console.error('API Error:', response.status, errorData);
-        
-        if (response.status === 500) {
-          if (errorData.error?.includes('access token')) {
-            setError('⚠️ Ошибка подключения к AmoCRM. Токен авторизации устарел. Обновите секрет AMOCRM_REFRESH_TOKEN');
-          } else if (errorData.error?.includes('credentials')) {
-            setError('⚠️ AmoCRM не настроен. Проверьте секреты: AMOCRM_DOMAIN, AMOCRM_CLIENT_ID, AMOCRM_CLIENT_SECRET, AMOCRM_REFRESH_TOKEN');
-          } else {
-            setError(`Ошибка сервера: ${errorData.error || 'Неизвестная ошибка'}`);
+      let clientData = {
+        id: '',
+        name: 'Клиент',
+        first_name: '',
+        last_name: '',
+        middle_name: '',
+        gender: 'male' as const,
+        phone: cleanPhone,
+        email: ''
+      };
+      
+      if (response.ok) {
+        const responseText = await response.text();
+        if (responseText) {
+          const data = JSON.parse(responseText);
+          if (data && data.id) {
+            clientData = {
+              id: String(data.id || ''),
+              name: data.name || 'Клиент',
+              first_name: data.first_name || '',
+              last_name: data.last_name || '',
+              middle_name: data.middle_name || '',
+              gender: data.gender || 'male',
+              phone: data.phone || cleanPhone,
+              email: data.email || ''
+            };
           }
-        } else if (response.status === 404) {
-          setError('Клиент не найден в AmoCRM. Проверьте номер телефона');
-        } else if (response.status === 401) {
-          setError('⚠️ Ошибка авторизации AmoCRM');
-        } else {
-          setError(errorData.error || 'Ошибка загрузки данных');
         }
-        return null;
       }
       
-      const responseText = await response.text();
-      if (!responseText) {
-        setError('Пустой ответ от сервера');
-        return null;
-      }
+      console.log(`Loaded ${deals.length} deals for ${clientData.name}`);
+      console.log('Статусы всех заявок:', deals.map(d => ({ id: d.id, status: d.status_name })));
+      console.log('Полные данные заявок:', deals);
       
-      const data = JSON.parse(responseText);
-      
-      if (!data || !data.id) {
-        setError('Получены некорректные данные от сервера');
-        console.error('Invalid data structure:', data);
-        return null;
-      }
-      
-      const mappedLeads = (data.leads || []).map(mapLeadData);
-      
-      console.log(`Loaded ${mappedLeads.length} deals for ${data.name}`);
-      console.log('Статусы всех заявок:', mappedLeads.map(d => ({ id: d.id, status: d.status_name })));
-      console.log('Полные данные заявок:', mappedLeads);
-      
-      const paymentNotifications = checkPaymentDeadlines(mappedLeads);
+      const paymentNotifications = checkPaymentDeadlines(deals);
       
       return {
-        clientData: {
-          id: String(data.id || ''),
-          name: data.name || 'Клиент',
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
-          middle_name: data.middle_name || '',
-          gender: data.gender || 'male',
-          phone: data.phone || cleanPhone,
-          email: data.email || ''
-        },
-        deals: mappedLeads,
+        clientData,
+        deals,
         notifications: paymentNotifications
       };
       

@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "Create deal with valid data",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "phone": "+79001234567",
+        "amount": 50000,
+        "loanTerm": 12,
+        "purpose": "Покупка товара"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "deal_id": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Missing required fields",
+      "method": "POST",
+      "path": "/",
+      "body": {},
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

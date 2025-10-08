@@ -1,0 +1,24 @@
+{
+  "tests": [
+    {
+      "name": "Get deals by phone",
+      "method": "GET",
+      "path": "/?phone=+79001234567",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "deals": []
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Missing phone validation",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

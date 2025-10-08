@@ -6,6 +6,8 @@ interface AuthState {
   clientName: string;
 }
 
+const CLIENT_AUTH_URL = 'https://functions.poehali.dev/331ab23f-a941-49aa-947a-eabaed896d8e';
+
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userPhone, setUserPhone] = useState('');
@@ -24,13 +26,42 @@ export const useAuth = () => {
     }
   }, []);
 
-  const login = (phone: string, name?: string) => {
-    setUserPhone(phone);
-    setIsAuthenticated(true);
-    localStorage.setItem('userPhone', phone);
-    if (name) {
-      setClientName(name);
-      localStorage.setItem('clientName', name);
+  const login = async (phone: string, name?: string) => {
+    try {
+      const response = await fetch(CLIENT_AUTH_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ phone, name: name || '' })
+      });
+
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const clientData = data.client;
+        setUserPhone(clientData.phone);
+        setIsAuthenticated(true);
+        setClientName(clientData.name);
+        
+        localStorage.setItem('userPhone', clientData.phone);
+        localStorage.setItem('clientName', clientData.name);
+        
+        if (data.isNewRegistration) {
+          localStorage.setItem('newRegistration', 'true');
+        }
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
   };
 

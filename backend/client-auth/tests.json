@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Existing client login",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "phone": "+79001234567",
+        "name": "Test Client"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "client": {
+          "phone": "string",
+          "name": "string"
+        }
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Missing phone validation",
+      "method": "POST",
+      "path": "/",
+      "body": {},
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

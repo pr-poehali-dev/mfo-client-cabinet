@@ -1,4 +1,7 @@
 {
+  "client-auth": "https://functions.poehali.dev/331ab23f-a941-49aa-947a-eabaed896d8e",
+  "client-deals": "https://functions.poehali.dev/2fbf226c-26a9-4dd5-966d-b851b1be5d94",
+  "create-deal": "https://functions.poehali.dev/19b4b253-3352-4332-810a-30d128021b66",
   "amocrm-chat": "https://functions.poehali.dev/b8a1856f-8ba7-482b-b70e-c9e1916ac7bd",
   "amocrm-update-contact": "https://functions.poehali.dev/9edfcddf-aeb9-4d91-8ca8-9a0af13c0697",
   "sms-auth": "https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea",
