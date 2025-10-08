@@ -168,13 +168,10 @@ export const useAmoCRM = () => {
         custom_fields_values: []
       }));
       
-      const response = await fetch(
-        `https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850?phone=${cleanPhone}`
-      );
-      
-      let clientData = {
+      // Данные клиента получаем из localStorage (установлены при авторизации)
+      const clientData = {
         id: '',
-        name: 'Клиент',
+        name: localStorage.getItem('clientName') || 'Клиент',
         first_name: '',
         last_name: '',
         middle_name: '',
@@ -182,25 +179,6 @@ export const useAmoCRM = () => {
         phone: cleanPhone,
         email: ''
       };
-      
-      if (response.ok) {
-        const responseText = await response.text();
-        if (responseText) {
-          const data = JSON.parse(responseText);
-          if (data && data.id) {
-            clientData = {
-              id: String(data.id || ''),
-              name: data.name || 'Клиент',
-              first_name: data.first_name || '',
-              last_name: data.last_name || '',
-              middle_name: data.middle_name || '',
-              gender: data.gender || 'male',
-              phone: data.phone || cleanPhone,
-              email: data.email || ''
-            };
-          }
-        }
-      }
       
       console.log(`Loaded ${deals.length} deals for ${clientData.name}`);
       console.log('Статусы всех заявок:', deals.map(d => ({ id: d.id, status: d.status_name })));
