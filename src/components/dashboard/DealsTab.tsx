@@ -32,9 +32,8 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
            lowerStatus.includes('займ просрочен');
   };
   
-  const hasRejectedDeal = deals.some(deal => isRejectedStatus(deal.status_name));
   const hasApprovedDeal = deals.some(deal => isApprovedStatus(deal.status_name));
-  const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
+  const canSubmitNewApplication = !hasApprovedDeal;
 
   const getStatusPriority = (statusName: string): number => {
     if (isOverdueStatus(statusName)) return 0;
