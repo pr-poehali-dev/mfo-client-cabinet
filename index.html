@@ -61,6 +61,46 @@
 </noscript>
 <!-- /Yandex.Metrika counter -->
 
+<!-- AmoCRM Chat Widget -->
+<script>
+(function(a,m,o,c,r,m){
+  a[m]={
+    id:"435659",
+    hash:"b37e36919def34b9611aaa7217bddca108a91f825271662291e9fb95592a2baa",
+    locale:"ru",
+    inline:false,
+    setMeta:function(p){
+      this.params=(this.params||[]).concat([p])
+    }
+  };
+  a[o]=a[o]||function(){
+    (a[o].q=a[o].q||[]).push(arguments)
+  };
+  var d=a.document,s=d.createElement('script');
+  s.async=true;
+  s.id=m+'_script';
+  s.src='https://gso.amocrm.ru/js/button.js';
+  d.head&&d.head.appendChild(s)
+}(window,0,'amoSocialButton',0,0,'amo_social_button'));
 
+// Apply custom styles to AmoCRM widget
+setTimeout(function() {
+  var style = document.createElement('style');
+  style.innerHTML = `
+    /* Force hide branding */
+    iframe[id*="amo"] { pointer-events: auto !important; }
+    #amo_social_button a[href*="amocrm"],
+    #amo_social_button div[class*="branding"],
+    #amo_social_button div[class*="footer"] {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+    }
+  `;
+  document.head.appendChild(style);
+}, 2000);
+</script>
+<!-- /AmoCRM Chat Widget -->
 </body>
 </html>
