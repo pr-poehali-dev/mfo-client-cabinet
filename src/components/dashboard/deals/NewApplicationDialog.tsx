@@ -45,6 +45,9 @@ const NewApplicationDialog = ({ clientPhone, onApplicationSubmit, canSubmitNewAp
       setIsDialogOpen(false);
       setAmount(50000);
       setTermDays(30);
+      
+      // Принудительно обновляем данные
+      await new Promise(resolve => setTimeout(resolve, 500));
       onApplicationSubmit();
     } catch (error) {
       toast.error('Не удалось отправить заявку');

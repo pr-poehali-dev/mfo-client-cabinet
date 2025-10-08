@@ -67,10 +67,17 @@ const Index = () => {
   }, [isAuthenticated, userPhone]);
 
   const loadData = async (phone: string) => {
-    // Очищаем старые данные перед загрузкой
+    // ПОЛНАЯ очистка старых данных перед загрузкой
     setLoans([]);
     setPayments([]);
     setDeals([]);
+    setClientName('');
+    setClientFirstName('');
+    setClientLastName('');
+    setClientMiddleName('');
+    setClientPhone('');
+    setClientEmail('');
+    setContactId('');
     
     const result = await fetchAmoCRMData(phone);
     
@@ -85,6 +92,9 @@ const Index = () => {
       setContactId(result.clientData.id);
       
       // Устанавливаем ТОЛЬКО полученные сделки
+      console.log(`🔍 Загружено ${result.deals.length} заявок для телефона ${phone}`);
+      console.log('📋 Список заявок:', result.deals.map(d => ({ id: d.id, name: d.name, status: d.status_name })));
+      
       setDeals(result.deals);
       setLoans(result.deals);
       setPayments([]);

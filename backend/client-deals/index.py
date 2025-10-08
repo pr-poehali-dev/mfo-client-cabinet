@@ -67,8 +67,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     # Находим client_id по номеру телефона
     cur.execute(
-        "SELECT id FROM t_p14771149_mfo_client_cabinet.amocrm_clients WHERE phone = %s",
-        (normalized_phone,)
+        f"SELECT id FROM t_p14771149_mfo_client_cabinet.amocrm_clients WHERE phone = '{normalized_phone}'"
     )
     client_row = cur.fetchone()
     
@@ -89,12 +88,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     # Получаем все сделки клиента
     cur.execute(
-        """SELECT id, name, price, status, status_id, status_name, status_color, 
+        f"""SELECT id, name, price, status, status_id, status_name, status_color, 
                   pipeline_id, pipeline_name, created_at, updated_at, custom_fields 
            FROM t_p14771149_mfo_client_cabinet.amocrm_deals 
-           WHERE client_id = %s 
-           ORDER BY created_at DESC""",
-        (client_id,)
+           WHERE client_id = {client_id} 
+           ORDER BY created_at DESC"""
     )
     
     deals = []
