@@ -67,6 +67,11 @@ const Index = () => {
   }, [isAuthenticated, userPhone]);
 
   const loadData = async (phone: string) => {
+    // Очищаем старые данные перед загрузкой
+    setLoans([]);
+    setPayments([]);
+    setDeals([]);
+    
     const result = await fetchAmoCRMData(phone);
     
     if (result) {
@@ -79,6 +84,7 @@ const Index = () => {
       setClientEmail(result.clientData.email);
       setContactId(result.clientData.id);
       
+      // Устанавливаем ТОЛЬКО полученные сделки
       setDeals(result.deals);
       setLoans(result.deals);
       setPayments([]);
@@ -93,6 +99,7 @@ const Index = () => {
       
       setLastUpdate(new Date());
     } else {
+      // Если данных нет, оставляем пустые массивы
       setLoans([]);
       setPayments([]);
       setDeals([]);

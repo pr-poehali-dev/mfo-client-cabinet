@@ -51,6 +51,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         clean_phone = '7' + clean_phone
     normalized_phone = '+' + clean_phone
     
+    print(f"DEBUG: Original phone: {phone}, Normalized: {normalized_phone}")
+    
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
         return {
@@ -72,6 +74,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     if not client_row:
         # Клиент не найден - возвращаем пустой список
+        print(f"DEBUG: Client not found for phone {normalized_phone}")
         cur.close()
         conn.close()
         return {
@@ -82,6 +85,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     client_id = client_row[0]
+    print(f"DEBUG: Found client_id {client_id} for phone {normalized_phone}")
     
     # Получаем все сделки клиента
     cur.execute(
@@ -110,6 +114,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'custom_fields': row[11] if row[11] else {}
         }
         deals.append(deal)
+    
+    print(f"DEBUG: Returning {len(deals)} deals for client_id {client_id}")
     
     cur.close()
     conn.close()
