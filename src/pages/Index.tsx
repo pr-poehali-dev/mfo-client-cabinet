@@ -67,6 +67,18 @@ const Index = () => {
   }, [isAuthenticated, userPhone]);
 
   const loadData = async (phone: string) => {
+    // ПОЛНАЯ очистка старых данных перед загрузкой
+    setLoans([]);
+    setPayments([]);
+    setDeals([]);
+    setClientName('');
+    setClientFirstName('');
+    setClientLastName('');
+    setClientMiddleName('');
+    setClientPhone('');
+    setClientEmail('');
+    setContactId('');
+    
     const result = await fetchAmoCRMData(phone);
     
     if (result) {
@@ -78,6 +90,11 @@ const Index = () => {
       setClientPhone(result.clientData.phone);
       setClientEmail(result.clientData.email);
       setContactId(result.clientData.id);
+      
+      // Backend уже отфильтровал заявки по contact_id через AmoCRM API
+      // Дополнительная фильтрация НЕ нужна - все заявки принадлежат этому клиенту
+      console.log(`✅ Загружено ${result.deals.length} заявок для ${result.clientData.name} (${phone})`);
+      console.log('📋 Список заявок:', result.deals.map(d => ({ id: d.id, name: d.name, status: d.status_name })));
       
       setDeals(result.deals);
       setLoans(result.deals);
@@ -93,6 +110,7 @@ const Index = () => {
       
       setLastUpdate(new Date());
     } else {
+      // Если данных нет, оставляем пустые массивы
       setLoans([]);
       setPayments([]);
       setDeals([]);
@@ -146,6 +164,7 @@ const Index = () => {
         <LoadingBanner loading={loading} />
         
         <DashboardTabs
+          key={userPhone}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           unreadMessagesCount={unreadMessagesCount}

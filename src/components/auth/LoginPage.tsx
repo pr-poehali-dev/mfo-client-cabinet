@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 
 interface LoginPageProps {
-  onLogin: (phone: string, clientName?: string) => void;
+  onLogin: (phone: string, clientName?: string) => Promise<boolean>;
 }
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
@@ -133,7 +133,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         if (finalName) {
           localStorage.setItem('clientName', finalName);
         }
-        onLogin(digits, finalName);
+        const success = await onLogin(digits, finalName);
+        if (!success) {
+          setError('Ошибка входа');
+        }
       } else {
         setError(data.error || 'Неверный код');
       }
