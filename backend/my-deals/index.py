@@ -56,19 +56,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     conn = psycopg2.connect(dsn)
     cur = conn.cursor()
     
-    # Получаем только заявки этого клиента
+    # Получаем только заявки этого клиента из AmoCRM таблиц
     cur.execute("""
         SELECT 
             d.id,
-            d.amocrm_id,
+            d.id as amocrm_id,
             d.name,
             d.price,
-            d.status,
+            d.status_name,
             d.created_at,
             c.name as client_name,
             c.phone as client_phone
-        FROM deals d
-        JOIN clients c ON d.client_id = c.id
+        FROM t_p14771149_mfo_client_cabinet.amocrm_deals d
+        JOIN t_p14771149_mfo_client_cabinet.amocrm_clients c ON d.client_id = c.id
         WHERE d.client_id = %s
         ORDER BY d.created_at DESC
     """, (client_id,))

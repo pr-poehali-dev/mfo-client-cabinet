@@ -42,22 +42,25 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': json.dumps({'success': False, 'error': 'Номер телефона обязателен'})
         }
     
-    # Нормализация номера телефона
+    # Нормализация номера телефона (приводим к формату +7XXXXXXXXXX)
     clean_phone = ''.join(filter(str.isdigit, phone))
     if clean_phone.startswith('8'):
         clean_phone = '7' + clean_phone[1:]
+    if not clean_phone.startswith('7'):
+        clean_phone = '7' + clean_phone
+    normalized_phone = '+' + clean_phone
     
     dsn = os.environ.get('DATABASE_URL')
     
     conn = psycopg2.connect(dsn)
     cur = conn.cursor()
     
-    # Ищем клиента по номеру телефона
+    # Ищем клиента по номеру телефона в AmoCRM таблице
     cur.execute("""
         SELECT id, name, phone 
-        FROM clients 
+        FROM t_p14771149_mfo_client_cabinet.amocrm_clients 
         WHERE phone = %s
-    """, (clean_phone,))
+    """, (normalized_phone,))
     
     client = cur.fetchone()
     
