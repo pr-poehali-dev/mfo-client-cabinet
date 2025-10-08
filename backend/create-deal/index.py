@@ -98,30 +98,39 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     amocrm_deal_id = None
     if amocrm_domain and amocrm_token:
         try:
+            print(f"DEBUG: Attempting to create deal in AmoCRM for phone {normalized_phone}")
             headers = {
                 'Authorization': f'Bearer {amocrm_token}',
                 'Content-Type': 'application/json'
             }
+            
+            # Базовые данные сделки без кастомных полей
             deal_data = [{
-                'name': f'Заявка на {amount} руб.',
-                'price': int(amount),
-                'custom_fields_values': [
-                    {'field_id': 'срок_займа', 'values': [{'value': loan_term}]},
-                    {'field_id': 'цель_займа', 'values': [{'value': purpose}]}
-                ]
+                'name': f'Заявка на {amount} руб. (ЛК)',
+                'price': int(amount)
             }]
+            
+            print(f"DEBUG: Sending to AmoCRM: {json.dumps(deal_data)}")
+            
             response = requests.post(
                 f'https://{amocrm_domain}/api/v4/leads',
                 headers=headers,
                 json=deal_data,
                 timeout=10
             )
-            if response.status_code == 200:
+            
+            print(f"DEBUG: AmoCRM response status: {response.status_code}")
+            
+            if response.status_code in [200, 201]:
                 result = response.json()
+                print(f"DEBUG: AmoCRM response: {json.dumps(result)}")
                 if result.get('_embedded', {}).get('leads'):
                     amocrm_deal_id = result['_embedded']['leads'][0]['id']
-        except Exception:
-            pass
+                    print(f"DEBUG: Created deal in AmoCRM with ID: {amocrm_deal_id}")
+            else:
+                print(f"DEBUG: AmoCRM error: {response.text}")
+        except Exception as e:
+            print(f"DEBUG: Exception creating AmoCRM deal: {str(e)}")
     
     # Сохраняем сделку в БД
     deal_name = f'Заявка на {amount} руб.'
