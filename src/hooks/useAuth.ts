@@ -28,6 +28,9 @@ export const useAuth = () => {
 
   const login = async (phone: string, name?: string) => {
     try {
+      // Очищаем все старые данные перед входом
+      localStorage.clear();
+      
       const response = await fetch(CLIENT_AUTH_URL, {
         method: 'POST',
         headers: {
@@ -69,8 +72,8 @@ export const useAuth = () => {
     setIsAuthenticated(false);
     setUserPhone('');
     setClientName('');
-    localStorage.removeItem('userPhone');
-    localStorage.removeItem('clientName');
+    // Полная очистка всех данных
+    localStorage.clear();
   };
 
   const checkNewRegistration = () => {

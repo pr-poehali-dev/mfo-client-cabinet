@@ -130,7 +130,13 @@ export const useAmoCRM = () => {
       const cleanPhone = phone.replace(/\D/g, '');
       
       const dealsResponse = await fetch(
-        `https://functions.poehali.dev/2fbf226c-26a9-4dd5-966d-b851b1be5d94?phone=${cleanPhone}`
+        `https://functions.poehali.dev/2fbf226c-26a9-4dd5-966d-b851b1be5d94?phone=${cleanPhone}&t=${Date.now()}`,
+        {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        }
       );
       
       if (!dealsResponse.ok) {
