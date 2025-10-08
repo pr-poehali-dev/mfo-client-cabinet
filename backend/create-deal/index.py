@@ -76,8 +76,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     # Находим или создаём клиента в amocrm_clients
     cur.execute(
-        "SELECT id FROM t_p14771149_mfo_client_cabinet.amocrm_clients WHERE phone = %s",
-        (normalized_phone,)
+        f"SELECT id FROM t_p14771149_mfo_client_cabinet.amocrm_clients WHERE phone = '{normalized_phone}'"
     )
     client_row = cur.fetchone()
     
@@ -86,11 +85,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     else:
         # Создаём временный ID для нового клиента
         temp_client_id = int(datetime.now().timestamp() * 1000)
+        now_iso = datetime.now().isoformat()
         cur.execute(
-            """INSERT INTO t_p14771149_mfo_client_cabinet.amocrm_clients 
+            f"""INSERT INTO t_p14771149_mfo_client_cabinet.amocrm_clients 
                (id, phone, name, created_at, updated_at, last_sync_at) 
-               VALUES (%s, %s, %s, %s, %s, %s)""",
-            (temp_client_id, normalized_phone, 'Новый клиент', datetime.now(), datetime.now(), datetime.now())
+               VALUES ({temp_client_id}, '{normalized_phone}', 'Новый клиент', '{now_iso}', '{now_iso}', '{now_iso}')"""
         )
         client_id = temp_client_id
         conn.commit()
@@ -127,29 +126,27 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     # Сохраняем сделку в БД
     deal_name = f'Заявка на {amount} руб.'
     deal_id_value = amocrm_deal_id if amocrm_deal_id else int(datetime.now().timestamp() * 1000)
+    now_iso = datetime.now().isoformat()
+    custom_fields_json = json.dumps({'loan_term': loan_term, 'purpose': purpose}).replace("'", "''")
+    deal_name_escaped = deal_name.replace("'", "''")
     
+    # Проверяем, нет ли уже такой сделки (защита от дублей)
     cur.execute(
-        """INSERT INTO t_p14771149_mfo_client_cabinet.amocrm_deals 
-           (id, client_id, name, price, status, status_id, status_name, status_color, 
-            pipeline_id, pipeline_name, created_at, updated_at, custom_fields) 
-           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-        (
-            deal_id_value,
-            client_id,
-            deal_name,
-            amount,
-            'new',
-            1,
-            'Новая заявка',
-            '#99ccff',
-            1,
-            'Основная воронка',
-            datetime.now(),
-            datetime.now(),
-            json.dumps({'loan_term': loan_term, 'purpose': purpose})
-        )
+        f"SELECT id FROM t_p14771149_mfo_client_cabinet.amocrm_deals WHERE id = {deal_id_value}"
     )
-    conn.commit()
+    existing_deal = cur.fetchone()
+    
+    if not existing_deal:
+        cur.execute(
+            f"""INSERT INTO t_p14771149_mfo_client_cabinet.amocrm_deals 
+               (id, client_id, name, price, status, status_id, status_name, status_color, 
+                pipeline_id, pipeline_name, created_at, updated_at, custom_fields) 
+               VALUES ({deal_id_value}, {client_id}, '{deal_name_escaped}', {amount}, 'new', 
+                       1, 'Новая заявка', '#99ccff', 1, 'Основная воронка', 
+                       '{now_iso}', '{now_iso}', '{custom_fields_json}')"""
+        )
+        conn.commit()
+    
     deal_id = deal_id_value
     
     cur.close()
