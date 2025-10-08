@@ -178,19 +178,28 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         all_leads_data = all_leads_response.json()
         all_leads = all_leads_data.get('_embedded', {}).get('leads', [])
         
-        # Все полученные сделки уже отфильтрованы AmoCRM по contact_id
-        # Это гарантирует, что показываются ТОЛЬКО сделки этого клиента
-        deals: List[Dict[str, Any]] = []
-        for lead in all_leads:
-            deals.append({
-                'id': lead.get('id'),
-                'name': lead.get('name', 'Заявка'),
-                'price': lead.get('price', 0),
-                'status_id': lead.get('status_id'),
-                'pipeline_id': lead.get('pipeline_id'),
-                'created_at': lead.get('created_at'),
-                'updated_at': lead.get('updated_at')
-            })
+        # Объединяем все сделки клиента в одну запись с суммой
+        total_price = sum(lead.get('price', 0) for lead in all_leads)
+        deal_ids = [lead.get('id') for lead in all_leads]
+        
+        # Создаём одну объединённую заявку
+        if all_leads:
+            # Берём самую свежую заявку для отображения
+            latest_lead = max(all_leads, key=lambda x: x.get('updated_at', 0))
+            
+            unified_deal = {
+                'id': ','.join(map(str, deal_ids)),  # Все ID через запятую
+                'name': f'Заявки клиента ({len(all_leads)} шт.)',
+                'price': total_price,
+                'status_id': latest_lead.get('status_id'),
+                'pipeline_id': latest_lead.get('pipeline_id'),
+                'created_at': min(lead.get('created_at', 0) for lead in all_leads),
+                'updated_at': latest_lead.get('updated_at'),
+                'count': len(all_leads)
+            }
+            deals = [unified_deal]
+        else:
+            deals = []
         
         return {
             'statusCode': 200,
