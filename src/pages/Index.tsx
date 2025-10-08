@@ -91,20 +91,13 @@ const Index = () => {
       setClientEmail(result.clientData.email);
       setContactId(result.clientData.id);
       
-      // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: фильтруем заявки только текущего клиента
-      const normalizedUserPhone = phone.replace(/\D/g, '');
-      const clientDeals = result.deals.filter(deal => {
-        // Проверяем, что заявка принадлежит текущему пользователю
-        const dealPhone = result.clientData.phone.replace(/\D/g, '');
-        return dealPhone === normalizedUserPhone;
-      });
+      // Backend уже отфильтровал заявки по contact_id через AmoCRM API
+      // Дополнительная фильтрация НЕ нужна - все заявки принадлежат этому клиенту
+      console.log(`✅ Загружено ${result.deals.length} заявок для ${result.clientData.name} (${phone})`);
+      console.log('📋 Список заявок:', result.deals.map(d => ({ id: d.id, name: d.name, status: d.status_name })));
       
-      console.log(`🔍 Загружено ${clientDeals.length} заявок для телефона ${phone}`);
-      console.log('📋 Список заявок:', clientDeals.map(d => ({ id: d.id, name: d.name, status: d.status_name })));
-      console.log(`🛡️ Безопасность: отфильтровано ${result.deals.length - clientDeals.length} чужих заявок`);
-      
-      setDeals(clientDeals);
-      setLoans(clientDeals);
+      setDeals(result.deals);
+      setLoans(result.deals);
       setPayments([]);
       
       setNotifications(prev => {

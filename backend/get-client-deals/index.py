@@ -214,14 +214,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'success': True,
                 'client': {'name': contact_name, 'phone': phone, 'id': contact_id},
                 'deals': deals,
-                'total': len(deals),
-                'debug': {
-                    'contact_id': contact_id,
-                    'normalized_phone': normalized_phone,
-                    'normalized_name': normalize_name(full_name),
-                    'total_leads_from_amocrm': len(all_leads),
-                    'filter_used': f'filter[contacts][0][id]={contact_id}'
-                }
+                'total': len(deals)
             }),
             'isBase64Encoded': False
         }
