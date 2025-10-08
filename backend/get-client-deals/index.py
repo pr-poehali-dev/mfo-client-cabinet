@@ -100,9 +100,41 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        contact = contacts[0]
-        contact_id = contact.get('id')
-        contact_name = contact.get('name', 'Клиент')
+        # Проверяем точное совпадение телефона в контакте
+        matched_contact = None
+        for contact in contacts:
+            # Получаем полные данные контакта с телефонами
+            contact_detail = requests.get(
+                f'https://{amocrm_domain}/api/v4/contacts/{contact.get("id")}',
+                headers=headers,
+                timeout=10
+            )
+            
+            if contact_detail.status_code == 200:
+                contact_data = contact_detail.json()
+                # Проверяем все телефоны контакта
+                for field in contact_data.get('custom_fields_values', []):
+                    if field.get('field_code') == 'PHONE':
+                        for value in field.get('values', []):
+                            contact_phone = normalize_phone(value.get('value', ''))
+                            if contact_phone == normalized_phone:
+                                matched_contact = contact_data
+                                break
+                    if matched_contact:
+                        break
+            if matched_contact:
+                break
+        
+        if not matched_contact:
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'success': False, 'error': 'Точное совпадение телефона не найдено'}),
+                'isBase64Encoded': False
+            }
+        
+        contact_id = matched_contact.get('id')
+        contact_name = matched_contact.get('name', 'Клиент')
         
         # Получаем сделки контакта
         leads_response = requests.get(
