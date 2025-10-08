@@ -145,6 +145,14 @@ export const useAmoCRM = () => {
       }
       
       const dealsData = await dealsResponse.json();
+      
+      // КРИТИЧЕСКАЯ ЗАЩИТА: Проверяем что сервер вернул массив заявок
+      if (!Array.isArray(dealsData.deals)) {
+        console.error('⚠️ Некорректный формат данных от сервера');
+        setError('Ошибка загрузки данных');
+        return null;
+      }
+      
       const deals = (dealsData.deals || []).map((deal: any) => ({
         id: String(deal.id),
         name: deal.name || 'Заявка',
