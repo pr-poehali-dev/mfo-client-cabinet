@@ -163,6 +163,7 @@ const Index = () => {
         <LoadingBanner loading={loading} />
         
         <DashboardTabs
+          key={userPhone}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           unreadMessagesCount={unreadMessagesCount}
