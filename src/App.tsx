@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import AmoCRMSetup from "./pages/AmoCRMSetup";
 import TestAmoCRM from "./pages/TestAmoCRM";
 import CleanupDeals from "./pages/CleanupDeals";
+import SyncAmoCRM from "./pages/SyncAmoCRM";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
