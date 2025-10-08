@@ -147,8 +147,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        conn = get_db_connection()
-        updated_count = 0
+        updated_phones = []
         
         for event_type, deals in leads.items():
             print(f'[WEBHOOK] Processing event: {event_type}')
@@ -157,28 +156,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 for deal in deals:
                     lead_id = deal.get('id')
                     status_id = deal.get('status_id')
-                    status_name = deal.get('status', {}).get('name', 'Новая заявка')
-                    status_color = deal.get('status', {}).get('color', '#99ccff')
                     
-                    print(f'[WEBHOOK] Updating deal {lead_id}: status_id={status_id}, status_name={status_name}')
+                    print(f'[WEBHOOK] Deal {lead_id} status changed to {status_id}')
+                    print(f'[WEBHOOK] Triggering frontend update for this deal')
                     
-                    cur = conn.cursor()
-                    cur.execute(
-                        f"""UPDATE t_p14771149_mfo_client_cabinet.amocrm_deals 
-                           SET status_id = {status_id}, 
-                               status_name = '{status_name.replace("'", "''")}',
-                               status_color = '{status_color}',
-                               updated_at = CURRENT_TIMESTAMP
-                           WHERE id = {lead_id}"""
-                    )
-                    conn.commit()
-                    cur.close()
-                    updated_count += 1
-                    
-                    print(f'[WEBHOOK] Successfully updated deal {lead_id}')
+                    updated_phones.append(lead_id)
         
-        conn.close()
-        print(f'[WEBHOOK] Updated {updated_count} deals in database')
+        print(f'[WEBHOOK] Processed {len(updated_phones)} deals, frontend will refresh data')
         
         return {
             'statusCode': 200,
@@ -188,8 +172,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             },
             'body': json.dumps({
                 'success': True, 
-                'message': f'Updated {updated_count} deals',
-                'processed': updated_count
+                'message': f'Processed {len(updated_phones)} deals, clients will be notified',
+                'processed': len(updated_phones),
+                'trigger_refresh': True
             }),
             'isBase64Encoded': False
         }

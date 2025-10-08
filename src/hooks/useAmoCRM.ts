@@ -129,98 +129,73 @@ export const useAmoCRM = () => {
       
       const cleanPhone = phone.replace(/\D/g, '');
       
-      // Используем get-client-deals с правильной фильтрацией по contact_id
-      const clientName = localStorage.getItem('clientName') || '';
-      
-      const dealsResponse = await fetch(
-        `https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${cleanPhone}&full_name=${encodeURIComponent(clientName)}&t=${Date.now()}`,
-        {
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
-        }
+      const response = await fetch(
+        `https://functions.poehali.dev/0c680166-1e97-4c5e-8c8f-5f2cd1c88850?phone=${cleanPhone}`
       );
       
-      if (!dealsResponse.ok) {
-        setError('Ошибка загрузки сделок');
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          setError('Ошибка сервера. Попробуйте позже');
+          return null;
+        }
+        
+        console.error('API Error:', response.status, errorData);
+        
+        if (response.status === 500) {
+          if (errorData.error?.includes('access token')) {
+            setError('⚠️ Ошибка подключения к AmoCRM. Токен авторизации устарел. Обновите секрет AMOCRM_REFRESH_TOKEN');
+          } else if (errorData.error?.includes('credentials')) {
+            setError('⚠️ AmoCRM не настроен. Проверьте секреты: AMOCRM_DOMAIN, AMOCRM_CLIENT_ID, AMOCRM_CLIENT_SECRET, AMOCRM_REFRESH_TOKEN');
+          } else {
+            setError(`Ошибка сервера: ${errorData.error || 'Неизвестная ошибка'}`);
+          }
+        } else if (response.status === 404) {
+          setError('Клиент не найден в AmoCRM. Проверьте номер телефона');
+        } else if (response.status === 401) {
+          setError('⚠️ Ошибка авторизации AmoCRM');
+        } else {
+          setError(errorData.error || 'Ошибка загрузки данных');
+        }
         return null;
       }
       
-      const dealsData = await dealsResponse.json();
-      
-      // Проверяем успешность ответа от новой функции get-client-deals
-      if (!dealsData.success) {
-        console.error('⚠️ Ошибка от сервера:', dealsData.error);
-        setError(dealsData.error || 'Ошибка загрузки данных');
+      const responseText = await response.text();
+      if (!responseText) {
+        setError('Пустой ответ от сервера');
         return null;
       }
       
-      // Логируем отладочную информацию для диагностики
-      if (dealsData.debug) {
-        console.log('🔍 DEBUG INFO:', dealsData.debug);
-        console.log(`📞 Contact ID: ${dealsData.debug.contact_id}`);
-        console.log(`📊 Total leads from AmoCRM: ${dealsData.debug.total_leads_from_amocrm}`);
-        console.log(`🔐 Filter used: ${dealsData.debug.filter_used}`);
-      }
+      const data = JSON.parse(responseText);
       
-      // КРИТИЧЕСКАЯ ЗАЩИТА: Проверяем что сервер вернул массив заявок
-      if (!Array.isArray(dealsData.deals)) {
-        console.error('⚠️ Некорректный формат данных от сервера');
-        setError('Ошибка загрузки данных');
+      if (!data || !data.id) {
+        setError('Получены некорректные данные от сервера');
+        console.error('Invalid data structure:', data);
         return null;
       }
       
-      const deals = (dealsData.deals || []).map((deal: any) => ({
-        id: String(deal.id),
-        name: deal.name || 'Заявка',
-        status: deal.status,
-        status_id: deal.status_id,
-        status_name: deal.status_name || 'На рассмотрении',
-        status_color: deal.status_color || '#cccccc',
-        pipeline_id: deal.pipeline_id,
-        pipeline_name: deal.pipeline_name || 'Основная воронка',
-        price: deal.price || 0,
-        amount: deal.price || 0,
-        term: deal.custom_fields?.loan_term || 30,
-        created_at: deal.created_at ? new Date(deal.created_at).toLocaleDateString('ru-RU', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }) : new Date().toLocaleDateString('ru-RU'),
-        updated_at: deal.updated_at ? new Date(deal.updated_at).toLocaleDateString('ru-RU', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }) : new Date().toLocaleDateString('ru-RU'),
-        date: deal.created_at ? new Date(deal.created_at).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
-        description: deal.name || 'Заявка на займ',
-        responsible_user_id: deal.responsible_user_id,
-        custom_fields: deal.custom_fields || {},
-        custom_fields_values: []
-      }));
+      const mappedLeads = (data.leads || []).map(mapLeadData);
       
-      // Данные клиента получаем из ответа сервера
-      const clientData = {
-        id: dealsData.client?.id || '',
-        name: dealsData.client?.name || localStorage.getItem('clientName') || 'Клиент',
-        first_name: '',
-        last_name: '',
-        middle_name: '',
-        gender: 'male' as const,
-        phone: dealsData.client?.phone || cleanPhone,
-        email: ''
-      };
+      console.log(`Loaded ${mappedLeads.length} deals for ${data.name}`);
+      console.log('Статусы всех заявок:', mappedLeads.map(d => ({ id: d.id, status: d.status_name })));
+      console.log('Полные данные заявок:', mappedLeads);
       
-      console.log(`✅ Загружено ${deals.length} заявок для ${clientData.name} (ID: ${clientData.id})`);
-      console.log('📋 Статусы всех заявок:', deals.map(d => ({ id: d.id, status: d.status_name })));
-      console.log('🔒 Все заявки принадлежат клиенту с ID:', dealsData.client?.id);
-      
-      const paymentNotifications = checkPaymentDeadlines(deals);
+      const paymentNotifications = checkPaymentDeadlines(mappedLeads);
       
       return {
-        clientData,
-        deals,
+        clientData: {
+          id: String(data.id || ''),
+          name: data.name || 'Клиент',
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
+          middle_name: data.middle_name || '',
+          gender: data.gender || 'male',
+          phone: data.phone || cleanPhone,
+          email: data.email || ''
+        },
+        deals: mappedLeads,
         notifications: paymentNotifications
       };
       

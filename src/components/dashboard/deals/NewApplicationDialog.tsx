@@ -24,30 +24,22 @@ const NewApplicationDialog = ({ clientPhone, onApplicationSubmit, canSubmitNewAp
   const handleSubmitApplication = async () => {
     setSubmitting(true);
     try {
-      const response = await fetch('https://functions.poehali.dev/19b4b253-3352-4332-810a-30d128021b66', {
+      const response = await fetch('https://functions.poehali.dev/6e80b3d4-1759-415b-bd93-5e37f93088a5', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: clientPhone,
           amount: amount,
-          loanTerm: termDays,
-          purpose: 'Займ через личный кабинет'
+          term: `${termDays} дней`
         })
       });
 
-      const data = await response.json();
+      if (!response.ok) throw new Error('Ошибка отправки');
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Ошибка отправки');
-      }
-
-      toast.success('Заявка успешно создана!');
+      toast.success('Заявка успешно отправлена!');
       setIsDialogOpen(false);
       setAmount(50000);
       setTermDays(30);
-      
-      // Принудительно обновляем данные
-      await new Promise(resolve => setTimeout(resolve, 500));
       onApplicationSubmit();
     } catch (error) {
       toast.error('Не удалось отправить заявку');

@@ -20,9 +20,6 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   const [showApproved, setShowApproved] = useState(true);
   const [showOverdue, setShowOverdue] = useState(true);
   
-  // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: гарантируем что отображаются только заявки текущего клиента
-  const safeDeals = deals || [];
-  
   const isRejectedStatus = (statusName: string) => 
     statusName.toLowerCase().includes('отклонена');
   
@@ -35,8 +32,9 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
            lowerStatus.includes('займ просрочен');
   };
   
-  const hasApprovedDeal = safeDeals.some(deal => isApprovedStatus(deal.status_name));
-  const canSubmitNewApplication = !hasApprovedDeal;
+  const hasRejectedDeal = deals.some(deal => isRejectedStatus(deal.status_name));
+  const hasApprovedDeal = deals.some(deal => isApprovedStatus(deal.status_name));
+  const canSubmitNewApplication = !hasRejectedDeal && !hasApprovedDeal;
 
   const getStatusPriority = (statusName: string): number => {
     if (isOverdueStatus(statusName)) return 0;
@@ -48,7 +46,7 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
     return 5;
   };
 
-  const sortedDeals = [...safeDeals].sort((a, b) => {
+  const sortedDeals = [...deals].sort((a, b) => {
     const aPriority = getStatusPriority(a.status_name);
     const bPriority = getStatusPriority(b.status_name);
     
@@ -107,28 +105,16 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
             </div>
           </div>
           
-          {canSubmitNewApplication ? (
-            <NewApplicationDialog 
-              clientPhone={clientPhone}
-              onApplicationSubmit={onApplicationSubmit}
-              canSubmitNewApplication={canSubmitNewApplication}
-            />
-          ) : (
-            <div className="flex flex-col items-end gap-2">
-              <Button disabled className="bg-gradient-to-r from-primary to-secondary opacity-50 cursor-not-allowed">
-                <Icon name="Lock" size={18} className="mr-2" />
-                Подать заявку
-              </Button>
-              <p className="text-xs text-muted-foreground text-right max-w-xs">
-                У вас уже есть одобренный займ. Погасите его, чтобы подать новую заявку.
-              </p>
-            </div>
-          )}
+          <NewApplicationDialog 
+            clientPhone={clientPhone}
+            onApplicationSubmit={onApplicationSubmit}
+            canSubmitNewApplication={canSubmitNewApplication}
+          />
         </div>
       </div>
 
       {activeDeals.length === 0 && rejectedDeals.length === 0 && approvedDeals.length === 0 && overdueDeals.length === 0 ? (
-        <EmptyDealsCard totalDeals={safeDeals.length} />
+        <EmptyDealsCard totalDeals={deals.length} />
       ) : (
         <>
           {overdueDeals.length > 0 && (
