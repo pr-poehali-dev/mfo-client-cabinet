@@ -51,6 +51,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    # Нормализуем телефон: убираем все кроме цифр, добавляем +
+    clean_phone = ''.join(filter(str.isdigit, phone))
+    if clean_phone.startswith('8'):
+        clean_phone = '7' + clean_phone[1:]
+    if not clean_phone.startswith('7'):
+        clean_phone = '7' + clean_phone
+    normalized_phone = '+' + clean_phone
+    
     database_url = os.environ.get('DATABASE_URL')
     amocrm_domain = os.environ.get('AMOCRM_DOMAIN', '')
     amocrm_token = os.environ.get('AMOCRM_ACCESS_TOKEN', '')
@@ -69,7 +77,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     # Находим или создаём клиента в amocrm_clients
     cur.execute(
         "SELECT id FROM t_p14771149_mfo_client_cabinet.amocrm_clients WHERE phone = %s",
-        (phone,)
+        (normalized_phone,)
     )
     client_row = cur.fetchone()
     
@@ -82,7 +90,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             """INSERT INTO t_p14771149_mfo_client_cabinet.amocrm_clients 
                (id, phone, name, created_at, updated_at, last_sync_at) 
                VALUES (%s, %s, %s, %s, %s, %s)""",
-            (temp_client_id, phone, 'Новый клиент', datetime.now(), datetime.now(), datetime.now())
+            (temp_client_id, normalized_phone, 'Новый клиент', datetime.now(), datetime.now(), datetime.now())
         )
         client_id = temp_client_id
         conn.commit()

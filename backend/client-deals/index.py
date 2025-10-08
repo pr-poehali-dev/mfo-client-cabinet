@@ -43,6 +43,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    # Нормализуем телефон: убираем все кроме цифр, добавляем +
+    clean_phone = ''.join(filter(str.isdigit, phone))
+    if clean_phone.startswith('8'):
+        clean_phone = '7' + clean_phone[1:]
+    if not clean_phone.startswith('7'):
+        clean_phone = '7' + clean_phone
+    normalized_phone = '+' + clean_phone
+    
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
         return {
@@ -58,7 +66,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     # Находим client_id по номеру телефона
     cur.execute(
         "SELECT id FROM t_p14771149_mfo_client_cabinet.amocrm_clients WHERE phone = %s",
-        (phone,)
+        (normalized_phone,)
     )
     client_row = cur.fetchone()
     

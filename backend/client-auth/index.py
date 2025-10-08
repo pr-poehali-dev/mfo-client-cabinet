@@ -51,6 +51,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    # Нормализуем телефон: убираем все кроме цифр, добавляем +
+    clean_phone = ''.join(filter(str.isdigit, phone))
+    if clean_phone.startswith('8'):
+        clean_phone = '7' + clean_phone[1:]
+    if not clean_phone.startswith('7'):
+        clean_phone = '7' + clean_phone
+    normalized_phone = '+' + clean_phone
+    
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
         return {
@@ -66,7 +74,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     # Проверяем, существует ли клиент в amocrm_clients
     cur.execute(
         "SELECT id, phone, name, first_name, last_name, middle_name, email FROM t_p14771149_mfo_client_cabinet.amocrm_clients WHERE phone = %s",
-        (phone,)
+        (normalized_phone,)
     )
     client = cur.fetchone()
     
@@ -89,7 +97,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Новый клиент - проверяем в clients или создаём
         cur.execute(
             "SELECT id, full_name FROM t_p14771149_mfo_client_cabinet.clients WHERE phone = %s",
-            (phone,)
+            (normalized_phone,)
         )
         existing_client = cur.fetchone()
         
@@ -102,7 +110,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                    (phone, full_name, first_name, last_name, middle_name, email, created_at, updated_at) 
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s) 
                    RETURNING id""",
-                (phone, name, '', '', '', '', datetime.now(), datetime.now())
+                (normalized_phone, name, '', '', '', '', datetime.now(), datetime.now())
             )
             client_id = cur.fetchone()[0]
             client_name = name
