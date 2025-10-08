@@ -155,10 +155,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         contact_name = matched_contact.get('name', 'Клиент')
         
         # Получаем ТОЛЬКО сделки этого контакта через фильтр AmoCRM
+        # ВАЖНО: AmoCRM требует строгий формат фильтра для поиска по контакту
+        filter_params = {
+            'filter[contacts][0][id]': str(contact_id),
+            'limit': 250
+        }
+        
         all_leads_response = requests.get(
             f'https://{amocrm_domain}/api/v4/leads',
             headers=headers,
-            params={'filter[contacts][0]': contact_id, 'limit': 250},
+            params=filter_params,
             timeout=10
         )
         
