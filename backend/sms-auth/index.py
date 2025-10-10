@@ -88,15 +88,20 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             print(f'[SMS-AUTH] Проверка клиента в Битрикс24: {clean_phone}')
             
-            contact_filter = {'PHONE': clean_phone}
-            contact_url = f"{webhook_url}/crm.contact.list.json"
-            contact_data = urllib.parse.urlencode({'filter': contact_filter}).encode()
+            search_params = urllib.parse.urlencode({
+                'filter[PHONE]': clean_phone
+            })
+            contact_url = f"{webhook_url}/crm.contact.list?{search_params}"
             
-            contact_req = urllib.request.Request(contact_url, data=contact_data)
+            print(f'[SMS-AUTH] URL запроса: {contact_url[:80]}...')
+            
+            contact_req = urllib.request.Request(contact_url)
             
             try:
                 with urllib.request.urlopen(contact_req, timeout=10) as response:
-                    contacts_data = json.loads(response.read().decode())
+                    response_text = response.read().decode()
+                    print(f'[SMS-AUTH] Ответ Битрикс24: {response_text[:200]}...')
+                    contacts_data = json.loads(response_text)
                 
                 contacts = contacts_data.get('result', [])
                 
