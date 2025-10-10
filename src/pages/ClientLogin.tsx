@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,15 +10,13 @@ import Icon from '@/components/ui/icon';
 const ClientLogin = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
-  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState<'form' | 'code'>('form');
+  const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [code, setCode] = useState('');
   const [storedCode, setStoredCode] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientData, setClientData] = useState<{ name: string; phone: string } | null>(null);
-  const phoneInputRef = useRef<HTMLInputElement>(null);
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -30,54 +28,50 @@ const ClientLogin = () => {
     return `+${digits[0]} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9, 11)}`;
   };
 
-  const handleFullNameBlur = async () => {
-    if (!fullName.trim() || fullName.length < 3) return;
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    setPhone(formatted);
+    setError('');
+    setClientData(null);
+  };
 
+  const handleCheckPhone = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError('');
     setClientData(null);
 
+    const cleanPhone = phone.replace(/\D/g, '');
+
     try {
-      const response = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: fullName.trim(),
-          action: 'search_by_name'
-        })
-      });
+      const response = await fetch('https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd?phone=' + cleanPhone);
       const data = await response.json();
+
+      console.log('Phone check response:', data);
 
       if (data.success && data.client) {
         setClientData({
           name: data.client.name,
-          phone: data.client.phone
+          phone: phone
         });
-        setPhone(formatPhone(data.client.phone));
-        setTimeout(() => {
-          phoneInputRef.current?.focus();
-        }, 100);
+        setClientName(data.client.name);
+      } else {
+        if (data.not_found) {
+          setError('Клиент с таким номером не найден в системе.');
+        } else {
+          setError(data.error || 'Ошибка проверки номера');
+        }
       }
     } catch (err) {
-      console.error('Name search error:', err);
+      console.error('Phone check error:', err);
+      setError('Ошибка подключения к серверу');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value);
-    setPhone(formatted);
-    setError('');
-  };
-
-  const handleSubmitForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!fullName.trim()) {
-      setError('Введите ваше ФИО');
-      return;
-    }
+  const handleSendCode = async () => {
+    if (!clientData) return;
 
     setLoading(true);
     setError('');
@@ -90,26 +84,22 @@ const ClientLogin = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: cleanPhone,
-          fullName: fullName,
+          fullName: clientData.name,
           action: 'send'
         })
       });
       const data = await response.json();
 
+      console.log('Send SMS response:', data);
+
       if (data.success) {
         setStoredCode(data.code);
-        setClientName(fullName);
         setStep('code');
       } else {
-        if (data.not_found) {
-          setError('Клиент с таким номером не найден в Битрикс24.');
-        } else if (data.name_mismatch) {
-          setError('ФИО не совпадает с данными в системе. Проверьте правильность ввода.');
-        } else {
-          setError(data.error || 'Ошибка отправки SMS');
-        }
+        setError(data.error || 'Ошибка отправки SMS');
       }
     } catch (err) {
+      console.error('Send SMS error:', err);
       setError('Ошибка подключения к серверу');
     } finally {
       setLoading(false);
@@ -162,52 +152,16 @@ const ClientLogin = () => {
             Личный кабинет
           </CardTitle>
           <CardDescription>
-            {step === 'form' && 'Введите ФИО и номер телефона для входа'}
+            {step === 'phone' && 'Введите номер телефона для входа'}
             {step === 'code' && `SMS-код отправлен на ${phone}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === 'form' && (
-          <form onSubmit={handleSubmitForm} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">ФИО</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Иванов Иван Иванович"
-                value={fullName}
-                onChange={(e) => {
-                  setFullName(e.target.value);
-                  setError('');
-                  setClientData(null);
-                }}
-                onBlur={handleFullNameBlur}
-                required
-                className="text-lg"
-                autoFocus
-              />
-              <p className="text-xs text-muted-foreground">
-                Начните вводить ФИО - мы найдём вас в системе
-              </p>
-            </div>
-
-            {clientData && (
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
-                <div className="flex items-center gap-3">
-                  <Icon name="CheckCircle" size={24} className="text-primary" />
-                  <div>
-                    <p className="font-semibold text-sm text-muted-foreground">Найден клиент:</p>
-                    <p className="font-semibold text-lg">{clientData.name}</p>
-                    <p className="text-sm text-muted-foreground">{clientData.phone}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
+          {step === 'phone' && (
+          <form onSubmit={handleCheckPhone} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="phone">Номер телефона</Label>
               <Input
-                ref={phoneInputRef}
                 id="phone"
                 type="tel"
                 placeholder="+7 (999) 999-99-99"
@@ -216,8 +170,45 @@ const ClientLogin = () => {
                 maxLength={18}
                 required
                 className="text-lg"
+                autoFocus
               />
+              <p className="text-xs text-muted-foreground">
+                Введите номер телефона, указанный при регистрации
+              </p>
             </div>
+
+            {clientData && (
+              <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Icon name="CheckCircle" size={24} className="text-primary" />
+                    <div>
+                      <p className="font-semibold text-sm text-muted-foreground">Найден клиент:</p>
+                      <p className="font-semibold text-lg">{clientData.name}</p>
+                      <p className="text-sm text-muted-foreground">{clientData.phone}</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleSendCode}
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                  >
+                    {loading ? (
+                      <>
+                        <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                        Отправка SMS...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="Send" size={20} className="mr-2" />
+                        Получить SMS-код
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {error && (
               <Alert className="bg-red-500/10 border-red-500/30">
@@ -228,28 +219,40 @@ const ClientLogin = () => {
               </Alert>
             )}
 
-            <Button
-              type="submit"
-              disabled={loading || phone.length < 18 || !fullName.trim()}
-              className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-            >
-              {loading ? (
-                <>
-                  <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                  Отправка SMS...
-                </>
-              ) : (
-                <>
-                  <Icon name="Send" size={20} className="mr-2" />
-                  Получить код
-                </>
-              )}
-            </Button>
+            {!clientData && (
+              <Button
+                type="submit"
+                disabled={loading || phone.length < 18}
+                className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+              >
+                {loading ? (
+                  <>
+                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                    Поиск...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="Search" size={20} className="mr-2" />
+                    Найти клиента
+                  </>
+                )}
+              </Button>
+            )}
           </form>
           )}
 
           {step === 'code' && (
           <form onSubmit={handleVerifyCode} className="space-y-6">
+            <div className="p-4 rounded-lg bg-primary/10 border border-primary/30 mb-4">
+              <div className="flex items-center gap-3">
+                <Icon name="User" size={24} className="text-primary" />
+                <div>
+                  <p className="font-semibold text-lg">{clientName}</p>
+                  <p className="text-sm text-muted-foreground">{phone}</p>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="code">SMS-код</Label>
               <Input
@@ -266,6 +269,9 @@ const ClientLogin = () => {
                 className="text-lg text-center tracking-widest"
                 autoFocus
               />
+              <p className="text-xs text-muted-foreground">
+                Введите 4-значный код из SMS
+              </p>
             </div>
 
             {error && (
@@ -281,9 +287,10 @@ const ClientLogin = () => {
               <Button
                 type="button"
                 onClick={() => {
-                  setStep('form');
+                  setStep('phone');
                   setCode('');
                   setError('');
+                  setClientData(null);
                 }}
                 variant="outline"
                 className="flex-1"
