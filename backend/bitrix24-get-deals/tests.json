@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "Test OPTIONS for CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Test webhook not configured",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 500,
+      "expectedBody": {
+        "error": "BITRIX24_WEBHOOK_URL not configured"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
