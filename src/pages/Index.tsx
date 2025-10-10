@@ -5,6 +5,7 @@ import WelcomeBanner from '@/components/dashboard/WelcomeBanner';
 import ErrorBanner from '@/components/dashboard/ErrorBanner';
 import LoadingBanner from '@/components/dashboard/LoadingBanner';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
+import AmoCRMConnectionBanner from '@/components/dashboard/AmoCRMConnectionBanner';
 import { useAuth } from '@/hooks/useAuth';
 import { useAmoCRM } from '@/hooks/useAmoCRM';
 import { Loan, Payment, AppNotification, Deal } from '@/components/dashboard/types';
@@ -159,6 +160,7 @@ const Index = () => {
       />
 
       <div className="container mx-auto px-4 py-8">
+        <AmoCRMConnectionBanner />
         <WelcomeBanner clientName={clientName} />
         <ErrorBanner error={error} />
         <LoadingBanner loading={loading} />
