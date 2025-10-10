@@ -226,16 +226,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        if action == 'send' and not full_name:
-            return {
-                'statusCode': 400,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': 'ФИО обязательно для входа'}),
-                'isBase64Encoded': False
-            }
+
         
         clean_phone = phone.replace('+', '').replace(' ', '').replace('(', '').replace(')', '').replace('-', '')
         
@@ -298,53 +289,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     contact_result = json.loads(contact_text)
                 
                 contact = contact_result.get('result', {})
-                
-                # Проверяем ФИО
-                contact_name = contact.get('NAME', '').strip().lower()
-                contact_last_name = contact.get('LAST_NAME', '').strip().lower()
-                contact_full = f"{contact_name} {contact_last_name}".strip()
-                
-                user_full_name = full_name.strip().lower()
-                
-                # Проверяем совпадение (хотя бы одно слово должно совпадать)
-                user_words = set(user_full_name.split())
-                contact_words = set(contact_full.split())
-                
-                if not user_words & contact_words:
-                    print(f'[SMS-AUTH] ФИО не совпадает: {user_full_name} != {contact_full}')
-                    return {
-                        'statusCode': 403,
-                        'headers': {
-                            'Content-Type': 'application/json',
-                            'Access-Control-Allow-Origin': '*'
-                        },
-                        'body': json.dumps({
-                            'error': 'ФИО не совпадает с данными в системе. Проверьте правильность ввода.',
-                            'name_mismatch': True
-                        }),
-                        'isBase64Encoded': False
-                    }
-                
-                print(f'[SMS-AUTH] ФИО подтверждено: {contact_full}')
-                
-                contacts = [contact]
-                
-                if not contacts:
-                    print(f'[SMS-AUTH] Клиент не найден в Битрикс24: {clean_phone}')
-                    return {
-                        'statusCode': 404,
-                        'headers': {
-                            'Content-Type': 'application/json',
-                            'Access-Control-Allow-Origin': '*'
-                        },
-                        'body': json.dumps({
-                            'error': 'Клиент с таким номером не найден в системе. Обратитесь в поддержку.',
-                            'not_found': True
-                        }),
-                        'isBase64Encoded': False
-                    }
-                
-                contact = contacts[0]
                 client_name = f"{contact.get('NAME', '')} {contact.get('LAST_NAME', '')}".strip() or 'Клиент'
                 client_id = contact.get('ID')
                 print(f'[SMS-AUTH] Клиент найден в Битрикс24: {client_name} (ID: {client_id})')
