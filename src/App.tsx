@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import AmoCRMAuth from "./pages/AmoCRMAuth";
+import AmoCRMSetup from "./pages/AmoCRMSetup";
 import CleanupDeals from "./pages/CleanupDeals";
 import AdminCleanup from "./pages/AdminCleanup";
 import ClientLogin from "./pages/ClientLogin";
@@ -23,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/amocrm-setup" element={<AmoCRMSetup />} />
           <Route path="/amocrm-auth" element={<AmoCRMAuth />} />
           <Route path="/cleanup-deals" element={<CleanupDeals />} />
           <Route path="/admin-cleanup" element={<AdminCleanup />} />
