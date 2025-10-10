@@ -18,7 +18,7 @@ const AmoCRMSetup = () => {
     }
   }, []);
   const [subdomain, setSubdomain] = useState('stepanmalik88');
-  const [clientId, setClientId] = useState('31cf6e60-2cd4-4adb-9be2-ae60c1e67bb3');
+  const [clientId, setClientId] = useState('d71f2423-d72b-4589-95dc-f28927138046');
   const [clientSecret, setClientSecret] = useState('');
   const [code, setCode] = useState('');
   const [redirectUri, setRedirectUri] = useState('https://poehali.dev/amocrm-setup');
