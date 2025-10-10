@@ -7,16 +7,20 @@
       "expectedStatus": 200
     },
     {
-      "name": "Test send SMS - client not found",
+      "name": "Test verify code - success",
       "method": "POST",
       "path": "/",
       "body": {
         "phone": "79991234567",
-        "action": "send"
+        "action": "verify",
+        "code": "1234",
+        "stored_code": "1234",
+        "client_name": "Тестовый клиент"
       },
-      "expectedStatus": 404,
+      "expectedStatus": 200,
       "expectedBody": {
-        "not_found": true
+        "success": true,
+        "verified": true
       },
       "bodyMatcher": "partial"
     }
