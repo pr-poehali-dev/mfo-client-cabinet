@@ -10,9 +10,12 @@ import Icon from '@/components/ui/icon';
 const ClientLogin = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
-  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [step, setStep] = useState<'phone' | 'code'>('phone');
+  const [code, setCode] = useState('');
+  const [storedCode, setStoredCode] = useState('');
+  const [clientName, setClientName] = useState('');
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -30,29 +33,72 @@ const ClientLogin = () => {
     setError('');
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     const cleanPhone = phone.replace(/\D/g, '');
-    const encodedName = encodeURIComponent(fullName.trim());
 
     try {
-      const url = `https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${cleanPhone}${fullName ? `&full_name=${encodedName}` : ''}`;
-      const response = await fetch(url);
+      const response = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: cleanPhone,
+          action: 'send'
+        })
+      });
       const data = await response.json();
 
-      if (data.success && data.client) {
-        localStorage.setItem('clientPhone', cleanPhone);
-        localStorage.setItem('clientName', data.client.name);
-        localStorage.setItem('clientFullName', fullName.trim());
-        navigate('/cabinet');
+      if (data.success) {
+        setStoredCode(data.code);
+        setClientName(data.client_name || 'Клиент');
+        setStep('code');
       } else {
-        setError(data.error || 'Клиент не найден в AmoCRM');
+        if (data.not_found) {
+          setError('Клиент не найден в Битрикс24. Проверьте номер телефона.');
+        } else {
+          setError(data.error || 'Ошибка отправки SMS');
+        }
       }
     } catch (err) {
-      setError('Ошибка подключения к AmoCRM');
+      setError('Ошибка подключения к серверу');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: cleanPhone,
+          action: 'verify',
+          code: code,
+          stored_code: storedCode,
+          client_name: clientName
+        })
+      });
+      const data = await response.json();
+
+      if (data.success && data.verified) {
+        localStorage.setItem('clientPhone', cleanPhone);
+        localStorage.setItem('clientName', clientName);
+        navigate('/cabinet');
+      } else {
+        setError('Неверный код. Попробуйте ещё раз.');
+      }
+    } catch (err) {
+      setError('Ошибка проверки кода');
     } finally {
       setLoading(false);
     }
@@ -69,11 +115,14 @@ const ClientLogin = () => {
             Личный кабинет
           </CardTitle>
           <CardDescription>
-            Введите номер телефона и ФИО для входа
+            {step === 'phone' 
+              ? 'Введите номер телефона для получения SMS-кода'
+              : `SMS-код отправлен на ${phone}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
+          {step === 'phone' ? (
+          <form onSubmit={handleSendCode} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="phone">Номер телефона</Label>
               <Input
@@ -88,21 +137,7 @@ const ClientLogin = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Фамилия Имя Отчество</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Иванов Иван Иванович"
-                value={fullName}
-                onChange={(e) => {
-                  setFullName(e.target.value);
-                  setError('');
-                }}
-                required
-                className="text-lg"
-              />
-            </div>
+
 
             {error && (
               <Alert className="bg-red-500/10 border-red-500/30">
@@ -115,22 +150,84 @@ const ClientLogin = () => {
 
             <Button
               type="submit"
-              disabled={loading || phone.length < 18 || fullName.trim().length < 3}
+              disabled={loading || phone.length < 18}
               className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
             >
               {loading ? (
                 <>
                   <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                  Вход...
+                  Отправка...
                 </>
               ) : (
                 <>
-                  <Icon name="LogIn" size={20} className="mr-2" />
-                  Войти
+                  <Icon name="MessageSquare" size={20} className="mr-2" />
+                  Получить SMS-код
                 </>
               )}
             </Button>
           </form>
+          ) : (
+          <form onSubmit={handleVerifyCode} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="code">SMS-код</Label>
+              <Input
+                id="code"
+                type="text"
+                placeholder="0000"
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value.replace(/\D/g, '').slice(0, 4));
+                  setError('');
+                }}
+                maxLength={4}
+                required
+                className="text-lg text-center tracking-widest"
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <Alert className="bg-red-500/10 border-red-500/30">
+                <Icon name="AlertCircle" size={18} className="text-red-500" />
+                <AlertDescription className="text-red-500">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                onClick={() => {
+                  setStep('phone');
+                  setCode('');
+                  setError('');
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Назад
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading || code.length !== 4}
+                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+              >
+                {loading ? (
+                  <>
+                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                    Проверка...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="LogIn" size={20} className="mr-2" />
+                    Войти
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+          )}
         </CardContent>
       </Card>
     </div>
