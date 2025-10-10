@@ -41,34 +41,29 @@ const AmoCRMAuth = () => {
     setError('');
 
     try {
-      const tokenUrl = `https://${subdomain}.amocrm.ru/oauth2/access_token`;
-      
-      const response = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: 'authorization_code',
-          code: code,
-          redirect_uri: redirectUri
-        })
-      });
+      const response = await fetch(
+        'https://functions.poehali.dev/a83ccba2-ed09-422c-82fd-2cb908a2b8f7',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code })
+        }
+      );
 
       const data = await response.json();
 
-      if (data.access_token) {
+      if (data.success && data.access_token) {
         setAccessToken(data.access_token);
         setRefreshToken(data.refresh_token);
         setStep('tokens');
       } else {
-        setError(data.hint || data.detail || 'Не удалось получить токен');
+        setError(data.error || 'Не удалось получить токен');
       }
     } catch (err) {
       console.error('OAuth error:', err);
-      setError('Ошибка подключения к AmoCRM');
+      setError('Ошибка подключения к серверу');
     } finally {
       setLoading(false);
     }

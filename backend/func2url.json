@@ -1,4 +1,5 @@
 {
+  "amocrm-get-token": "https://functions.poehali.dev/a83ccba2-ed09-422c-82fd-2cb908a2b8f7",
   "amocrm-get-deals": "https://functions.poehali.dev/e6a0215a-0de8-499a-9306-b86675ec02d5",
   "amocrm-refresh-token": "https://functions.poehali.dev/bd4f1139-f517-46a8-a562-642004ca1f36",
   "amocrm-create-deal": "https://functions.poehali.dev/b260ef22-d5c1-4259-b2ef-44e4db32cb55",
