@@ -24,7 +24,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': ''
         }
     
-    subdomain = os.environ.get('AMOCRM_SUBDOMAIN')
+    subdomain = os.environ.get('AMOCRM_SUBDOMAIN', '').replace('.amocrm.ru', '')
     client_id = os.environ.get('AMOCRM_CLIENT_ID')
     client_secret = os.environ.get('AMOCRM_CLIENT_SECRET')
     refresh_token = os.environ.get('AMOCRM_REFRESH_TOKEN')

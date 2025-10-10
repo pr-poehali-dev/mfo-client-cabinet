@@ -51,7 +51,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': json.dumps({'error': 'Параметры name и phone обязательны'})
         }
     
-    subdomain = os.environ.get('AMOCRM_SUBDOMAIN')
+    subdomain = os.environ.get('AMOCRM_SUBDOMAIN', '').replace('.amocrm.ru', '')
     access_token = os.environ.get('AMOCRM_ACCESS_TOKEN')
     
     if not subdomain or not access_token:
