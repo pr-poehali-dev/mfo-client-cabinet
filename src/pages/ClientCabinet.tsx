@@ -9,18 +9,15 @@ interface Deal {
   id: number;
   name: string;
   price: number;
-  stage_id?: string;
-  status_id?: number;
-  pipeline_id?: number;
-  created_at: string | number;
-  updated_at: string | number;
+  stage_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const ClientCabinet = () => {
   const navigate = useNavigate();
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
-  const [clientFullName, setClientFullName] = useState('');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -28,7 +25,6 @@ const ClientCabinet = () => {
   useEffect(() => {
     const phone = localStorage.getItem('clientPhone');
     const name = localStorage.getItem('clientName');
-    const fullName = localStorage.getItem('clientFullName');
     
     if (!phone) {
       navigate('/login');
@@ -37,11 +33,10 @@ const ClientCabinet = () => {
 
     setClientPhone(phone);
     setClientName(name || 'Клиент');
-    setClientFullName(fullName || '');
-    loadDeals(phone, fullName || '');
+    loadDeals(phone);
   }, [navigate]);
 
-  const loadDeals = async (phone: string, fullName: string) => {
+  const loadDeals = async (phone: string) => {
     setLoading(true);
     setError('');
 
@@ -49,6 +44,8 @@ const ClientCabinet = () => {
       const url = `https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd?phone=${phone}`;
       const response = await fetch(url);
       const data = await response.json();
+
+      console.log('Bitrix24 response:', data);
 
       if (data.success) {
         setDeals(data.deals || []);
@@ -58,13 +55,14 @@ const ClientCabinet = () => {
         }
       } else {
         if (data.not_found) {
-          setError('Клиент не найден. Проверьте номер телефона.');
+          setError('Клиент не найден в системе.');
         } else {
-          setError(data.error || 'Ошибка загрузки заявок из Битрикс24');
+          setError(data.error || 'Ошибка загрузки данных');
         }
       }
     } catch (err) {
-      setError('Ошибка подключения к Битрикс24');
+      console.error('Load deals error:', err);
+      setError('Ошибка подключения к серверу');
     } finally {
       setLoading(false);
     }
@@ -73,17 +71,14 @@ const ClientCabinet = () => {
   const handleLogout = () => {
     localStorage.removeItem('clientPhone');
     localStorage.removeItem('clientName');
-    localStorage.removeItem('clientFullName');
     navigate('/login');
   };
 
   const handleRefresh = () => {
     if (clientPhone) {
-      loadDeals(clientPhone, clientFullName);
+      loadDeals(clientPhone);
     }
   };
-
-
 
   const formatPhone = (phone: string) => {
     const digits = phone.replace(/\D/g, '');
@@ -101,37 +96,35 @@ const ClientCabinet = () => {
     }).format(price);
   };
 
-  const formatDate = (timestamp: string | number) => {
-    if (typeof timestamp === 'string') {
-      return new Date(timestamp).toLocaleDateString('ru-RU', {
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
       });
+    } catch {
+      return dateString;
     }
-    return new Date(timestamp * 1000).toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
-  const getStatusColor = (deal: Deal) => {
-    const stageId = deal.stage_id || '';
-    
-    if (stageId.includes('WON') || stageId.includes('SUCCESS')) return 'bg-green-500/20 text-green-300 border-green-500/30';
-    if (stageId.includes('LOSE') || stageId.includes('FAIL')) return 'bg-red-500/20 text-red-300 border-red-500/30';
-    if (stageId.includes('NEW')) return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+  const getStatusColor = (stageId: string) => {
+    if (stageId.includes('WON') || stageId.includes('SUCCESS')) {
+      return 'bg-green-500/20 text-green-300 border-green-500/30';
+    }
+    if (stageId.includes('LOSE') || stageId.includes('FAIL')) {
+      return 'bg-red-500/20 text-red-300 border-red-500/30';
+    }
+    if (stageId.includes('NEW')) {
+      return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+    }
     return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
   };
 
-  const getStatusName = (deal: Deal) => {
-    const stageId = deal.stage_id || '';
-    
+  const getStatusName = (stageId: string) => {
     const stageNames: Record<string, string> = {
       'NEW': 'Новая заявка',
       'PREPARATION': 'Подготовка документов',
@@ -139,12 +132,15 @@ const ClientCabinet = () => {
       'EXECUTING': 'Выполняется',
       'FINAL_INVOICE': 'Финальный счет',
       'WON': 'Успешно завершена',
-      'LOSE': 'Провалена'
+      'LOSE': 'Отклонена'
     };
+
     for (const [key, name] of Object.entries(stageNames)) {
       if (stageId.includes(key)) return name;
     }
-    return stageId.split(':').pop() || stageId;
+
+    const parts = stageId.split(':');
+    return parts[parts.length - 1] || stageId;
   };
 
   return (
@@ -152,7 +148,7 @@ const ClientCabinet = () => {
       <div className="max-w-6xl mx-auto space-y-6 py-8">
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
                   <Icon name="User" size={32} className="text-white" />
@@ -180,14 +176,14 @@ const ClientCabinet = () => {
 
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <CardTitle className="text-2xl font-montserrat flex items-center gap-2">
-                  <Icon name="FileText" size={28} />
-                  Мои заявки из Битрикс24
+                  <Icon name="Briefcase" size={28} />
+                  Мои заявки
                 </CardTitle>
                 <CardDescription>
-                  Всего заявок: {deals.length}
+                  {loading ? 'Загрузка...' : `Всего заявок: ${deals.length}`}
                 </CardDescription>
               </div>
               <Button
@@ -203,8 +199,9 @@ const ClientCabinet = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center justify-center py-12 gap-4">
                 <Icon name="Loader2" size={40} className="animate-spin text-primary" />
+                <p className="text-muted-foreground">Загружаем ваши заявки...</p>
               </div>
             ) : error ? (
               <Alert className="bg-red-500/10 border-red-500/30">
@@ -216,39 +213,45 @@ const ClientCabinet = () => {
             ) : deals.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Icon name="Inbox" size={48} className="mx-auto mb-4 opacity-50" />
-                <p className="text-lg">У вас пока нет заявок в Битрикс24</p>
+                <p className="text-lg font-medium">У вас пока нет заявок</p>
+                <p className="text-sm mt-2">Заявки появятся здесь после их создания в системе</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {deals.map((deal) => (
-                  <Card key={deal.id} className="border-border/30 bg-background/30">
+                  <Card key={deal.id} className="border-border/30 bg-background/30 hover:bg-background/50 transition-colors">
                     <CardContent className="pt-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-xl font-semibold">{deal.name}</h3>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(deal)}`}>
-                              {getStatusName(deal)}
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-xl font-semibold mb-2 truncate">{deal.name}</h3>
+                            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(deal.stage_id)}`}>
+                              {getStatusName(deal.stage_id)}
                             </span>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <Icon name="DollarSign" size={16} />
-                              <span className="font-semibold text-foreground text-lg">
-                                {formatPrice(deal.price)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Icon name="Calendar" size={16} />
-                              <span>{formatDate(deal.created_at)}</span>
-                            </div>
+                          <div className="flex items-center gap-2 text-right">
+                            <Icon name="DollarSign" size={20} className="text-primary" />
+                            <span className="font-bold text-xl text-primary">
+                              {formatPrice(deal.price)}
+                            </span>
                           </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-border/30">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Icon name="Calendar" size={16} />
+                            <span>Создана: {formatDate(deal.created_at)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Icon name="Clock" size={16} />
+                            <span>Обновлена: {formatDate(deal.updated_at)}</span>
+                          </div>
+                        </div>
 
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Icon name="Hash" size={14} />
-                            <span>ID заявки: {deal.id}</span>
-                          </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
+                          <Icon name="Hash" size={14} />
+                          <span>ID: {deal.id}</span>
                         </div>
                       </div>
                     </CardContent>
