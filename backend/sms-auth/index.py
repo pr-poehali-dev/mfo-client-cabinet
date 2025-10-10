@@ -71,8 +71,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         clean_phone = phone.replace('+', '').replace(' ', '').replace('(', '').replace(')', '').replace('-', '')
         
         if action == 'send':
-            amocrm_domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
-            amocrm_token = os.environ.get('AMOCRM_ACCESS_TOKEN') or os.environ.get('ACCESS_TOKEN', '')
+            amocrm_subdomain = os.environ.get('AMOCRM_SUBDOMAIN', 'stepanmalik88').replace('.amocrm.ru', '')
+            amocrm_token = os.environ.get('AMOCRM_ACCESS_TOKEN', '')
             
             if not amocrm_token:
                 return {
@@ -87,7 +87,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             print(f'[SMS-AUTH] Проверка клиента в AmoCRM: {clean_phone}')
             
-            contact_url = f'https://{amocrm_domain}/api/v4/contacts?query={clean_phone}'
+            contact_url = f'https://{amocrm_subdomain}.amocrm.ru/api/v4/contacts?query={clean_phone}'
             contact_req = urllib.request.Request(
                 contact_url,
                 headers={'Authorization': f'Bearer {amocrm_token}'}
