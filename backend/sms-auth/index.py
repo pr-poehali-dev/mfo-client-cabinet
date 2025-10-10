@@ -89,9 +89,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             print(f'[SMS-AUTH] Проверка клиента в Битрикс24: {clean_phone}')
             
             search_params = urllib.parse.urlencode({
-                'filter[PHONE]': clean_phone
+                'PHONE': clean_phone,
+                'TYPE': 'PHONE'
             })
-            contact_url = f"{webhook_url}/crm.contact.list?{search_params}"
+            contact_url = f"{webhook_url}/crm.duplicate.findbycomm?{search_params}"
             
             print(f'[SMS-AUTH] URL запроса: {contact_url[:80]}...')
             
@@ -101,9 +102,35 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 with urllib.request.urlopen(contact_req, timeout=10) as response:
                     response_text = response.read().decode()
                     print(f'[SMS-AUTH] Ответ Битрикс24: {response_text[:200]}...')
-                    contacts_data = json.loads(response_text)
+                    duplicate_data = json.loads(response_text)
                 
-                contacts = contacts_data.get('result', [])
+                contact_entities = duplicate_data.get('result', {}).get('CONTACT', [])
+                
+                if not contact_entities:
+                    print(f'[SMS-AUTH] Клиент не найден в Битрикс24: {clean_phone}')
+                    return {
+                        'statusCode': 404,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({
+                            'error': 'Клиент с таким номером не найден в системе. Обратитесь в поддержку.',
+                            'not_found': True
+                        }),
+                        'isBase64Encoded': False
+                    }
+                
+                contact_id = contact_entities[0]
+                
+                contact_get_url = f"{webhook_url}/crm.contact.get?id={contact_id}"
+                contact_get_req = urllib.request.Request(contact_get_url)
+                
+                with urllib.request.urlopen(contact_get_req, timeout=10) as contact_response:
+                    contact_text = contact_response.read().decode()
+                    contact_result = json.loads(contact_text)
+                
+                contacts = [contact_result.get('result', {})]
                 
                 if not contacts:
                     print(f'[SMS-AUTH] Клиент не найден в Битрикс24: {clean_phone}')
