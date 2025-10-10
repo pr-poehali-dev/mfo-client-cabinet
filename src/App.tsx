@@ -5,12 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import AmoCRMSetup from "./pages/AmoCRMSetup";
-import AmoCRMSecretsGuide from "./pages/AmoCRMSecretsGuide";
-import TestAmoCRM from "./pages/TestAmoCRM";
 import CleanupDeals from "./pages/CleanupDeals";
 import AdminCleanup from "./pages/AdminCleanup";
-import SyncAmoCRM from "./pages/SyncAmoCRM";
 import ClientLogin from "./pages/ClientLogin";
 import ClientCabinet from "./pages/ClientCabinet";
 import DealsDistribution from "./pages/DealsDistribution";
@@ -26,9 +22,6 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/amocrm-setup" element={<AmoCRMSetup />} />
-          <Route path="/amocrm-secrets" element={<AmoCRMSecretsGuide />} />
-          <Route path="/test-amocrm" element={<TestAmoCRM />} />
           <Route path="/cleanup-deals" element={<CleanupDeals />} />
           <Route path="/admin-cleanup" element={<AdminCleanup />} />
           <Route path="/login" element={<ClientLogin />} />
