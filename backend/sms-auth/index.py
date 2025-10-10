@@ -133,22 +133,39 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             sms_code = str(random.randint(1000, 9999))
+            print(f'[SMS-AUTH] Генерирован код: {sms_code}')
             
             message = f'Ваш код для входа: {sms_code}'
             
-            params = urllib.parse.urlencode({
-                'api_id': api_key,
-                'to': clean_phone,
-                'msg': message,
-                'json': 1
-            })
+            try:
+                params = urllib.parse.urlencode({
+                    'api_id': api_key,
+                    'to': clean_phone,
+                    'msg': message,
+                    'json': 1
+                })
+                
+                sms_url = f'https://sms.ru/sms/send?{params}'
+                print(f'[SMS-AUTH] Отправка SMS на {clean_phone}')
+                
+                req = urllib.request.Request(sms_url)
+                
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    result = json.loads(response.read().decode())
+                
+                print(f'[SMS-AUTH] Ответ SMS.ru: {result}')
             
-            sms_url = f'https://sms.ru/sms/send?{params}'
-            
-            req = urllib.request.Request(sms_url)
-            
-            with urllib.request.urlopen(req, timeout=10) as response:
-                result = json.loads(response.read().decode())
+            except Exception as sms_error:
+                print(f'[SMS-AUTH] Ошибка отправки SMS: {sms_error}')
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': f'Ошибка отправки SMS: {str(sms_error)}'}),
+                    'isBase64Encoded': False
+                }
             
             if result.get('status') == 'OK':
                 return {
@@ -234,6 +251,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
             
     except Exception as e:
+        print(f'[SMS-AUTH] Общая ошибка: {e}')
+        import traceback
+        print(f'[SMS-AUTH] Traceback: {traceback.format_exc()}')
         return {
             'statusCode': 500,
             'headers': {
