@@ -54,10 +54,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         body_data = json.loads(event.get('body', '{}'))
         phone = body_data.get('phone', '')
+        full_name = body_data.get('fullName', '')
         code = body_data.get('code', '')
         action = body_data.get('action', 'send')
         
-        print(f'[SMS-AUTH] Request: action={action}, phone={phone[:4]}***')
+        print(f'[SMS-AUTH] Request: action={action}, phone={phone[:4]}***, name={full_name}')
         
         if not phone:
             return {
@@ -67,6 +68,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'Access-Control-Allow-Origin': '*'
                 },
                 'body': json.dumps({'error': 'Phone required'}),
+                'isBase64Encoded': False
+            }
+        
+        if action == 'send' and not full_name:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'ФИО обязательно для входа'}),
                 'isBase64Encoded': False
             }
         
@@ -130,7 +142,37 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     contact_text = contact_response.read().decode()
                     contact_result = json.loads(contact_text)
                 
-                contacts = [contact_result.get('result', {})]
+                contact = contact_result.get('result', {})
+                
+                # Проверяем ФИО
+                contact_name = contact.get('NAME', '').strip().lower()
+                contact_last_name = contact.get('LAST_NAME', '').strip().lower()
+                contact_full = f"{contact_name} {contact_last_name}".strip()
+                
+                user_full_name = full_name.strip().lower()
+                
+                # Проверяем совпадение (хотя бы одно слово должно совпадать)
+                user_words = set(user_full_name.split())
+                contact_words = set(contact_full.split())
+                
+                if not user_words & contact_words:
+                    print(f'[SMS-AUTH] ФИО не совпадает: {user_full_name} != {contact_full}')
+                    return {
+                        'statusCode': 403,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({
+                            'error': 'ФИО не совпадает с данными в системе. Проверьте правильность ввода.',
+                            'name_mismatch': True
+                        }),
+                        'isBase64Encoded': False
+                    }
+                
+                print(f'[SMS-AUTH] ФИО подтверждено: {contact_full}')
+                
+                contacts = [contact]
                 
                 if not contacts:
                     print(f'[SMS-AUTH] Клиент не найден в Битрикс24: {clean_phone}')

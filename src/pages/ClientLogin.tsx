@@ -10,6 +10,7 @@ import Icon from '@/components/ui/icon';
 const ClientLogin = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'phone' | 'code'>('phone');
@@ -46,6 +47,7 @@ const ClientLogin = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: cleanPhone,
+          fullName: fullName,
           action: 'send'
         })
       });
@@ -58,6 +60,8 @@ const ClientLogin = () => {
       } else {
         if (data.not_found) {
           setError('Клиент не найден в Битрикс24. Проверьте номер телефона.');
+        } else if (data.name_mismatch) {
+          setError('ФИО не совпадает с данными в системе. Проверьте правильность ввода.');
         } else {
           setError(data.error || 'Ошибка отправки SMS');
         }
@@ -116,13 +120,29 @@ const ClientLogin = () => {
           </CardTitle>
           <CardDescription>
             {step === 'phone' 
-              ? 'Введите номер телефона для получения SMS-кода'
+              ? 'Введите ФИО и номер телефона для получения SMS-кода'
               : `SMS-код отправлен на ${phone}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {step === 'phone' ? (
           <form onSubmit={handleSendCode} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">ФИО</Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="Иванов Иван Иванович"
+                value={fullName}
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  setError('');
+                }}
+                required
+                className="text-lg"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="phone">Номер телефона</Label>
               <Input
@@ -137,8 +157,6 @@ const ClientLogin = () => {
               />
             </div>
 
-
-
             {error && (
               <Alert className="bg-red-500/10 border-red-500/30">
                 <Icon name="AlertCircle" size={18} className="text-red-500" />
@@ -150,13 +168,13 @@ const ClientLogin = () => {
 
             <Button
               type="submit"
-              disabled={loading || phone.length < 18}
+              disabled={loading || phone.length < 18 || !fullName.trim()}
               className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
             >
               {loading ? (
                 <>
                   <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                  Отправка...
+                  Проверка...
                 </>
               ) : (
                 <>
