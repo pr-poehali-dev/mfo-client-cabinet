@@ -129,11 +129,8 @@ export const useAmoCRM = () => {
       
       const cleanPhone = phone.replace(/\D/g, '');
       
-      // Используем get-client-deals с правильной фильтрацией по contact_id
-      const clientName = localStorage.getItem('clientName') || '';
-      
       const dealsResponse = await fetch(
-        `https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${cleanPhone}&full_name=${encodeURIComponent(clientName)}&t=${Date.now()}`,
+        `https://functions.poehali.dev/2fbf226c-26a9-4dd5-966d-b851b1be5d94?phone=${cleanPhone}&t=${Date.now()}`,
         {
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -148,29 +145,6 @@ export const useAmoCRM = () => {
       }
       
       const dealsData = await dealsResponse.json();
-      
-      // Проверяем успешность ответа от новой функции get-client-deals
-      if (!dealsData.success) {
-        console.error('⚠️ Ошибка от сервера:', dealsData.error);
-        setError(dealsData.error || 'Ошибка загрузки данных');
-        return null;
-      }
-      
-      // Логируем отладочную информацию для диагностики
-      if (dealsData.debug) {
-        console.log('🔍 DEBUG INFO:', dealsData.debug);
-        console.log(`📞 Contact ID: ${dealsData.debug.contact_id}`);
-        console.log(`📊 Total leads from AmoCRM: ${dealsData.debug.total_leads_from_amocrm}`);
-        console.log(`🔐 Filter used: ${dealsData.debug.filter_used}`);
-      }
-      
-      // КРИТИЧЕСКАЯ ЗАЩИТА: Проверяем что сервер вернул массив заявок
-      if (!Array.isArray(dealsData.deals)) {
-        console.error('⚠️ Некорректный формат данных от сервера');
-        setError('Ошибка загрузки данных');
-        return null;
-      }
-      
       const deals = (dealsData.deals || []).map((deal: any) => ({
         id: String(deal.id),
         name: deal.name || 'Заявка',
@@ -200,21 +174,21 @@ export const useAmoCRM = () => {
         custom_fields_values: []
       }));
       
-      // Данные клиента получаем из ответа сервера
+      // Данные клиента получаем из localStorage (установлены при авторизации)
       const clientData = {
-        id: dealsData.client?.id || '',
-        name: dealsData.client?.name || localStorage.getItem('clientName') || 'Клиент',
+        id: '',
+        name: localStorage.getItem('clientName') || 'Клиент',
         first_name: '',
         last_name: '',
         middle_name: '',
         gender: 'male' as const,
-        phone: dealsData.client?.phone || cleanPhone,
+        phone: cleanPhone,
         email: ''
       };
       
-      console.log(`✅ Загружено ${deals.length} заявок для ${clientData.name} (ID: ${clientData.id})`);
-      console.log('📋 Статусы всех заявок:', deals.map(d => ({ id: d.id, status: d.status_name })));
-      console.log('🔒 Все заявки принадлежат клиенту с ID:', dealsData.client?.id);
+      console.log(`Loaded ${deals.length} deals for ${clientData.name}`);
+      console.log('Статусы всех заявок:', deals.map(d => ({ id: d.id, status: d.status_name })));
+      console.log('Полные данные заявок:', deals);
       
       const paymentNotifications = checkPaymentDeadlines(deals);
       

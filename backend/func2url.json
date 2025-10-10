@@ -1,7 +1,4 @@
 {
-  "cleanup-amocrm-deals": "https://functions.poehali.dev/addb6e88-5455-4441-99f0-c2fbef7911d3",
-  "get-client-deals": "https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a",
-  "cleanup-deals": "https://functions.poehali.dev/88a1f443-5722-411a-8502-d09ca9fc51eb",
   "client-auth": "https://functions.poehali.dev/331ab23f-a941-49aa-947a-eabaed896d8e",
   "client-deals": "https://functions.poehali.dev/2fbf226c-26a9-4dd5-966d-b851b1be5d94",
   "create-deal": "https://functions.poehali.dev/19b4b253-3352-4332-810a-30d128021b66",

@@ -91,9 +91,8 @@ const Index = () => {
       setClientEmail(result.clientData.email);
       setContactId(result.clientData.id);
       
-      // Backend уже отфильтровал заявки по contact_id через AmoCRM API
-      // Дополнительная фильтрация НЕ нужна - все заявки принадлежат этому клиенту
-      console.log(`✅ Загружено ${result.deals.length} заявок для ${result.clientData.name} (${phone})`);
+      // Устанавливаем ТОЛЬКО полученные сделки
+      console.log(`🔍 Загружено ${result.deals.length} заявок для телефона ${phone}`);
       console.log('📋 Список заявок:', result.deals.map(d => ({ id: d.id, name: d.name, status: d.status_name })));
       
       setDeals(result.deals);
@@ -164,7 +163,6 @@ const Index = () => {
         <LoadingBanner loading={loading} />
         
         <DashboardTabs
-          key={userPhone}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           unreadMessagesCount={unreadMessagesCount}

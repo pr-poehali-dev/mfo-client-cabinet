@@ -20,9 +20,6 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
   const [showApproved, setShowApproved] = useState(true);
   const [showOverdue, setShowOverdue] = useState(true);
   
-  // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: гарантируем что отображаются только заявки текущего клиента
-  const safeDeals = deals || [];
-  
   const isRejectedStatus = (statusName: string) => 
     statusName.toLowerCase().includes('отклонена');
   
@@ -35,7 +32,7 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
            lowerStatus.includes('займ просрочен');
   };
   
-  const hasApprovedDeal = safeDeals.some(deal => isApprovedStatus(deal.status_name));
+  const hasApprovedDeal = deals.some(deal => isApprovedStatus(deal.status_name));
   const canSubmitNewApplication = !hasApprovedDeal;
 
   const getStatusPriority = (statusName: string): number => {
@@ -48,7 +45,7 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
     return 5;
   };
 
-  const sortedDeals = [...safeDeals].sort((a, b) => {
+  const sortedDeals = [...deals].sort((a, b) => {
     const aPriority = getStatusPriority(a.status_name);
     const bPriority = getStatusPriority(b.status_name);
     
@@ -128,7 +125,7 @@ const DealsTab = ({ deals, clientPhone, onApplicationSubmit }: DealsTabProps) =>
       </div>
 
       {activeDeals.length === 0 && rejectedDeals.length === 0 && approvedDeals.length === 0 && overdueDeals.length === 0 ? (
-        <EmptyDealsCard totalDeals={safeDeals.length} />
+        <EmptyDealsCard totalDeals={deals.length} />
       ) : (
         <>
           {overdueDeals.length > 0 && (
