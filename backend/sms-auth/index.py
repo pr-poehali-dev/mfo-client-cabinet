@@ -57,6 +57,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         code = body_data.get('code', '')
         action = body_data.get('action', 'send')
         
+        print(f'[SMS-AUTH] Request: action={action}, phone={phone[:4]}***')
+        
         if not phone:
             return {
                 'statusCode': 400,
