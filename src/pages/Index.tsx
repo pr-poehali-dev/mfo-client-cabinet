@@ -6,6 +6,7 @@ import ErrorBanner from '@/components/dashboard/ErrorBanner';
 import LoadingBanner from '@/components/dashboard/LoadingBanner';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
 import { useAuth } from '@/hooks/useAuth';
+import { useAmoCRM } from '@/hooks/useAmoCRM';
 import { Loan, Payment, AppNotification, Deal } from '@/components/dashboard/types';
 
 const Index = () => {
@@ -19,8 +20,7 @@ const Index = () => {
     clearNewRegistration
   } = useAuth();
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { loading, error, getDeals } = useAmoCRM();
 
   const [activeTab, setActiveTab] = useState('applications');
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -67,9 +67,6 @@ const Index = () => {
   }, [isAuthenticated, userPhone]);
 
   const loadData = async (phone: string) => {
-    setLoading(true);
-    setError(null);
-    
     // Очистка данных
     setLoans([]);
     setPayments([]);
@@ -82,7 +79,30 @@ const Index = () => {
     setClientEmail('');
     setContactId('');
     
-    setLoading(false);
+    const result = await getDeals(phone);
+    
+    if (result) {
+      setClientName(result.client.name);
+      setClientFirstName(result.client.first_name);
+      setClientLastName(result.client.last_name);
+      setClientPhone(result.client.phone);
+      setClientEmail(result.client.email);
+      setContactId(result.client.id);
+      
+      const mappedDeals = result.deals.map(deal => ({
+        id: deal.id,
+        name: deal.name,
+        amount: deal.price,
+        status: 'pending' as const,
+        status_name: 'В обработке',
+        date: new Date(deal.created_at * 1000).toLocaleDateString('ru-RU'),
+        description: deal.name
+      }));
+      
+      setDeals(mappedDeals);
+      setLoans(mappedDeals);
+      setLastUpdate(new Date());
+    }
   };
 
   const handleLogin = (phone: string, name?: string) => {
