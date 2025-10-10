@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ const ClientLogin = () => {
   const [code, setCode] = useState('');
   const [storedCode, setStoredCode] = useState('');
   const [clientName, setClientName] = useState('');
+  const fullNameInputRef = useRef<HTMLInputElement>(null);
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -32,6 +33,12 @@ const ClientLogin = () => {
     const formatted = formatPhone(e.target.value);
     setPhone(formatted);
     setError('');
+    
+    if (formatted.length === 18) {
+      setTimeout(() => {
+        fullNameInputRef.current?.focus();
+      }, 100);
+    }
   };
 
   const handleSubmitForm = async (e: React.FormEvent) => {
@@ -149,6 +156,7 @@ const ClientLogin = () => {
             <div className="space-y-2">
               <Label htmlFor="fullName">ФИО</Label>
               <Input
+                ref={fullNameInputRef}
                 id="fullName"
                 type="text"
                 placeholder="Иванов Иван Иванович"
