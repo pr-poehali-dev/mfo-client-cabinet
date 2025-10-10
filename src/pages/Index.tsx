@@ -5,9 +5,7 @@ import WelcomeBanner from '@/components/dashboard/WelcomeBanner';
 import ErrorBanner from '@/components/dashboard/ErrorBanner';
 import LoadingBanner from '@/components/dashboard/LoadingBanner';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
-import AmoCRMConnectionBanner from '@/components/dashboard/AmoCRMConnectionBanner';
 import { useAuth } from '@/hooks/useAuth';
-import { useAmoCRM } from '@/hooks/useAmoCRM';
 import { Loan, Payment, AppNotification, Deal } from '@/components/dashboard/types';
 
 const Index = () => {
@@ -21,7 +19,8 @@ const Index = () => {
     clearNewRegistration
   } = useAuth();
 
-  const { loading, error, fetchAmoCRMData } = useAmoCRM();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState('applications');
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -68,7 +67,10 @@ const Index = () => {
   }, [isAuthenticated, userPhone]);
 
   const loadData = async (phone: string) => {
-    // ПОЛНАЯ очистка старых данных перед загрузкой
+    setLoading(true);
+    setError(null);
+    
+    // Очистка данных
     setLoans([]);
     setPayments([]);
     setDeals([]);
@@ -80,43 +82,7 @@ const Index = () => {
     setClientEmail('');
     setContactId('');
     
-    const result = await fetchAmoCRMData(phone);
-    
-    if (result) {
-      setClientName(result.clientData.name);
-      setClientFirstName(result.clientData.first_name);
-      setClientLastName(result.clientData.last_name);
-      setClientMiddleName(result.clientData.middle_name);
-      setClientGender(result.clientData.gender as 'male' | 'female');
-      setClientPhone(result.clientData.phone);
-      setClientEmail(result.clientData.email);
-      setContactId(result.clientData.id);
-      
-      // Backend уже отфильтровал заявки по contact_id через AmoCRM API
-      // Дополнительная фильтрация НЕ нужна - все заявки принадлежат этому клиенту
-      console.log(`✅ Загружено ${result.deals.length} заявок для ${result.clientData.name} (${phone})`);
-      console.log('📋 Список заявок:', result.deals.map(d => ({ id: d.id, name: d.name, status: d.status_name })));
-      
-      setDeals(result.deals);
-      setLoans(result.deals);
-      setPayments([]);
-      
-      setNotifications(prev => {
-        const welcomeNotif = prev.find(n => n.id.startsWith('welcome-'));
-        if (welcomeNotif) {
-          return [welcomeNotif, ...result.notifications];
-        }
-        return result.notifications;
-      });
-      
-      setLastUpdate(new Date());
-    } else {
-      // Если данных нет, оставляем пустые массивы
-      setLoans([]);
-      setPayments([]);
-      setDeals([]);
-      setNotifications([]);
-    }
+    setLoading(false);
   };
 
   const handleLogin = (phone: string, name?: string) => {
@@ -160,7 +126,6 @@ const Index = () => {
       />
 
       <div className="container mx-auto px-4 py-8">
-        <AmoCRMConnectionBanner />
         <WelcomeBanner clientName={clientName} />
         <ErrorBanner error={error} />
         <LoadingBanner loading={loading} />
