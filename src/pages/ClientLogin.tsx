@@ -74,6 +74,13 @@ const ClientLogin = () => {
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Проверка ФИО
+    if (!fullName.trim()) {
+      setError('Введите ваше ФИО');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
