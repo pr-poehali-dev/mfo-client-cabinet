@@ -42,8 +42,17 @@ const ClientLogin = () => {
     const cleanPhone = phone.replace(/\D/g, '');
 
     try {
-      const response = await fetch('https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd?phone=' + cleanPhone);
+      const response = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: cleanPhone,
+          action: 'check'
+        })
+      });
       const data = await response.json();
+
+      console.log('Phone check response:', data);
 
       if (data.success && data.client) {
         setClientName(data.client.name || 'Клиент');
@@ -56,6 +65,7 @@ const ClientLogin = () => {
         }
       }
     } catch (err) {
+      console.error('Phone check error:', err);
       setError('Ошибка подключения к серверу');
     } finally {
       setLoading(false);
