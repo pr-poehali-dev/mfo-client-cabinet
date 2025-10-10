@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "Create deal",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Иван Иванов",
+        "phone": "79991234567",
+        "amount": 50000
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "lead_id": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
