@@ -74,6 +74,9 @@ export const useAuth = () => {
     setClientName('');
     // Полная очистка всех данных
     localStorage.clear();
+    sessionStorage.clear();
+    // Перезагрузка страницы для полной очистки состояния
+    window.location.reload();
   };
 
   const checkNewRegistration = () => {
