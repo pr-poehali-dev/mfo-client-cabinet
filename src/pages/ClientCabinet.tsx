@@ -24,7 +24,6 @@ const ClientCabinet = () => {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [source, setSource] = useState<'amocrm' | 'bitrix24'>('bitrix24');
 
   useEffect(() => {
     const phone = localStorage.getItem('clientPhone');
@@ -47,10 +46,7 @@ const ClientCabinet = () => {
     setError('');
 
     try {
-      const url = source === 'bitrix24'
-        ? `https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd?phone=${phone}`
-        : `https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=${phone}${fullName ? `&full_name=${encodeURIComponent(fullName)}` : ''}`;
-      
+      const url = `https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd?phone=${phone}`;
       const response = await fetch(url);
       const data = await response.json();
 
@@ -64,11 +60,11 @@ const ClientCabinet = () => {
         if (data.not_found) {
           setError('Клиент не найден. Проверьте номер телефона.');
         } else {
-          setError(data.error || `Ошибка загрузки заявок из ${source === 'bitrix24' ? 'Битрикс24' : 'AmoCRM'}`);
+          setError(data.error || 'Ошибка загрузки заявок из Битрикс24');
         }
       }
     } catch (err) {
-      setError(`Ошибка подключения к ${source === 'bitrix24' ? 'Битрикс24' : 'AmoCRM'}`);
+      setError('Ошибка подключения к Битрикс24');
     } finally {
       setLoading(false);
     }
@@ -87,14 +83,7 @@ const ClientCabinet = () => {
     }
   };
 
-  const toggleSource = () => {
-    const newSource = source === 'bitrix24' ? 'amocrm' : 'bitrix24';
-    setSource(newSource as 'amocrm' | 'bitrix24');
-    if (clientPhone) {
-      setLoading(true);
-      setTimeout(() => loadDeals(clientPhone, clientFullName), 100);
-    }
-  };
+
 
   const formatPhone = (phone: string) => {
     const digits = phone.replace(/\D/g, '');
@@ -133,49 +122,29 @@ const ClientCabinet = () => {
 
   const getStatusColor = (deal: Deal) => {
     const stageId = deal.stage_id || '';
-    const statusId = deal.status_id || 0;
     
-    if (source === 'bitrix24') {
-      if (stageId.includes('WON') || stageId.includes('SUCCESS')) return 'bg-green-500/20 text-green-300 border-green-500/30';
-      if (stageId.includes('LOSE') || stageId.includes('FAIL')) return 'bg-red-500/20 text-red-300 border-red-500/30';
-      if (stageId.includes('NEW')) return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-      return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
-    }
-    
-    const statusMap: Record<number, string> = {
-      142: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-      143: 'bg-green-500/20 text-green-300 border-green-500/30',
-      144: 'bg-red-500/20 text-red-300 border-red-500/30'
-    };
-    return statusMap[statusId] || 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+    if (stageId.includes('WON') || stageId.includes('SUCCESS')) return 'bg-green-500/20 text-green-300 border-green-500/30';
+    if (stageId.includes('LOSE') || stageId.includes('FAIL')) return 'bg-red-500/20 text-red-300 border-red-500/30';
+    if (stageId.includes('NEW')) return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+    return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
   };
 
   const getStatusName = (deal: Deal) => {
     const stageId = deal.stage_id || '';
-    const statusId = deal.status_id || 0;
     
-    if (source === 'bitrix24') {
-      const stageNames: Record<string, string> = {
-        'NEW': 'Новая заявка',
-        'PREPARATION': 'Подготовка документов',
-        'PREPAYMENT_INVOICE': 'Выставлен счет',
-        'EXECUTING': 'Выполняется',
-        'FINAL_INVOICE': 'Финальный счет',
-        'WON': 'Успешно завершена',
-        'LOSE': 'Провалена'
-      };
-      for (const [key, name] of Object.entries(stageNames)) {
-        if (stageId.includes(key)) return name;
-      }
-      return stageId.split(':').pop() || stageId;
-    }
-    
-    const statusNames: Record<number, string> = {
-      142: 'Новая заявка',
-      143: 'Успешно реализовано',
-      144: 'Неуспешно реализовано'
+    const stageNames: Record<string, string> = {
+      'NEW': 'Новая заявка',
+      'PREPARATION': 'Подготовка документов',
+      'PREPAYMENT_INVOICE': 'Выставлен счет',
+      'EXECUTING': 'Выполняется',
+      'FINAL_INVOICE': 'Финальный счет',
+      'WON': 'Успешно завершена',
+      'LOSE': 'Провалена'
     };
-    return statusNames[statusId] || `Статус ${statusId}`;
+    for (const [key, name] of Object.entries(stageNames)) {
+      if (stageId.includes(key)) return name;
+    }
+    return stageId.split(':').pop() || stageId;
   };
 
   return (
@@ -215,32 +184,21 @@ const ClientCabinet = () => {
               <div>
                 <CardTitle className="text-2xl font-montserrat flex items-center gap-2">
                   <Icon name="FileText" size={28} />
-                  Мои заявки из {source === 'bitrix24' ? 'Битрикс24' : 'AmoCRM'}
+                  Мои заявки из Битрикс24
                 </CardTitle>
                 <CardDescription>
                   Всего заявок: {deals.length}
                 </CardDescription>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={toggleSource}
-                  disabled={loading}
-                  variant="outline"
-                  className="border-border/50"
-                >
-                  <Icon name="RefreshCcw" size={18} className="mr-2" />
-                  {source === 'bitrix24' ? 'AmoCRM' : 'Битрикс24'}
-                </Button>
-                <Button
-                  onClick={handleRefresh}
-                  disabled={loading}
-                  variant="outline"
-                  className="border-border/50"
-                >
-                  <Icon name="RefreshCw" size={18} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  Обновить
-                </Button>
-              </div>
+              <Button
+                onClick={handleRefresh}
+                disabled={loading}
+                variant="outline"
+                className="border-border/50"
+              >
+                <Icon name="RefreshCw" size={18} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Обновить
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -258,7 +216,7 @@ const ClientCabinet = () => {
             ) : deals.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Icon name="Inbox" size={48} className="mx-auto mb-4 opacity-50" />
-                <p className="text-lg">У вас пока нет заявок в {source === 'bitrix24' ? 'Битрикс24' : 'AmoCRM'}</p>
+                <p className="text-lg">У вас пока нет заявок в Битрикс24</p>
               </div>
             ) : (
               <div className="space-y-4">
