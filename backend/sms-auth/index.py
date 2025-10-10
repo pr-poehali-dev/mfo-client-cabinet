@@ -58,6 +58,79 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         code = body_data.get('code', '')
         action = body_data.get('action', 'send')
         
+        # Новое действие: поиск клиента по ФИО
+        if action == 'search_by_name':
+            webhook_url = os.environ.get('BITRIX24_WEBHOOK_URL', '').rstrip('/')
+            
+            if not webhook_url or not full_name:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'success': False}),
+                    'isBase64Encoded': False
+                }
+            
+            try:
+                search_params = urllib.parse.urlencode({
+                    'FILTER[NAME]': full_name.split()[0] if full_name.split() else full_name,
+                    'SELECT[]': ['NAME', 'LAST_NAME', 'PHONE']
+                })
+                list_url = f"{webhook_url}/crm.contact.list?{search_params}"
+                
+                list_req = urllib.request.Request(list_url)
+                with urllib.request.urlopen(list_req, timeout=10) as response:
+                    list_data = json.loads(response.read().decode())
+                
+                contacts = list_data.get('result', [])
+                
+                if contacts:
+                    contact = contacts[0]
+                    contact_name = f"{contact.get('NAME', '')} {contact.get('LAST_NAME', '')}".strip()
+                    
+                    phones = contact.get('PHONE', [])
+                    contact_phone = phones[0].get('VALUE', '') if phones else ''
+                    
+                    return {
+                        'statusCode': 200,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({
+                            'success': True,
+                            'client': {
+                                'name': contact_name,
+                                'phone': contact_phone
+                            }
+                        }),
+                        'isBase64Encoded': False
+                    }
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'success': False}),
+                    'isBase64Encoded': False
+                }
+                
+            except Exception as e:
+                print(f'[SMS-AUTH] Ошибка поиска по ФИО: {e}')
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'success': False}),
+                    'isBase64Encoded': False
+                }
+        
         # Новое действие: проверка телефона без отправки SMS
         if action == 'check':
             webhook_url = os.environ.get('BITRIX24_WEBHOOK_URL', '').rstrip('/')
