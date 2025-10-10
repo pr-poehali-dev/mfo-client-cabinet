@@ -7,12 +7,12 @@
       "expectedStatus": 200
     },
     {
-      "name": "Test webhook not configured",
+      "name": "Test phone parameter missing",
       "method": "GET",
       "path": "/",
-      "expectedStatus": 500,
+      "expectedStatus": 400,
       "expectedBody": {
-        "error": "BITRIX24_WEBHOOK_URL not configured"
+        "error": "Phone parameter required"
       },
       "bodyMatcher": "partial"
     }

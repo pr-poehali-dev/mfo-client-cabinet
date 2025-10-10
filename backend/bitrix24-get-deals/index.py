@@ -54,19 +54,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     try:
-        # Ищем контакт по телефону
-        contact_filter = {
-            'PHONE': phone
-        }
+        clean_phone = phone.replace('+', '').replace('-', '').replace('(', '').replace(')', '').replace(' ', '')
         
-        contact_url = f"{webhook_url}/crm.contact.list.json"
-        contact_data = urllib.parse.urlencode({'filter': contact_filter}).encode()
+        # Ищем контакт через crm.duplicate.findbycomm
+        search_params = urllib.parse.urlencode({
+            'PHONE': clean_phone,
+            'TYPE': 'PHONE'
+        })
+        duplicate_url = f"{webhook_url}/crm.duplicate.findbycomm?{search_params}"
         
-        contact_req = urllib.request.Request(contact_url, data=contact_data)
-        with urllib.request.urlopen(contact_req) as response:
-            contact_result = json.loads(response.read().decode())
+        dup_req = urllib.request.Request(duplicate_url)
+        with urllib.request.urlopen(dup_req, timeout=10) as response:
+            duplicate_data = json.loads(response.read().decode())
         
-        if not contact_result.get('result'):
+        contact_entities = duplicate_data.get('result', {}).get('CONTACT', [])
+        
+        if not contact_entities:
             return {
                 'statusCode': 404,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -74,24 +77,33 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({'error': 'Contact not found', 'not_found': True})
             }
         
-        contact = contact_result['result'][0]
-        contact_id = contact['ID']
+        contact_id = contact_entities[0]
+        
+        # Получаем полные данные контакта
+        contact_get_url = f"{webhook_url}/crm.contact.get?id={contact_id}"
+        contact_get_req = urllib.request.Request(contact_get_url)
+        
+        with urllib.request.urlopen(contact_get_req, timeout=10) as contact_response:
+            contact_result = json.loads(contact_response.read().decode())
+        
+        contact = contact_result.get('result', {})
         client_name = f"{contact.get('NAME', '')} {contact.get('LAST_NAME', '')}".strip()
         
         # Получаем сделки контакта
-        deal_filter = {
-            'CONTACT_ID': contact_id
-        }
+        deal_params = urllib.parse.urlencode({
+            'filter[CONTACT_ID]': contact_id,
+            'select[]': 'ID',
+            'select[]': 'TITLE',
+            'select[]': 'STAGE_ID',
+            'select[]': 'OPPORTUNITY',
+            'select[]': 'DATE_CREATE',
+            'select[]': 'DATE_MODIFY'
+        })
         
-        deal_url = f"{webhook_url}/crm.deal.list.json"
-        deal_params = {
-            'filter': deal_filter,
-            'select': ['ID', 'TITLE', 'STAGE_ID', 'OPPORTUNITY', 'DATE_CREATE', 'DATE_MODIFY']
-        }
-        deal_data = urllib.parse.urlencode(deal_params).encode()
+        deal_url = f"{webhook_url}/crm.deal.list?{deal_params}"
+        deal_req = urllib.request.Request(deal_url)
         
-        deal_req = urllib.request.Request(deal_url, data=deal_data)
-        with urllib.request.urlopen(deal_req) as response:
+        with urllib.request.urlopen(deal_req, timeout=10) as response:
             deal_result = json.loads(response.read().decode())
         
         deals = []
