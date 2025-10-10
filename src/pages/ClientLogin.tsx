@@ -16,7 +16,7 @@ const ClientLogin = () => {
   const [code, setCode] = useState('');
   const [storedCode, setStoredCode] = useState('');
   const [clientName, setClientName] = useState('');
-  const [clientData, setClientData] = useState<{ name: string; phone: string } | null>(null);
+
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -32,79 +32,58 @@ const ClientLogin = () => {
     const formatted = formatPhone(e.target.value);
     setPhone(formatted);
     setError('');
-    setClientData(null);
   };
 
-  const handleCheckPhone = async (e: React.FormEvent) => {
+  const handleSubmitPhone = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setClientData(null);
 
     const cleanPhone = phone.replace(/\D/g, '');
 
     try {
-      const response = await fetch('https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd?phone=' + cleanPhone);
-      const data = await response.json();
+      const checkResponse = await fetch('https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd?phone=' + cleanPhone);
+      const checkData = await checkResponse.json();
 
-      console.log('Phone check response:', data);
+      console.log('Bitrix24 check response:', checkData);
 
-      if (data.success && data.client) {
-        setClientData({
-          name: data.client.name,
-          phone: phone
-        });
-        setClientName(data.client.name);
-      } else {
-        if (data.not_found) {
-          setError('Клиент с таким номером не найден в системе.');
-        } else {
-          setError(data.error || 'Ошибка проверки номера');
-        }
+      if (!checkData.success || checkData.not_found) {
+        setError('Клиент с таким номером не найден в системе.');
+        setLoading(false);
+        return;
       }
-    } catch (err) {
-      console.error('Phone check error:', err);
-      setError('Ошибка подключения к серверу');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleSendCode = async () => {
-    if (!clientData) return;
+      const foundClientName = checkData.client?.name || 'Клиент';
+      setClientName(foundClientName);
 
-    setLoading(true);
-    setError('');
-
-    const cleanPhone = phone.replace(/\D/g, '');
-
-    try {
-      const response = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
+      const smsResponse = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: cleanPhone,
-          fullName: clientData.name,
+          fullName: foundClientName,
           action: 'send'
         })
       });
-      const data = await response.json();
+      const smsData = await smsResponse.json();
 
-      console.log('Send SMS response:', data);
+      console.log('SMS send response:', smsData);
 
-      if (data.success) {
-        setStoredCode(data.code);
+      if (smsData.success) {
+        setStoredCode(smsData.code);
         setStep('code');
       } else {
-        setError(data.error || 'Ошибка отправки SMS');
+        setError(smsData.error || 'Ошибка отправки SMS');
       }
     } catch (err) {
-      console.error('Send SMS error:', err);
+      console.error('Login error:', err);
       setError('Ошибка подключения к серверу');
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,7 +137,7 @@ const ClientLogin = () => {
         </CardHeader>
         <CardContent>
           {step === 'phone' && (
-          <form onSubmit={handleCheckPhone} className="space-y-6">
+          <form onSubmit={handleSubmitPhone} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="phone">Номер телефона</Label>
               <Input
@@ -177,39 +156,6 @@ const ClientLogin = () => {
               </p>
             </div>
 
-            {clientData && (
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Icon name="CheckCircle" size={24} className="text-primary" />
-                    <div>
-                      <p className="font-semibold text-sm text-muted-foreground">Найден клиент:</p>
-                      <p className="font-semibold text-lg">{clientData.name}</p>
-                      <p className="text-sm text-muted-foreground">{clientData.phone}</p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleSendCode}
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-                  >
-                    {loading ? (
-                      <>
-                        <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                        Отправка SMS...
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="Send" size={20} className="mr-2" />
-                        Получить SMS-код
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {error && (
               <Alert className="bg-red-500/10 border-red-500/30">
                 <Icon name="AlertCircle" size={18} className="text-red-500" />
@@ -219,25 +165,23 @@ const ClientLogin = () => {
               </Alert>
             )}
 
-            {!clientData && (
-              <Button
-                type="submit"
-                disabled={loading || phone.length < 18}
-                className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-              >
-                {loading ? (
-                  <>
-                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                    Поиск...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Search" size={20} className="mr-2" />
-                    Найти клиента
-                  </>
-                )}
-              </Button>
-            )}
+            <Button
+              type="submit"
+              disabled={loading || phone.length < 18}
+              className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+            >
+              {loading ? (
+                <>
+                  <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                  Отправка SMS...
+                </>
+              ) : (
+                <>
+                  <Icon name="Send" size={20} className="mr-2" />
+                  Получить код
+                </>
+              )}
+            </Button>
           </form>
           )}
 
@@ -290,7 +234,6 @@ const ClientLogin = () => {
                   setStep('phone');
                   setCode('');
                   setError('');
-                  setClientData(null);
                 }}
                 variant="outline"
                 className="flex-1"
