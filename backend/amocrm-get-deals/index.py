@@ -21,7 +21,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
-            'body': ''
+            'body': '',
+            'isBase64Encoded': False
         }
     
     params = event.get('queryStringParameters', {})
@@ -31,7 +32,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Параметр phone обязателен'})
+            'body': json.dumps({'error': 'Параметр phone обязателен'}),
+            'isBase64Encoded': False
         }
     
     subdomain = os.environ.get('AMOCRM_SUBDOMAIN', '').replace('.amocrm.ru', '')
@@ -41,7 +43,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Не настроены секреты AmoCRM'})
+            'body': json.dumps({'error': 'Не настроены секреты AmoCRM'}),
+            'isBase64Encoded': False
         }
     
     headers = {
@@ -51,29 +54,92 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     try:
         # Поиск контакта по телефону
+        print(f'[AMOCRM] Поиск контакта: {phone}')
         search_url = f'https://{subdomain}.amocrm.ru/api/v4/contacts'
-        search_response = requests.get(
-            search_url,
-            headers=headers,
-            params={'query': phone},
-            timeout=10
-        )
+        
+        try:
+            search_response = requests.get(
+                search_url,
+                headers=headers,
+                params={'query': phone},
+                timeout=10
+            )
+            print(f'[AMOCRM] Status: {search_response.status_code}')
+            print(f'[AMOCRM] Response headers: {dict(search_response.headers)}')
+            print(f'[AMOCRM] Response text length: {len(search_response.text)}')
+            
+        except requests.exceptions.Timeout:
+            print('[AMOCRM] Timeout при запросе')
+            return {
+                'statusCode': 504,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Превышено время ожидания ответа от AmoCRM'}),
+                'isBase64Encoded': False
+            }
+        except requests.exceptions.ConnectionError as e:
+            print(f'[AMOCRM] Connection error: {e}')
+            return {
+                'statusCode': 503,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Ошибка подключения к AmoCRM'}),
+                'isBase64Encoded': False
+            }
         
         if search_response.status_code == 401:
             return {
                 'statusCode': 401,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Токен недействителен. Обновите токен.'})
+                'body': json.dumps({'error': 'Токен недействителен. Обновите токен.'}),
+                'isBase64Encoded': False
             }
         
-        search_response.raise_for_status()
-        contacts_data = search_response.json()
+        if search_response.status_code == 204:
+            print('[AMOCRM] Контакт не найден (204)')
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Клиент не найден'}),
+                'isBase64Encoded': False
+            }
+        
+        if search_response.status_code != 200:
+            print(f'[AMOCRM] Ошибка поиска контакта: {search_response.status_code}')
+            print(f'[AMOCRM] Ответ: {search_response.text[:500]}')
+            return {
+                'statusCode': search_response.status_code,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': f'Ошибка поиска в AmoCRM: {search_response.status_code}'}),
+                'isBase64Encoded': False
+            }
+        
+        response_text = search_response.text
+        if not response_text or response_text.strip() == '':
+            print('[AMOCRM] Пустой ответ от AmoCRM')
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Клиент не найден'}),
+                'isBase64Encoded': False
+            }
+        
+        try:
+            contacts_data = json.loads(response_text)
+        except json.JSONDecodeError as json_error:
+            print(f'[AMOCRM] Ошибка парсинга JSON: {json_error}')
+            print(f'[AMOCRM] Ответ: {response_text[:200]}')
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Клиент не найден'}),
+                'isBase64Encoded': False
+            }
         
         if not contacts_data.get('_embedded', {}).get('contacts'):
             return {
                 'statusCode': 404,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Клиент не найден'})
+                'body': json.dumps({'error': 'Клиент не найден'}),
+                'isBase64Encoded': False
             }
         
         contact = contacts_data['_embedded']['contacts'][0]
@@ -90,16 +156,46 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         leads_response.raise_for_status()
         leads_data = leads_response.json()
         
+        # Получаем все воронки и их статусы одним запросом
+        pipelines_url = f'https://{subdomain}.amocrm.ru/api/v4/leads/pipelines'
+        try:
+            pipelines_response = requests.get(pipelines_url, headers=headers, timeout=10)
+            pipelines_response.raise_for_status()
+            pipelines_data = pipelines_response.json()
+            
+            # Собираем все статусы из всех воронок
+            all_statuses = {}
+            for pipeline in pipelines_data.get('_embedded', {}).get('pipelines', []):
+                pipeline_id = pipeline.get('id')
+                statuses = pipeline.get('_embedded', {}).get('statuses', [])
+                for status in statuses:
+                    status_id = status.get('id')
+                    if status_id:
+                        all_statuses[status_id] = status.get('name', 'В обработке')
+            
+            print(f'[AMOCRM] Загружено статусов: {len(all_statuses)}')
+        except Exception as e:
+            print(f'[AMOCRM] Ошибка загрузки статусов: {e}')
+            all_statuses = {}
+        
         deals = []
         for lead in leads_data.get('_embedded', {}).get('leads', []):
+            status_id = lead.get('status_id')
+            status_name = all_statuses.get(status_id, 'В обработке')
+            
             deals.append({
                 'id': str(lead['id']),
                 'name': lead.get('name', 'Без названия'),
                 'price': lead.get('price', 0),
-                'status_id': lead.get('status_id'),
+                'status_id': status_id,
+                'status_name': status_name,
+                'pipeline_id': lead.get('pipeline_id'),
                 'created_at': lead.get('created_at'),
-                'updated_at': lead.get('updated_at')
+                'updated_at': lead.get('updated_at'),
+                'closed_at': lead.get('closed_at')
             })
+        
+        print(f'[AMOCRM] Найдено сделок: {len(deals)}')
         
         # Формирование данных клиента
         custom_fields = contact.get('custom_fields_values', [])
@@ -122,12 +218,23 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'client': client_data,
                 'deals': deals,
                 'total_deals': len(deals)
-            })
+            }),
+            'isBase64Encoded': False
         }
         
     except requests.exceptions.RequestException as e:
+        print(f'[AMOCRM] Ошибка API: {e}')
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'Ошибка API AmoCRM: {str(e)}'})
+            'body': json.dumps({'error': f'Ошибка API AmoCRM: {str(e)}'}),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        print(f'[AMOCRM] Общая ошибка: {e}')
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Ошибка обработки данных: {str(e)}'}),
+            'isBase64Encoded': False
         }

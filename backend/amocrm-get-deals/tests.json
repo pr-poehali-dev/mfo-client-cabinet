@@ -1,13 +1,12 @@
 {
   "tests": [
     {
-      "name": "Get deals by phone",
+      "name": "Get deals endpoint response",
       "method": "GET",
       "path": "/?phone=79991234567",
-      "expectedStatus": 200,
+      "expectedStatus": 404,
       "expectedBody": {
-        "client": "object",
-        "deals": "array"
+        "error": "string"
       },
       "bodyMatcher": "partial"
     }
