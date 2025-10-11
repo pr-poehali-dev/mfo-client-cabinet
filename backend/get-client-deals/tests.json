@@ -1,12 +1,12 @@
 {
   "tests": [
     {
-      "name": "Get client deals by phone",
+      "name": "Get client deals by phone - not found",
       "method": "GET",
       "path": "/?phone=79999999999",
-      "expectedStatus": 200,
+      "expectedStatus": 404,
       "expectedBody": {
-        "success": true
+        "success": false
       },
       "bodyMatcher": "partial"
     },

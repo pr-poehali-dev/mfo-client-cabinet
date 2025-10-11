@@ -8,7 +8,7 @@ import random
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Отправка SMS-кода для авторизации через sms.ru
+    Business: Отправка SMS-кода для авторизации через sms.ru с проверкой в AmoCRM
     Args: event с httpMethod, body содержит phone или phone+code для проверки
     Returns: JSON с результатом отправки или проверки SMS
     '''
@@ -39,6 +39,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     api_key = os.environ.get('SMSRU_API_KEY')
+    amocrm_token = os.environ.get('AMOCRM_ACCESS_TOKEN')
+    amocrm_subdomain = os.environ.get('AMOCRM_SUBDOMAIN', 'stepanmalik88')
+    
+    # Убираем .amocrm.ru если он уже есть в subdomain
+    if amocrm_subdomain.endswith('.amocrm.ru'):
+        amocrm_subdomain = amocrm_subdomain.replace('.amocrm.ru', '')
     
     if not api_key:
         return {
@@ -51,169 +57,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    if not amocrm_token:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': 'AMOCRM_ACCESS_TOKEN not configured'}),
+            'isBase64Encoded': False
+        }
+    
     try:
         body_data = json.loads(event.get('body', '{}'))
         phone = body_data.get('phone', '')
-        full_name = body_data.get('fullName', '')
         code = body_data.get('code', '')
         action = body_data.get('action', 'send')
         
-        # Новое действие: поиск клиента по ФИО
-        if action == 'search_by_name':
-            webhook_url = os.environ.get('BITRIX24_WEBHOOK_URL', '').rstrip('/')
-            
-            if not webhook_url or not full_name:
-                return {
-                    'statusCode': 400,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'body': json.dumps({'success': False}),
-                    'isBase64Encoded': False
-                }
-            
-            try:
-                search_params = urllib.parse.urlencode({
-                    'FILTER[NAME]': full_name.split()[0] if full_name.split() else full_name,
-                    'SELECT[]': ['NAME', 'LAST_NAME', 'PHONE']
-                })
-                list_url = f"{webhook_url}/crm.contact.list?{search_params}"
-                
-                list_req = urllib.request.Request(list_url)
-                with urllib.request.urlopen(list_req, timeout=10) as response:
-                    list_data = json.loads(response.read().decode())
-                
-                contacts = list_data.get('result', [])
-                
-                if contacts:
-                    contact = contacts[0]
-                    contact_name = f"{contact.get('NAME', '')} {contact.get('LAST_NAME', '')}".strip()
-                    
-                    phones = contact.get('PHONE', [])
-                    contact_phone = phones[0].get('VALUE', '') if phones else ''
-                    
-                    return {
-                        'statusCode': 200,
-                        'headers': {
-                            'Content-Type': 'application/json',
-                            'Access-Control-Allow-Origin': '*'
-                        },
-                        'body': json.dumps({
-                            'success': True,
-                            'client': {
-                                'name': contact_name,
-                                'phone': contact_phone
-                            }
-                        }),
-                        'isBase64Encoded': False
-                    }
-                
-                return {
-                    'statusCode': 200,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'body': json.dumps({'success': False}),
-                    'isBase64Encoded': False
-                }
-                
-            except Exception as e:
-                print(f'[SMS-AUTH] Ошибка поиска по ФИО: {e}')
-                return {
-                    'statusCode': 200,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'body': json.dumps({'success': False}),
-                    'isBase64Encoded': False
-                }
-        
-        # Новое действие: проверка телефона без отправки SMS
-        if action == 'check':
-            webhook_url = os.environ.get('BITRIX24_WEBHOOK_URL', '').rstrip('/')
-            
-            if not webhook_url:
-                return {
-                    'statusCode': 500,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'body': json.dumps({'error': 'Битрикс24 не настроен'}),
-                    'isBase64Encoded': False
-                }
-            
-            clean_phone = phone.replace('+', '').replace(' ', '').replace('(', '').replace(')', '').replace('-', '')
-            
-            search_params = urllib.parse.urlencode({
-                'PHONE': clean_phone,
-                'TYPE': 'PHONE'
-            })
-            contact_url = f"{webhook_url}/crm.duplicate.findbycomm?{search_params}"
-            
-            try:
-                contact_req = urllib.request.Request(contact_url)
-                with urllib.request.urlopen(contact_req, timeout=10) as response:
-                    duplicate_data = json.loads(response.read().decode())
-                
-                contact_entities = duplicate_data.get('result', {}).get('CONTACT', [])
-                
-                if not contact_entities:
-                    return {
-                        'statusCode': 404,
-                        'headers': {
-                            'Content-Type': 'application/json',
-                            'Access-Control-Allow-Origin': '*'
-                        },
-                        'body': json.dumps({
-                            'success': False,
-                            'not_found': True
-                        }),
-                        'isBase64Encoded': False
-                    }
-                
-                contact_id = contact_entities[0]
-                contact_get_url = f"{webhook_url}/crm.contact.get?id={contact_id}"
-                contact_get_req = urllib.request.Request(contact_get_url)
-                
-                with urllib.request.urlopen(contact_get_req, timeout=10) as contact_response:
-                    contact_result = json.loads(contact_response.read().decode())
-                
-                contact = contact_result.get('result', {})
-                contact_name = f"{contact.get('NAME', '')} {contact.get('LAST_NAME', '')}".strip()
-                
-                return {
-                    'statusCode': 200,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'body': json.dumps({
-                        'success': True,
-                        'client': {
-                            'name': contact_name,
-                            'phone': phone
-                        }
-                    }),
-                    'isBase64Encoded': False
-                }
-                
-            except Exception as e:
-                print(f'[SMS-AUTH] Ошибка проверки телефона: {e}')
-                return {
-                    'statusCode': 500,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'body': json.dumps({'error': str(e)}),
-                    'isBase64Encoded': False
-                }
-        
-        print(f'[SMS-AUTH] Request: action={action}, phone={phone[:4]}***, name={full_name}')
+        print(f'[SMS-AUTH] Request: action={action}, phone={phone[:4]}***')
         
         if not phone:
             return {
@@ -226,46 +87,37 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-
-        
         clean_phone = phone.replace('+', '').replace(' ', '').replace('(', '').replace(')', '').replace('-', '')
         
         if action == 'send':
-            webhook_url = os.environ.get('BITRIX24_WEBHOOK_URL', '').rstrip('/')
+            print(f'[SMS-AUTH] Проверка клиента в AmoCRM: {clean_phone}')
             
-            if not webhook_url:
-                return {
-                    'statusCode': 500,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'body': json.dumps({'error': 'Битрикс24 не настроен'}),
-                    'isBase64Encoded': False
-                }
-            
-            print(f'[SMS-AUTH] Проверка клиента в Битрикс24: {clean_phone}')
-            
+            # Поиск контакта в AmoCRM по телефону
+            search_url = f'https://{amocrm_subdomain}.amocrm.ru/api/v4/contacts'
             search_params = urllib.parse.urlencode({
-                'PHONE': clean_phone,
-                'TYPE': 'PHONE'
+                'query': clean_phone
             })
-            contact_url = f"{webhook_url}/crm.duplicate.findbycomm?{search_params}"
+            full_url = f'{search_url}?{search_params}'
             
-            print(f'[SMS-AUTH] URL запроса: {contact_url[:80]}...')
+            print(f'[SMS-AUTH] URL запроса: {full_url}')
             
-            contact_req = urllib.request.Request(contact_url)
+            headers = {
+                'Authorization': f'Bearer {amocrm_token}',
+                'Content-Type': 'application/json'
+            }
             
             try:
-                with urllib.request.urlopen(contact_req, timeout=10) as response:
+                req = urllib.request.Request(full_url, headers=headers)
+                
+                with urllib.request.urlopen(req, timeout=10) as response:
                     response_text = response.read().decode()
-                    print(f'[SMS-AUTH] Ответ Битрикс24: {response_text[:200]}...')
-                    duplicate_data = json.loads(response_text)
+                    print(f'[SMS-AUTH] Ответ AmoCRM: {response_text[:200]}...')
+                    contacts_data = json.loads(response_text)
                 
-                contact_entities = duplicate_data.get('result', {}).get('CONTACT', [])
+                contacts = contacts_data.get('_embedded', {}).get('contacts', [])
                 
-                if not contact_entities:
-                    print(f'[SMS-AUTH] Клиент не найден в Битрикс24: {clean_phone}')
+                if not contacts:
+                    print(f'[SMS-AUTH] Клиент не найден в AmoCRM: {clean_phone}')
                     return {
                         'statusCode': 404,
                         'headers': {
@@ -279,32 +131,36 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'isBase64Encoded': False
                     }
                 
-                contact_id = contact_entities[0]
+                contact = contacts[0]
+                client_name = contact.get('name', 'Клиент')
+                client_id = contact.get('id')
+                print(f'[SMS-AUTH] Клиент найден в AmoCRM: {client_name} (ID: {client_id})')
                 
-                contact_get_url = f"{webhook_url}/crm.contact.get?id={contact_id}"
-                contact_get_req = urllib.request.Request(contact_get_url)
-                
-                with urllib.request.urlopen(contact_get_req, timeout=10) as contact_response:
-                    contact_text = contact_response.read().decode()
-                    contact_result = json.loads(contact_text)
-                
-                contact = contact_result.get('result', {})
-                client_name = f"{contact.get('NAME', '')} {contact.get('LAST_NAME', '')}".strip() or 'Клиент'
-                client_id = contact.get('ID')
-                print(f'[SMS-AUTH] Клиент найден в Битрикс24: {client_name} (ID: {client_id})')
-                
-            except Exception as e:
-                print(f'[SMS-AUTH] Ошибка проверки Битрикс24: {e}')
+            except urllib.error.HTTPError as e:
+                error_body = e.read().decode()
+                print(f'[SMS-AUTH] HTTP Error {e.code}: {error_body}')
                 return {
                     'statusCode': 500,
                     'headers': {
                         'Content-Type': 'application/json',
                         'Access-Control-Allow-Origin': '*'
                     },
-                    'body': json.dumps({'error': 'Ошибка проверки данных в Битрикс24'}),
+                    'body': json.dumps({'error': f'Ошибка проверки данных в AmoCRM: {e.code}'}),
+                    'isBase64Encoded': False
+                }
+            except Exception as e:
+                print(f'[SMS-AUTH] Ошибка проверки AmoCRM: {e}')
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': 'Ошибка проверки данных в AmoCRM'}),
                     'isBase64Encoded': False
                 }
             
+            # Генерация и отправка SMS-кода
             sms_code = str(random.randint(1000, 9999))
             print(f'[SMS-AUTH] Генерирован код: {sms_code}')
             
@@ -352,7 +208,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'message': 'SMS отправлена',
                         'code': sms_code,
                         'phone': clean_phone,
-                        'client_name': client_name
+                        'client_name': client_name,
+                        'client_id': client_id
                     }),
                     'isBase64Encoded': False
                 }
@@ -385,6 +242,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             if code == stored_code:
                 stored_name = body_data.get('client_name', 'Клиент')
+                client_id = body_data.get('client_id', '')
                 return {
                     'statusCode': 200,
                     'headers': {
@@ -394,7 +252,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({
                         'success': True,
                         'verified': True,
-                        'client_name': stored_name
+                        'client_name': stored_name,
+                        'client_id': client_id
                     }),
                     'isBase64Encoded': False
                 }

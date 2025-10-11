@@ -51,15 +51,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    if not full_name:
-        return {
-            'statusCode': 400,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'success': False, 'error': 'ФИО обязательно'}),
-            'isBase64Encoded': False
-        }
-    
-    amocrm_domain = os.environ.get('AMOCRM_DOMAIN', 'stepanmalik88.amocrm.ru')
+    amocrm_subdomain = os.environ.get('AMOCRM_SUBDOMAIN', 'stepanmalik88')
+    # Убираем .amocrm.ru если он уже есть
+    if amocrm_subdomain.endswith('.amocrm.ru'):
+        amocrm_domain = amocrm_subdomain
+    else:
+        amocrm_domain = f'{amocrm_subdomain}.amocrm.ru'
     amocrm_token = os.environ.get('AMOCRM_ACCESS_TOKEN', '')
     
     if not amocrm_token:
