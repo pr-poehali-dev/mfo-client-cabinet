@@ -12,6 +12,7 @@ const ClientLogin = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -76,8 +77,20 @@ const ClientLogin = () => {
 
     const cleanPhone = phone.replace(/\D/g, '');
 
+    if (cleanPhone.length !== 11) {
+      setError('Введите корректный номер телефона');
+      setLoading(false);
+      return;
+    }
+
     if (password.length < 4) {
       setError('Пароль должен быть минимум 4 символа');
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Пароли не совпадают');
       setLoading(false);
       return;
     }
@@ -89,17 +102,18 @@ const ClientLogin = () => {
         body: JSON.stringify({
           phone: cleanPhone,
           password: password,
-          full_name: fullName,
+          full_name: fullName.trim(),
           email: email
         })
       });
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Регистрация успешна! Теперь войдите в систему.');
+        setSuccess('Регистрация успешна! Вы можете войти в систему.');
         setTimeout(() => {
           setPhone('');
           setPassword('');
+          setConfirmPassword('');
           setFullName('');
           setEmail('');
           setSuccess('');
@@ -193,38 +207,31 @@ const ClientLogin = () => {
                   )}
                 </Button>
 
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => navigate('/register')}
-                    className="text-primary hover:text-primary/80"
-                  >
-                    Нет аккаунта? Зарегистрироваться
-                  </Button>
-                </div>
+
               </form>
             </TabsContent>
 
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-name">ФИО</Label>
+                  <Label htmlFor="register-name">ФИО *</Label>
                   <Input
                     id="register-name"
                     type="text"
-                    placeholder="Иван Иванов"
+                    placeholder="Иванов Иван Иванович"
                     value={fullName}
                     onChange={(e) => {
                       setFullName(e.target.value);
                       setError('');
+                      setSuccess('');
                     }}
                     required
+                    disabled={loading}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="register-phone">Номер телефона</Label>
+                  <Label htmlFor="register-phone">Номер телефона *</Label>
                   <Input
                     id="register-phone"
                     type="tel"
@@ -233,11 +240,12 @@ const ClientLogin = () => {
                     onChange={handlePhoneChange}
                     maxLength={18}
                     required
+                    disabled={loading}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="register-password">Пароль</Label>
+                  <Label htmlFor="register-password">Пароль *</Label>
                   <Input
                     id="register-password"
                     type="password"
@@ -246,22 +254,27 @@ const ClientLogin = () => {
                     onChange={(e) => {
                       setPassword(e.target.value);
                       setError('');
+                      setSuccess('');
                     }}
                     required
+                    disabled={loading}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="register-email">Email (необязательно)</Label>
+                  <Label htmlFor="register-confirm-password">Подтвердите пароль *</Label>
                   <Input
-                    id="register-email"
-                    type="email"
-                    placeholder="example@mail.ru"
-                    value={email}
+                    id="register-confirm-password"
+                    type="password"
+                    placeholder="Повторите пароль"
+                    value={confirmPassword}
                     onChange={(e) => {
-                      setEmail(e.target.value);
+                      setConfirmPassword(e.target.value);
                       setError('');
+                      setSuccess('');
                     }}
+                    required
+                    disabled={loading}
                   />
                 </div>
 
@@ -285,7 +298,7 @@ const ClientLogin = () => {
 
                 <Button
                   type="submit"
-                  disabled={loading || phone.length < 18 || !password || !fullName}
+                  disabled={loading || phone.length < 18 || !password || !confirmPassword || !fullName}
                   className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
                 >
                   {loading ? (
