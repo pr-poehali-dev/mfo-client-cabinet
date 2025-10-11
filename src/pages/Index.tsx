@@ -66,6 +66,25 @@ const Index = () => {
     }
   }, [isAuthenticated, userPhone]);
 
+  const getStatusColor = (statusName: string): string => {
+    const name = statusName?.toLowerCase() || '';
+    
+    if (name.includes('успешно') || name.includes('выполнен') || name.includes('оплачен')) {
+      return 'green';
+    }
+    if (name.includes('отказ') || name.includes('отклонен') || name.includes('провал')) {
+      return 'red';
+    }
+    if (name.includes('новая') || name.includes('первичный')) {
+      return 'blue';
+    }
+    if (name.includes('ожидан') || name.includes('обработ')) {
+      return 'yellow';
+    }
+    
+    return 'gray';
+  };
+
   const loadData = async (phone: string) => {
     // Очистка данных
     setLoans([]);
@@ -93,8 +112,17 @@ const Index = () => {
         id: deal.id,
         name: deal.name,
         amount: deal.price,
-        status: 'pending' as const,
-        status_name: 'В обработке',
+        status: deal.status_name || 'В обработке',
+        status_id: deal.status_id,
+        status_name: deal.status_name || 'В обработке',
+        status_color: getStatusColor(deal.status_name),
+        pipeline_id: deal.pipeline_id,
+        pipeline_name: '',
+        responsible_user_id: 0,
+        created_at: new Date(deal.created_at * 1000).toLocaleDateString('ru-RU'),
+        updated_at: new Date(deal.updated_at * 1000).toLocaleDateString('ru-RU'),
+        price: deal.price,
+        custom_fields: [],
         date: new Date(deal.created_at * 1000).toLocaleDateString('ru-RU'),
         description: deal.name
       }));

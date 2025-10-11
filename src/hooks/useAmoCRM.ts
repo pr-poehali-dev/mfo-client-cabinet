@@ -14,8 +14,11 @@ interface AmoCRMDeal {
   name: string;
   price: number;
   status_id: number;
+  status_name: string;
+  pipeline_id: number;
   created_at: number;
   updated_at: number;
+  closed_at?: number;
 }
 
 interface AmoCRMData {
