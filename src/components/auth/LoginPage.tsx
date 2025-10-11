@@ -3,15 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 
 interface LoginPageProps {
   onLogin: (phone: string, clientName?: string) => Promise<boolean>;
@@ -19,10 +12,10 @@ interface LoginPageProps {
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [smsInfo, setSmsInfo] = useState<string>('');
   const [storedCode, setStoredCode] = useState<string>('');
@@ -44,7 +37,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setError('');
   };
 
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  // Вход по SMS
+  const handleSmsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const digits = phone.replace(/\D/g, '');
@@ -64,16 +58,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         body: JSON.stringify({ action: 'send', phone: digits })
       });
 
-      const responseText = await response.text();
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        setError('Ошибка сервера. Попробуйте позже');
-        setLoading(false);
-        return;
-      }
+      const data = await response.json();
 
       if (response.ok && data.success) {
         setStep('code');
@@ -86,7 +71,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         }
       } else {
         if (response.status === 404 || data.not_found) {
-          setError('Клиент с таким номером не найден в системе. Обратитесь в службу поддержки для получения доступа.');
+          setError('Клиент с таким номером не найден в системе');
         } else {
           setError(data.error || 'Ошибка при отправке SMS');
         }
@@ -117,16 +102,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         body: JSON.stringify({ action: 'verify', phone: digits, code, stored_code: storedCode, client_name: clientName })
       });
 
-      const responseText = await response.text();
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        setError('Ошибка сервера. Попробуйте позже');
-        setLoading(false);
-        return;
-      }
+      const data = await response.json();
 
       if (response.ok && data.success) {
         const finalName = data.client_name || clientName || '';
@@ -147,74 +123,68 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-            <Icon name="Wallet" size={32} className="text-white" />
-          </div>
-          <CardTitle className="text-3xl font-montserrat">
-            {step === 'phone' ? 'Вход в личный кабинет' : 'Подтверждение входа'}
-          </CardTitle>
-          <CardDescription>
-            {step === 'phone' 
-              ? 'Введите номер телефона, указанный при оформлении займа'
-              : 'Введите код из SMS для входа в кабинет'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {step === 'phone' ? (
-            <form onSubmit={handlePhoneSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Номер телефона</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+7 (999) 123-45-67"
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  disabled={loading}
-                  className="text-lg"
-                  autoComplete="tel"
-                  autoFocus
-                />
-              </div>
+  // Вход по паролю
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-              {error && (
-                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
-                  <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
-              )}
+    const digits = phone.replace(/\D/g, '');
+    
+    if (digits.length !== 11) {
+      setError('Введите корректный номер телефона');
+      return;
+    }
 
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                    Отправка SMS...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="MessageSquare" size={20} className="mr-2" />
-                    Получить код
-                  </>
-                )}
-              </Button>
+    if (!password) {
+      setError('Введите пароль');
+      return;
+    }
 
-              <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
-                <Icon name="Info" size={18} className="text-accent flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground">
-                  Используйте номер телефона, указанный при оформлении займа
-                </p>
-              </div>
-            </form>
-          ) : (
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/3ef6f7cb-856a-4e15-bcf8-124143d9c136', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: digits,
+          password: password
+        })
+      });
+      
+      const data = await response.json();
+
+      if (data.success && data.client) {
+        const success = await onLogin(digits, data.client.full_name);
+        if (!success) {
+          setError('Ошибка входа');
+        }
+      } else {
+        setError(data.error || 'Неверный телефон или пароль');
+      }
+    } catch (err) {
+      setError('Ошибка соединения с сервером');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (step === 'code') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+              <Icon name="Wallet" size={32} className="text-white" />
+            </div>
+            <CardTitle className="text-3xl font-montserrat">
+              Подтверждение входа
+            </CardTitle>
+            <CardDescription>
+              Введите код из SMS для входа в кабинет
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <form onSubmit={handleCodeSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="code">Код из SMS</Label>
@@ -281,93 +251,149 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 Изменить номер
               </Button>
             </form>
-          )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-          <div className="mt-6">
-            <p className="text-sm text-muted-foreground text-center">
-              Нет доступа к кабинету?{' '}
-              <Dialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen}>
-                <DialogTrigger asChild>
-                  <button className="text-primary hover:underline font-medium">
-                    Свяжитесь с поддержкой
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-                        <Icon name="Headphones" size={20} className="text-white" />
-                      </div>
-                      Служба поддержки
-                    </DialogTitle>
-                    <DialogDescription>
-                      Свяжитесь с нами для получения доступа к личному кабинету
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4 py-4">
-                    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Icon name="Phone" size={20} className="text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground mb-1">Телефон</p>
-                        <a href="tel:+78001234567" className="text-lg font-semibold hover:text-primary transition-colors">
-                          +7 (800) 123-45-67
-                        </a>
-                        <p className="text-xs text-muted-foreground mt-1">Круглосуточно</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                      <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                        <Icon name="Mail" size={20} className="text-secondary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground mb-1">Email</p>
-                        <a href="mailto:support@example.com" className="text-lg font-semibold hover:text-primary transition-colors break-all">
-                          support@example.com
-                        </a>
-                        <p className="text-xs text-muted-foreground mt-1">Ответ в течение 24 часов</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                        <Icon name="MessageCircle" size={20} className="text-green-500" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground mb-1">Telegram</p>
-                        <a href="https://t.me/support" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold hover:text-primary transition-colors">
-                          @support
-                        </a>
-                        <p className="text-xs text-muted-foreground mt-1">Быстрый ответ</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setSupportDialogOpen(false)}
-                    >
-                      Закрыть
-                    </Button>
-                    <Button
-                      className="flex-1 bg-gradient-to-r from-primary to-secondary"
-                      onClick={() => {
-                        window.location.href = 'tel:+78001234567';
-                      }}
-                    >
-                      <Icon name="Phone" size={18} className="mr-2" />
-                      Позвонить
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </p>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardHeader className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+            <Icon name="Wallet" size={32} className="text-white" />
           </div>
+          <CardTitle className="text-3xl font-montserrat">
+            Личный кабинет
+          </CardTitle>
+          <CardDescription>
+            Выберите способ входа в систему
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="password" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="password">Пароль</TabsTrigger>
+              <TabsTrigger value="sms">SMS-код</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="password">
+              <form onSubmit={handlePasswordLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password-phone">Номер телефона</Label>
+                  <Input
+                    id="password-phone"
+                    type="tel"
+                    placeholder="+7 (999) 123-45-67"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    disabled={loading}
+                    className="text-lg"
+                    autoComplete="tel"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Пароль</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Введите пароль"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError('');
+                    }}
+                    disabled={loading}
+                    className="text-lg"
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
+                    <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
+                    <p className="text-sm text-destructive">{error}</p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
+                  disabled={loading || phone.length < 18 || !password}
+                >
+                  {loading ? (
+                    <>
+                      <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                      Вход...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="LogIn" size={20} className="mr-2" />
+                      Войти
+                    </>
+                  )}
+                </Button>
+
+                <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
+                  <Icon name="Info" size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    Используйте номер телефона и пароль из личного кабинета
+                  </p>
+                </div>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="sms">
+              <form onSubmit={handleSmsLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sms-phone">Номер телефона</Label>
+                  <Input
+                    id="sms-phone"
+                    type="tel"
+                    placeholder="+7 (999) 123-45-67"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    disabled={loading}
+                    className="text-lg"
+                    autoComplete="tel"
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-2">
+                    <Icon name="AlertCircle" size={18} className="text-destructive flex-shrink-0" />
+                    <p className="text-sm text-destructive">{error}</p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-primary to-secondary text-lg py-6"
+                  disabled={loading || phone.length < 18}
+                >
+                  {loading ? (
+                    <>
+                      <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                      Отправка SMS...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="MessageSquare" size={20} className="mr-2" />
+                      Получить код
+                    </>
+                  )}
+                </Button>
+
+                <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
+                  <Icon name="Info" size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    Используйте номер телефона, указанный при оформлении займа
+                  </p>
+                </div>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

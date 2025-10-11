@@ -63,16 +63,19 @@ const NewApplicationDialog = ({ clientPhone, onApplicationSubmit, canSubmitNewAp
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-primary to-secondary">
+        <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity">
           <Icon name="Plus" size={18} className="mr-2" />
           Подать заявку
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg border-border/50 bg-card/95 backdrop-blur-sm">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-montserrat">Новая заявка на займ</DialogTitle>
+          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+            <Icon name="FileText" size={24} className="text-white" />
+          </div>
+          <DialogTitle className="text-2xl font-montserrat text-center">Новая заявка на займ</DialogTitle>
         </DialogHeader>
-        <div className="space-y-6 py-6">
+        <div className="space-y-6 py-4">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-base font-semibold">Сумма займа</Label>
@@ -115,17 +118,30 @@ const NewApplicationDialog = ({ clientPhone, onApplicationSubmit, canSubmitNewAp
             </div>
           </div>
 
-          <div className="p-5 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl border-2 border-primary/20">
+          <div className="p-5 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 rounded-xl border-2 border-primary/30 shadow-lg">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground">Процентная ставка</span>
-              <span className="text-lg font-bold">{interestRate}% в день</span>
+              <div className="flex items-center gap-2">
+                <Icon name="TrendingUp" size={16} className="text-primary" />
+                <span className="text-sm text-muted-foreground">Процентная ставка</span>
+              </div>
+              <span className="text-lg font-bold text-primary">{interestRate}% в день</span>
             </div>
             <div className="flex items-center justify-between pt-3 border-t border-border/50">
-              <span className="text-base font-semibold">Сумма к возврату</span>
+              <div className="flex items-center gap-2">
+                <Icon name="Wallet" size={18} className="text-secondary" />
+                <span className="text-base font-semibold">Сумма к возврату</span>
+              </div>
               <span className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 {Math.round(totalReturn).toLocaleString('ru-RU')} ₽
               </span>
             </div>
+          </div>
+          
+          <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
+            <Icon name="Info" size={16} className="text-accent flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              Заявка будет рассмотрена в течение 15 минут. Результат придёт SMS-сообщением.
+            </p>
           </div>
 
           <Button 
