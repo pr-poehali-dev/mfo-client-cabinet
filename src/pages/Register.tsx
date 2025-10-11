@@ -6,23 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Icon from '@/components/ui/icon';
-import funcUrls from '../../backend/func2url.json';
 
 export default function Register() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    lastName: '',
-    firstName: '',
-    middleName: '',
-    passportSeries: '',
-    passportNumber: '',
-    phone: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -34,81 +27,65 @@ export default function Register() {
     return `+7 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9, 11)}`;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === 'passportSeries') {
-      const cleaned = value.replace(/\D/g, '').slice(0, 4);
-      setFormData(prev => ({ ...prev, [name]: cleaned }));
-    } else if (name === 'passportNumber') {
-      const cleaned = value.replace(/\D/g, '').slice(0, 6);
-      setFormData(prev => ({ ...prev, [name]: cleaned }));
-    } else if (name === 'phone') {
-      const cleaned = value.replace(/\D/g, '').slice(0, 11);
-      setFormData(prev => ({ ...prev, [name]: cleaned }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    setPhone(formatted);
     setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
-    if (formData.password !== formData.confirmPassword) {
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    if (cleanPhone.length !== 11) {
+      setError('Введите корректный номер телефона');
+      return;
+    }
+
+    if (!fullName.trim()) {
+      setError('Введите ФИО');
+      return;
+    }
+
+    if (password.length < 4) {
+      setError('Пароль должен быть не менее 4 символов');
+      return;
+    }
+
+    if (password !== confirmPassword) {
       setError('Пароли не совпадают');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Пароль должен быть не менее 6 символов');
-      return;
-    }
-
-    if (formData.passportSeries.length !== 4 || formData.passportNumber.length !== 6) {
-      setError('Проверьте правильность серии и номера паспорта');
-      return;
-    }
-
-    if (formData.phone.length !== 11) {
-      setError('Введите корректный номер телефона (11 цифр)');
       return;
     }
 
     try {
       setLoading(true);
       
-      const response = await fetch(funcUrls['user-auth'], {
+      const response = await fetch('https://functions.poehali.dev/9f6f96b6-4717-4745-b49d-f5e4683a8911', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          action: 'register',
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          middleName: formData.middleName,
-          passportSeries: formData.passportSeries,
-          passportNumber: formData.passportNumber,
-          phone: formData.phone,
-          email: formData.email,
-          password: formData.password
+          phone: cleanPhone,
+          password: password,
+          full_name: fullName.trim()
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Ошибка регистрации');
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Ошибка регистрации');
       }
 
-      const data = await response.json();
+      setSuccess('Регистрация успешна! Перенаправляем на страницу входа...');
       
-      localStorage.setItem('userPhone', data.phone);
-      localStorage.setItem('userEmail', data.email);
-      localStorage.setItem('userName', data.name);
-      
-      navigate('/');
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка регистрации');
@@ -119,7 +96,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
             <Icon name="UserPlus" size={32} className="text-white" />
@@ -128,7 +105,7 @@ export default function Register() {
             Регистрация
           </CardTitle>
           <CardDescription>
-            Создайте личный кабинет для доступа к услугам
+            Создайте учётную запись для доступа к системе
           </CardDescription>
         </CardHeader>
         
@@ -142,128 +119,83 @@ export default function Register() {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Фамилия *</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                  placeholder="Иванов"
-                />
-              </div>
+          {success && (
+            <Alert className="mb-6 bg-green-500/10 border-green-500/30">
+              <Icon name="CheckCircle" size={18} className="text-green-500" />
+              <AlertDescription className="text-green-500">
+                {success}
+              </AlertDescription>
+            </Alert>
+          )}
 
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Имя *</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                  placeholder="Иван"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="middleName">Отчество</Label>
-                <Input
-                  id="middleName"
-                  name="middleName"
-                  value={formData.middleName}
-                  onChange={handleChange}
-                  placeholder="Иванович"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="passportSeries">Серия паспорта *</Label>
-                <Input
-                  id="passportSeries"
-                  name="passportSeries"
-                  value={formData.passportSeries}
-                  onChange={handleChange}
-                  required
-                  maxLength={4}
-                  placeholder="0000"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="passportNumber">Номер паспорта *</Label>
-                <Input
-                  id="passportNumber"
-                  name="passportNumber"
-                  value={formData.passportNumber}
-                  onChange={handleChange}
-                  required
-                  maxLength={6}
-                  placeholder="000000"
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">ФИО *</Label>
+              <Input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  setError('');
+                }}
+                required
+                placeholder="Иванов Иван Иванович"
+                disabled={loading}
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="phone">Номер телефона *</Label>
               <Input
                 id="phone"
-                name="phone"
                 type="tel"
-                value={formatPhone(formData.phone)}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, '');
-                  handleChange({ ...e, target: { ...e.target, name: 'phone', value: digits } });
-                }}
+                value={phone}
+                onChange={handlePhoneChange}
                 required
+                maxLength={18}
                 placeholder="+7 (999) 123-45-67"
+                disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">11 цифр</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="password">Пароль *</Label>
               <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
                 required
-                placeholder="example@mail.ru"
+                placeholder="Минимум 4 символа"
+                disabled={loading}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Пароль *</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  placeholder="Минимум 6 символов"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Подтвердите пароль *</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setError('');
+                }}
+                required
+                placeholder="Повторите пароль"
+                disabled={loading}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Подтвердите пароль *</Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  placeholder="Повторите пароль"
-                />
-              </div>
+            <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
+              <Icon name="Info" size={16} className="text-accent flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                После регистрации вы сможете войти в систему используя номер телефона и пароль
+              </p>
             </div>
 
             <Button
@@ -288,8 +220,9 @@ export default function Register() {
               <Button
                 type="button"
                 variant="link"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/login')}
                 className="text-primary hover:text-primary/80"
+                disabled={loading}
               >
                 Уже есть аккаунт? Войти
               </Button>
