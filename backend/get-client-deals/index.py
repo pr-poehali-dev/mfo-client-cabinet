@@ -84,6 +84,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             timeout=10
         )
         
+        if search_response.status_code == 401:
+            return {
+                'statusCode': 401,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'success': False, 'error': 'Токен AmoCRM недействителен или истёк'}),
+                'isBase64Encoded': False
+            }
+        
         if search_response.status_code != 200:
             return {
                 'statusCode': 404,

@@ -18,7 +18,7 @@ const AmoCRMSetup = () => {
 
     try {
       const response = await fetch(
-        'https://functions.poehali.dev/e6a0215a-0de8-499a-9306-b86675ec02d5?phone=79991234567'
+        'https://functions.poehali.dev/73314828-ff07-4cb4-ba82-3a329bb79b4a?phone=79991234567'
       );
 
       const data = await response.json();
@@ -27,7 +27,7 @@ const AmoCRMSetup = () => {
         setStatus({
           configured: true,
           message: '✅ AmoCRM настроен правильно!',
-          details: `Найдено сделок: ${data.total_deals || 0}`
+          details: `API работает корректно. Контакт найден: ${data.contact?.name || 'не указано'}`
         });
       } else if (response.status === 404) {
         setStatus({
@@ -41,24 +41,24 @@ const AmoCRMSetup = () => {
           message: '❌ Токен недействителен',
           details: 'Токен AMOCRM_ACCESS_TOKEN истёк или неверный. Нужно обновить.'
         });
-      } else if (data.error?.includes('секреты')) {
+      } else if (data.error?.includes('секрет')) {
         setStatus({
           configured: false,
           message: '❌ Секреты не настроены',
-          details: 'Проверьте, что все 6 секретов заполнены правильными значениями'
+          details: 'Проверьте, что секреты AMOCRM_ACCESS_TOKEN и AMOCRM_SUBDOMAIN заполнены'
         });
       } else {
         setStatus({
           configured: false,
           message: '❌ Ошибка подключения',
-          details: data.error || 'Неизвестная ошибка'
+          details: `Код ошибки: ${response.status}. ${data.error || 'Неизвестная ошибка'}`
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       setStatus({
         configured: false,
         message: '❌ Ошибка сети',
-        details: 'Не удалось подключиться к API'
+        details: err.message || 'Не удалось подключиться к API'
       });
     } finally {
       setChecking(false);
