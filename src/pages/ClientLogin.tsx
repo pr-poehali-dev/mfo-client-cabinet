@@ -192,6 +192,17 @@ const ClientLogin = () => {
                     </>
                   )}
                 </Button>
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={() => navigate('/register')}
+                    className="text-primary hover:text-primary/80"
+                  >
+                    Нет аккаунта? Зарегистрироваться
+                  </Button>
+                </div>
               </form>
             </TabsContent>
 

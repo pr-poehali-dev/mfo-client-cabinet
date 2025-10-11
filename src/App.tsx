@@ -12,6 +12,7 @@ import AdminCleanup from "./pages/AdminCleanup";
 import ClientLogin from "./pages/ClientLogin";
 import ClientCabinet from "./pages/ClientCabinet";
 import DealsDistribution from "./pages/DealsDistribution";
+import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/cleanup-deals" element={<CleanupDeals />} />
           <Route path="/admin-cleanup" element={<AdminCleanup />} />
           <Route path="/login" element={<ClientLogin />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/cabinet" element={<ClientCabinet />} />
           <Route path="/distribution" element={<DealsDistribution />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
