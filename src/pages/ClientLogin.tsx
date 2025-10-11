@@ -6,17 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Icon from '@/components/ui/icon';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ClientLogin = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
-  const [code, setCode] = useState('');
-  const [storedCode, setStoredCode] = useState('');
-  const [clientName, setClientName] = useState('');
-
+  const [success, setSuccess] = useState('');
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -32,9 +32,10 @@ const ClientLogin = () => {
     const formatted = formatPhone(e.target.value);
     setPhone(formatted);
     setError('');
+    setSuccess('');
   };
 
-  const handleSubmitPhone = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -42,38 +43,22 @@ const ClientLogin = () => {
     const cleanPhone = phone.replace(/\D/g, '');
 
     try {
-      const checkResponse = await fetch('https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd?phone=' + cleanPhone);
-      const checkData = await checkResponse.json();
-
-      console.log('Bitrix24 check response:', checkData);
-
-      if (!checkData.success || checkData.not_found) {
-        setError('Клиент с таким номером не найден в системе.');
-        setLoading(false);
-        return;
-      }
-
-      const foundClientName = checkData.client?.name || 'Клиент';
-      setClientName(foundClientName);
-
-      const smsResponse = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
+      const response = await fetch('https://functions.poehali.dev/3ef6f7cb-856a-4e15-bcf8-124143d9c136', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: cleanPhone,
-          fullName: foundClientName,
-          action: 'send'
+          password: password
         })
       });
-      const smsData = await smsResponse.json();
+      const data = await response.json();
 
-      console.log('SMS send response:', smsData);
-
-      if (smsData.success) {
-        setStoredCode(smsData.code);
-        setStep('code');
+      if (data.success && data.client) {
+        localStorage.setItem('clientPhone', data.client.phone);
+        localStorage.setItem('clientName', data.client.full_name);
+        navigate('/cabinet');
       } else {
-        setError(smsData.error || 'Ошибка отправки SMS');
+        setError(data.error || 'Ошибка входа');
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -83,38 +68,48 @@ const ClientLogin = () => {
     }
   };
 
-
-
-  const handleVerifyCode = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     const cleanPhone = phone.replace(/\D/g, '');
 
+    if (password.length < 4) {
+      setError('Пароль должен быть минимум 4 символа');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('https://functions.poehali.dev/291aa98a-124e-4714-8e23-ab5309099dea', {
+      const response = await fetch('https://functions.poehali.dev/9f6f96b6-4717-4745-b49d-f5e4683a8911', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: cleanPhone,
-          action: 'verify',
-          code: code,
-          stored_code: storedCode,
-          client_name: clientName
+          password: password,
+          full_name: fullName,
+          email: email
         })
       });
       const data = await response.json();
 
-      if (data.success && data.verified) {
-        localStorage.setItem('clientPhone', cleanPhone);
-        localStorage.setItem('clientName', clientName);
-        navigate('/cabinet');
+      if (data.success) {
+        setSuccess('Регистрация успешна! Теперь войдите в систему.');
+        setTimeout(() => {
+          setPhone('');
+          setPassword('');
+          setFullName('');
+          setEmail('');
+          setSuccess('');
+        }, 2000);
       } else {
-        setError('Неверный код. Попробуйте ещё раз.');
+        setError(data.error || 'Ошибка регистрации');
       }
     } catch (err) {
-      setError('Ошибка проверки кода');
+      console.error('Register error:', err);
+      setError('Ошибка подключения к серверу');
     } finally {
       setLoading(false);
     }
@@ -131,135 +126,172 @@ const ClientLogin = () => {
             Личный кабинет
           </CardTitle>
           <CardDescription>
-            {step === 'phone' && 'Введите номер телефона для входа'}
-            {step === 'code' && `SMS-код отправлен на ${phone}`}
+            Войдите или зарегистрируйтесь для доступа
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === 'phone' && (
-          <form onSubmit={handleSubmitPhone} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Номер телефона</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+7 (999) 999-99-99"
-                value={phone}
-                onChange={handlePhoneChange}
-                maxLength={18}
-                required
-                className="text-lg"
-                autoFocus
-              />
-              <p className="text-xs text-muted-foreground">
-                Введите номер телефона, указанный при регистрации
-              </p>
-            </div>
-
-            {error && (
-              <Alert className="bg-red-500/10 border-red-500/30">
-                <Icon name="AlertCircle" size={18} className="text-red-500" />
-                <AlertDescription className="text-red-500">
-                  {error}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <Button
-              type="submit"
-              disabled={loading || phone.length < 18}
-              className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-            >
-              {loading ? (
-                <>
-                  <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                  Отправка SMS...
-                </>
-              ) : (
-                <>
-                  <Icon name="Send" size={20} className="mr-2" />
-                  Получить код
-                </>
-              )}
-            </Button>
-          </form>
-          )}
-
-          {step === 'code' && (
-          <form onSubmit={handleVerifyCode} className="space-y-6">
-            <div className="p-4 rounded-lg bg-primary/10 border border-primary/30 mb-4">
-              <div className="flex items-center gap-3">
-                <Icon name="User" size={24} className="text-primary" />
-                <div>
-                  <p className="font-semibold text-lg">{clientName}</p>
-                  <p className="text-sm text-muted-foreground">{phone}</p>
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Вход</TabsTrigger>
+              <TabsTrigger value="register">Регистрация</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-phone">Номер телефона</Label>
+                  <Input
+                    id="login-phone"
+                    type="tel"
+                    placeholder="+7 (999) 999-99-99"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    maxLength={18}
+                    required
+                  />
                 </div>
-              </div>
-            </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Пароль</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    placeholder="Введите пароль"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError('');
+                    }}
+                    required
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="code">SMS-код</Label>
-              <Input
-                id="code"
-                type="text"
-                placeholder="0000"
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value.replace(/\D/g, '').slice(0, 4));
-                  setError('');
-                }}
-                maxLength={4}
-                required
-                className="text-lg text-center tracking-widest"
-                autoFocus
-              />
-              <p className="text-xs text-muted-foreground">
-                Введите 4-значный код из SMS
-              </p>
-            </div>
-
-            {error && (
-              <Alert className="bg-red-500/10 border-red-500/30">
-                <Icon name="AlertCircle" size={18} className="text-red-500" />
-                <AlertDescription className="text-red-500">
-                  {error}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                onClick={() => {
-                  setStep('phone');
-                  setCode('');
-                  setError('');
-                }}
-                variant="outline"
-                className="flex-1"
-              >
-                Назад
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading || code.length !== 4}
-                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-              >
-                {loading ? (
-                  <>
-                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                    Проверка...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="LogIn" size={20} className="mr-2" />
-                    Войти
-                  </>
+                {error && (
+                  <Alert className="bg-red-500/10 border-red-500/30">
+                    <Icon name="AlertCircle" size={18} className="text-red-500" />
+                    <AlertDescription className="text-red-500">
+                      {error}
+                    </AlertDescription>
+                  </Alert>
                 )}
-              </Button>
-            </div>
-          </form>
-          )}
+
+                <Button
+                  type="submit"
+                  disabled={loading || phone.length < 18 || !password}
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                >
+                  {loading ? (
+                    <>
+                      <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                      Вход...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="LogIn" size={20} className="mr-2" />
+                      Войти
+                    </>
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="register">
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="register-name">ФИО</Label>
+                  <Input
+                    id="register-name"
+                    type="text"
+                    placeholder="Иван Иванов"
+                    value={fullName}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      setError('');
+                    }}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="register-phone">Номер телефона</Label>
+                  <Input
+                    id="register-phone"
+                    type="tel"
+                    placeholder="+7 (999) 999-99-99"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    maxLength={18}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="register-password">Пароль</Label>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    placeholder="Минимум 4 символа"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError('');
+                    }}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">Email (необязательно)</Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    placeholder="example@mail.ru"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setError('');
+                    }}
+                  />
+                </div>
+
+                {error && (
+                  <Alert className="bg-red-500/10 border-red-500/30">
+                    <Icon name="AlertCircle" size={18} className="text-red-500" />
+                    <AlertDescription className="text-red-500">
+                      {error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {success && (
+                  <Alert className="bg-green-500/10 border-green-500/30">
+                    <Icon name="CheckCircle" size={18} className="text-green-500" />
+                    <AlertDescription className="text-green-500">
+                      {success}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={loading || phone.length < 18 || !password || !fullName}
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                >
+                  {loading ? (
+                    <>
+                      <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                      Регистрация...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="UserPlus" size={20} className="mr-2" />
+                      Зарегистрироваться
+                    </>
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

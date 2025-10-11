@@ -1,4 +1,6 @@
 {
+  "client-register": "https://functions.poehali.dev/9f6f96b6-4717-4745-b49d-f5e4683a8911",
+  "client-login": "https://functions.poehali.dev/3ef6f7cb-856a-4e15-bcf8-124143d9c136",
   "bitrix24-get-deals": "https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd",
   "amocrm-get-token": "https://functions.poehali.dev/a83ccba2-ed09-422c-82fd-2cb908a2b8f7",
   "amocrm-get-deals": "https://functions.poehali.dev/e6a0215a-0de8-499a-9306-b86675ec02d5",

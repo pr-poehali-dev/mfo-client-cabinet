@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "Register with missing data",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "phone": "79991234567"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "success": false
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "OPTIONS CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
