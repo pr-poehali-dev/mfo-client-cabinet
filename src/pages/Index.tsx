@@ -1,205 +1,60 @@
-import { useState, useEffect } from 'react';
-import Header from '@/components/dashboard/Header';
-import LoginPage from '@/components/auth/LoginPage';
-import WelcomeBanner from '@/components/dashboard/WelcomeBanner';
-import ErrorBanner from '@/components/dashboard/ErrorBanner';
-import LoadingBanner from '@/components/dashboard/LoadingBanner';
-import DashboardTabs from '@/components/dashboard/DashboardTabs';
-import { useAuth } from '@/hooks/useAuth';
-import { useAmoCRM } from '@/hooks/useAmoCRM';
-import { Loan, Payment, AppNotification, Deal } from '@/components/dashboard/types';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Icon from '@/components/ui/icon';
 
 const Index = () => {
-  const { 
-    isAuthenticated, 
-    userPhone, 
-    clientName: authClientName, 
-    login, 
-    logout: authLogout,
-    checkNewRegistration,
-    clearNewRegistration
-  } = useAuth();
-
-  const { loading, error, getDeals } = useAmoCRM();
-
-  const [activeTab, setActiveTab] = useState('applications');
-  const [loans, setLoans] = useState<Loan[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [clientName, setClientName] = useState('');
-  const [clientFirstName, setClientFirstName] = useState('');
-  const [clientLastName, setClientLastName] = useState('');
-  const [clientMiddleName, setClientMiddleName] = useState('');
-  const [clientGender, setClientGender] = useState<'male' | 'female'>('male');
-  const [clientPhone, setClientPhone] = useState('');
-  const [clientEmail, setClientEmail] = useState('');
-  const [contactId, setContactId] = useState('');
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
-
-  useEffect(() => {
-    if (activeTab === 'support') {
-      setUnreadMessagesCount(0);
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (isAuthenticated && userPhone) {
-      if (authClientName) {
-        setClientName(authClientName);
-      }
-
-      if (checkNewRegistration()) {
-        setNotifications([{
-          id: 'welcome-' + Date.now(),
-          title: '🎉 Добро пожаловать!',
-          message: 'Ваша заявка успешно принята в обработку. Мы свяжемся с вами в ближайшее время.',
-          date: new Date().toLocaleDateString('ru-RU'),
-          read: false,
-          type: 'success'
-        }]);
-        clearNewRegistration();
-      }
-
-      loadData(userPhone);
-    }
-  }, [isAuthenticated, userPhone]);
-
-  const getStatusColor = (statusName: string): string => {
-    const name = statusName?.toLowerCase() || '';
-    
-    if (name.includes('успешно') || name.includes('выполнен') || name.includes('оплачен')) {
-      return 'green';
-    }
-    if (name.includes('отказ') || name.includes('отклонен') || name.includes('провал')) {
-      return 'red';
-    }
-    if (name.includes('новая') || name.includes('первичный')) {
-      return 'blue';
-    }
-    if (name.includes('ожидан') || name.includes('обработ')) {
-      return 'yellow';
-    }
-    
-    return 'gray';
-  };
-
-  const loadData = async (phone: string) => {
-    // Очистка данных
-    setLoans([]);
-    setPayments([]);
-    setDeals([]);
-    setClientName('');
-    setClientFirstName('');
-    setClientLastName('');
-    setClientMiddleName('');
-    setClientPhone('');
-    setClientEmail('');
-    setContactId('');
-    
-    const result = await getDeals(phone);
-    
-    if (result) {
-      setClientName(result.client.name);
-      setClientFirstName(result.client.first_name);
-      setClientLastName(result.client.last_name);
-      setClientPhone(result.client.phone);
-      setClientEmail(result.client.email);
-      setContactId(result.client.id);
-      
-      const mappedDeals = result.deals.map(deal => ({
-        id: deal.id,
-        name: deal.name,
-        amount: deal.price,
-        status: deal.status_name || 'В обработке',
-        status_id: deal.status_id,
-        status_name: deal.status_name || 'В обработке',
-        status_color: getStatusColor(deal.status_name),
-        pipeline_id: deal.pipeline_id,
-        pipeline_name: '',
-        responsible_user_id: 0,
-        created_at: new Date(deal.created_at * 1000).toLocaleDateString('ru-RU'),
-        updated_at: new Date(deal.updated_at * 1000).toLocaleDateString('ru-RU'),
-        price: deal.price,
-        custom_fields: [],
-        date: new Date(deal.created_at * 1000).toLocaleDateString('ru-RU'),
-        description: deal.name
-      }));
-      
-      setDeals(mappedDeals);
-      setLoans(mappedDeals);
-      setLastUpdate(new Date());
-    }
-  };
-
-  const handleLogin = (phone: string, name?: string) => {
-    login(phone, name);
-  };
-
-  const handleLogout = () => {
-    authLogout();
-    setLoans([]);
-    setPayments([]);
-    setNotifications([]);
-    setDeals([]);
-    setClientName('');
-    setClientFirstName('');
-    setClientLastName('');
-    setClientMiddleName('');
-    setClientGender('male');
-    setClientPhone('');
-    setClientEmail('');
-    setContactId('');
-    setLastUpdate(null);
-  };
-
-  const refreshData = async () => {
-    if (!userPhone) return;
-    await loadData(userPhone);
-  };
-
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419]">
-      <Header 
-        lastUpdate={lastUpdate}
-        loading={loading}
-        notifications={notifications}
-        onRefresh={refreshData}
-        onLogout={handleLogout}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardHeader className="text-center">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+            <Icon name="ShoppingBag" size={48} className="text-white" />
+          </div>
+          <CardTitle className="text-4xl font-montserrat mb-3">МегаГрупп</CardTitle>
+          <CardDescription className="text-lg">
+            Система управления клиентами и заказами
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button
+            onClick={() => navigate('/megagroup-login')}
+            className="w-full text-lg h-14"
+            size="lg"
+          >
+            <Icon name="LogIn" size={24} className="mr-3" />
+            Вход в личный кабинет
+          </Button>
 
-      <div className="container mx-auto px-4 py-8">
-        <WelcomeBanner clientName={clientName} />
-        <ErrorBanner error={error} />
-        <LoadingBanner loading={loading} />
-        
-        <DashboardTabs
-          key={userPhone}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          unreadMessagesCount={unreadMessagesCount}
-          deals={deals}
-          clientPhone={clientPhone}
-          contactId={contactId}
-          clientName={clientName}
-          clientFirstName={clientFirstName}
-          clientLastName={clientLastName}
-          clientMiddleName={clientMiddleName}
-          clientGender={clientGender}
-          clientEmail={clientEmail}
-          onApplicationSubmit={() => loadData(userPhone)}
-          onMessagesUpdate={(count) => {
-            if (activeTab !== 'support') {
-              setUnreadMessagesCount(prev => prev + count);
-            }
-          }}
-        />
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+            <div className="text-center p-4">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
+                <Icon name="Users" size={24} className="text-primary" />
+              </div>
+              <h3 className="font-semibold mb-1">Клиентская база</h3>
+              <p className="text-sm text-muted-foreground">Управление информацией о клиентах</p>
+            </div>
+
+            <div className="text-center p-4">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
+                <Icon name="Package" size={24} className="text-primary" />
+              </div>
+              <h3 className="font-semibold mb-1">История заказов</h3>
+              <p className="text-sm text-muted-foreground">Просмотр всех заказов клиента</p>
+            </div>
+
+            <div className="text-center p-4">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
+                <Icon name="Wallet" size={24} className="text-primary" />
+              </div>
+              <h3 className="font-semibold mb-1">Баланс и бонусы</h3>
+              <p className="text-sm text-muted-foreground">Отслеживание финансовых данных</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
