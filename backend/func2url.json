@@ -1,4 +1,5 @@
 {
+  "megagroup": "https://functions.poehali.dev/44db4f9d-e497-4fac-b36c-64aa9c7edf64",
   "client-register": "https://functions.poehali.dev/9f6f96b6-4717-4745-b49d-f5e4683a8911",
   "client-login": "https://functions.poehali.dev/3ef6f7cb-856a-4e15-bcf8-124143d9c136",
   "bitrix24-get-deals": "https://functions.poehali.dev/40d400f9-c52e-41e3-bd22-032a937010cd",

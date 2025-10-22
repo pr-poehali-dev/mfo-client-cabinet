@@ -12,6 +12,8 @@ import AdminCleanup from "./pages/AdminCleanup";
 import ClientLogin from "./pages/ClientLogin";
 import ClientCabinet from "./pages/ClientCabinet";
 import DealsDistribution from "./pages/DealsDistribution";
+import MegagroupLogin from "./pages/MegagroupLogin";
+import MegagroupCabinet from "./pages/MegagroupCabinet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
           <Route path="/login" element={<ClientLogin />} />
           <Route path="/cabinet" element={<ClientCabinet />} />
           <Route path="/distribution" element={<DealsDistribution />} />
+          <Route path="/megagroup-login" element={<MegagroupLogin />} />
+          <Route path="/megagroup-cabinet" element={<MegagroupCabinet />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
