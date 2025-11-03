@@ -96,30 +96,21 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     }
 
 def get_client_by_phone(api_key: str, account_id: str, phone: str) -> Optional[Dict[str, Any]]:
-    import hashlib
-    
     clean_phone = ''.join(filter(str.isdigit, phone))
     print(f'[DEBUG] Searching for phone: {clean_phone}')
     
-    method = 'GET'
-    path = '/v1/clients'
     query_string = f'query={clean_phone}'
-    body = ''
-    
-    signature_string = f'{method}{path}?{query_string}{body}{api_key}'
-    signature = hashlib.sha256(signature_string.encode()).hexdigest()
     
     print(f'[DEBUG] Account ID: {account_id}')
-    print(f'[DEBUG] Signature string: {method}{path}?{query_string}{body}***')
-    print(f'[DEBUG] Signature: {signature}')
+    print(f'[DEBUG] API Key: {api_key[:10]}...')
     
     headers = {
         'X-MegaCrm-ApiAccount': account_id,
-        'X-MegaCrm-ApiSignature': signature,
+        'X-MegaCrm-ApiKey': api_key,
         'Content-Type': 'application/json'
     }
     
-    url = f'https://api.megacrm.ru{path}?{query_string}'
+    url = f'https://api.megacrm.ru/v1/clients?{query_string}'
     print(f'[DEBUG] API URL: {url}')
     
     response = requests.get(url, headers=headers, timeout=10)
@@ -146,23 +137,15 @@ def get_client_by_phone(api_key: str, account_id: str, phone: str) -> Optional[D
     return None
 
 def get_client_orders(api_key: str, account_id: str, client_id: str) -> List[Dict[str, Any]]:
-    import hashlib
-    
-    method = 'GET'
-    path = '/v1/deals'
     query_string = f'client_id={client_id}'
-    body = ''
-    
-    signature_string = f'{method}{path}?{query_string}{body}{api_key}'
-    signature = hashlib.sha256(signature_string.encode()).hexdigest()
     
     headers = {
         'X-MegaCrm-ApiAccount': account_id,
-        'X-MegaCrm-ApiSignature': signature,
+        'X-MegaCrm-ApiKey': api_key,
         'Content-Type': 'application/json'
     }
     
-    url = f'https://api.megacrm.ru{path}?{query_string}'
+    url = f'https://api.megacrm.ru/v1/deals?{query_string}'
     
     response = requests.get(url, headers=headers, timeout=10)
     
