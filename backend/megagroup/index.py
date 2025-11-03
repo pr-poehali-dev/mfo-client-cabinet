@@ -43,12 +43,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     api_key = os.environ.get('MEGAGROUP_API_KEY')
-    if not api_key:
+    account_id = os.environ.get('MEGAGROUP_ACCOUNT_ID')
+    
+    if not api_key or not account_id:
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             'isBase64Encoded': False,
-            'body': json.dumps({'success': False, 'error': 'API key not configured'})
+            'body': json.dumps({'success': False, 'error': 'API credentials not configured'})
         }
     
     if method == 'GET':
@@ -63,7 +65,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({'success': False, 'error': 'Phone number required'})
             }
         
-        client_data = get_client_by_phone(api_key, phone)
+        client_data = get_client_by_phone(api_key, account_id, phone)
         
         if not client_data:
             return {
@@ -73,7 +75,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({'success': False, 'not_found': True, 'error': 'Client not found'})
             }
         
-        orders = get_client_orders(api_key, client_data['id'])
+        orders = get_client_orders(api_key, account_id, client_data['id'])
         
         return {
             'statusCode': 200,
@@ -93,7 +95,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         'body': json.dumps({'success': False, 'error': 'Method not allowed'})
     }
 
-def get_client_by_phone(api_key: str, phone: str) -> Optional[Dict[str, Any]]:
+def get_client_by_phone(api_key: str, account_id: str, phone: str) -> Optional[Dict[str, Any]]:
     import hashlib
     
     clean_phone = ''.join(filter(str.isdigit, phone))
@@ -107,8 +109,8 @@ def get_client_by_phone(api_key: str, phone: str) -> Optional[Dict[str, Any]]:
     signature_string = f'{method}:{path}:{params}:{body}:{api_key}'
     signature = hashlib.sha256(signature_string.encode()).hexdigest()
     
-    account_id = api_key.split('-')[0] if '-' in api_key else api_key[:8]
     print(f'[DEBUG] Account ID: {account_id}')
+    print(f'[DEBUG] Signature: {signature[:20]}...')
     
     headers = {
         'X-MegaCrm-ApiAccount': account_id,
@@ -142,7 +144,7 @@ def get_client_by_phone(api_key: str, phone: str) -> Optional[Dict[str, Any]]:
     
     return None
 
-def get_client_orders(api_key: str, client_id: str) -> List[Dict[str, Any]]:
+def get_client_orders(api_key: str, account_id: str, client_id: str) -> List[Dict[str, Any]]:
     import hashlib
     
     method = 'GET'
@@ -152,8 +154,6 @@ def get_client_orders(api_key: str, client_id: str) -> List[Dict[str, Any]]:
     
     signature_string = f'{method}:{path}:{params}:{body}:{api_key}'
     signature = hashlib.sha256(signature_string.encode()).hexdigest()
-    
-    account_id = api_key.split('-')[0] if '-' in api_key else api_key[:8]
     
     headers = {
         'X-MegaCrm-ApiAccount': account_id,
