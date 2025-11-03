@@ -78,26 +78,26 @@ const MegagroupLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center p-3 sm:p-4 md:p-6">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-2xl shadow-emerald-500/30 mb-6">
-            <Icon name="Wallet" size={48} className="text-white" />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-2xl shadow-emerald-500/30 mb-4 sm:mb-6">
+            <Icon name="Wallet" size={40} className="text-white sm:w-12 sm:h-12" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Микрозаймы</h1>
-          <p className="text-gray-600 text-lg">Войдите в личный кабинет</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-2">Микрозаймы</h1>
+          <p className="text-gray-600 text-base sm:text-lg">Войдите в личный кабинет</p>
         </div>
         
       <Card className="border-gray-200 bg-white shadow-xl">
-        <CardContent className="pt-8 pb-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-3">
-              <Label htmlFor="phone" className="text-base font-semibold text-gray-700">
+        <CardContent className="pt-6 pb-6 px-4 sm:pt-8 sm:pb-8 sm:px-6">
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+            <div className="space-y-2 sm:space-y-3">
+              <Label htmlFor="phone" className="text-sm sm:text-base font-semibold text-gray-700">
                 Номер телефона
               </Label>
               <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                  <Icon name="Phone" size={20} />
+                <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="Phone" size={18} className="sm:w-5 sm:h-5" />
                 </div>
                 <Input
                   id="phone"
@@ -105,12 +105,12 @@ const MegagroupLogin = () => {
                   placeholder="+7 (___) ___-__-__"
                   value={phone}
                   onChange={handlePhoneChange}
-                  className="text-lg h-14 pl-12 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+                  className="text-base sm:text-lg h-12 sm:h-14 pl-10 sm:pl-12 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
                   autoFocus
                   disabled={loading}
                 />
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 Введите номер телефона для входа
               </p>
             </div>
@@ -126,27 +126,27 @@ const MegagroupLogin = () => {
 
             <Button
               type="submit"
-              className="w-full text-lg h-14 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/30 transition-all"
+              className="w-full text-base sm:text-lg h-12 sm:h-14 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/30 transition-all"
               disabled={loading || phone.replace(/\D/g, '').length !== 11}
             >
               {loading ? (
                 <>
-                  <Icon name="Loader2" size={22} className="mr-2 animate-spin" />
+                  <Icon name="Loader2" size={20} className="mr-2 animate-spin sm:w-5 sm:h-5" />
                   Проверяем...
                 </>
               ) : (
                 <>
-                  <Icon name="Lock" size={22} className="mr-2" />
+                  <Icon name="Lock" size={20} className="mr-2 sm:w-5 sm:h-5" />
                   Войти в кабинет
                 </>
               )}
             </Button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+          <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200 text-center">
             <div className="flex items-center justify-center gap-2 text-gray-600">
-              <Icon name="Shield" size={18} className="text-emerald-600" />
-              <p className="text-sm">Защищенное соединение</p>
+              <Icon name="Shield" size={16} className="text-emerald-600 sm:w-4 sm:h-4" />
+              <p className="text-xs sm:text-sm">Защищенное соединение</p>
             </div>
           </div>
         </CardContent>

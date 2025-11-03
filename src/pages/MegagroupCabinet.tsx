@@ -140,18 +140,18 @@ const MegagroupCabinet = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-6 shadow-lg">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <Icon name="User" size={32} className="text-white" />
+      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 sm:py-6 shadow-lg">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4">
+          <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                <Icon name="User" size={24} className="text-white sm:w-8 sm:h-8" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold">
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold truncate">
                   {client?.name || 'Загрузка...'}
                 </h1>
-                <p className="text-emerald-100">
+                <p className="text-emerald-100 text-xs sm:text-sm">
                   {client ? formatPhone(client.phone) : ''}
                 </p>
               </div>
@@ -159,16 +159,17 @@ const MegagroupCabinet = () => {
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              size="sm"
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20 text-xs sm:text-sm h-8 sm:h-10"
             >
-              <Icon name="LogOut" size={18} className="mr-2" />
+              <Icon name="LogOut" size={16} className="mr-1 sm:mr-2 sm:w-4 sm:h-4" />
               Выйти
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8 space-y-4 sm:space-y-6">
         {error && (
           <Alert className="bg-red-50 border-red-200">
             <Icon name="AlertCircle" size={18} className="text-red-600" />
@@ -179,16 +180,16 @@ const MegagroupCabinet = () => {
         )}
 
         {client && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
             <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                    <Icon name="Wallet" size={28} className="text-white" />
+              <CardContent className="pt-4 pb-4 sm:pt-6 sm:pb-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
+                    <Icon name="Wallet" size={24} className="text-white sm:w-7 sm:h-7" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500 font-medium">Баланс счета</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium">Баланс счета</p>
+                    <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 truncate">
                       {formatPrice(client.balance)}
                     </p>
                   </div>
@@ -197,14 +198,14 @@ const MegagroupCabinet = () => {
             </Card>
 
             <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
-                    <Icon name="Star" size={28} className="text-white" />
+              <CardContent className="pt-4 pb-4 sm:pt-6 sm:pb-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center flex-shrink-0">
+                    <Icon name="Star" size={24} className="text-white sm:w-7 sm:h-7" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500 font-medium">Бонусы</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium">Бонусы</p>
+                    <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 truncate">
                       {formatPrice(client.bonus_balance)}
                     </p>
                   </div>
@@ -213,14 +214,14 @@ const MegagroupCabinet = () => {
             </Card>
 
             <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-                    <Icon name="Percent" size={28} className="text-white" />
+              <CardContent className="pt-4 pb-4 sm:pt-6 sm:pb-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                    <Icon name="Percent" size={24} className="text-white sm:w-7 sm:h-7" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500 font-medium">Скидка</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium">Скидка</p>
+                    <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">
                       {client.discount}%
                     </p>
                   </div>
@@ -231,14 +232,14 @@ const MegagroupCabinet = () => {
         )}
 
         <Card className="border-gray-200 bg-white shadow-lg">
-          <CardHeader>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                  <Icon name="CreditCard" size={28} className="text-emerald-500" />
-                  Мои займы
+          <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
+            <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3">
+                  <Icon name="CreditCard" size={24} className="text-emerald-500 flex-shrink-0 sm:w-7 sm:h-7" />
+                  <span className="truncate">Мои займы</span>
                 </CardTitle>
-                <CardDescription className="text-base mt-1">
+                <CardDescription className="text-sm sm:text-base mt-1">
                   Всего займов: {orders.length}
                 </CardDescription>
               </div>
@@ -246,64 +247,65 @@ const MegagroupCabinet = () => {
                 onClick={handleRefresh}
                 disabled={loading}
                 variant="outline"
-                className="border-gray-300"
+                size="sm"
+                className="border-gray-300 text-xs sm:text-sm h-8 sm:h-10 flex-shrink-0"
               >
-                <Icon name="RefreshCw" size={18} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <Icon name="RefreshCw" size={16} className={`mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''} sm:w-4 sm:h-4`} />
                 Обновить
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6 py-4 sm:py-6">
             {orders.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
-                  <Icon name="Inbox" size={40} className="text-gray-400" />
+              <div className="text-center py-12 sm:py-16">
+                <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 mb-3 sm:mb-4">
+                  <Icon name="Inbox" size={32} className="text-gray-400 sm:w-10 sm:h-10" />
                 </div>
-                <p className="text-xl font-semibold text-gray-900 mb-2">Нет активных займов</p>
-                <p className="text-gray-500">Ваши займы появятся здесь</p>
+                <p className="text-lg sm:text-xl font-semibold text-gray-900 mb-1 sm:mb-2">Нет активных займов</p>
+                <p className="text-sm sm:text-base text-gray-500">Ваши займы появятся здесь</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {orders.map((order) => {
                   const statusConfig = getStatusConfig(order.status);
                   
                   return (
                     <Card key={order.id} className="border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:shadow-md transition-all">
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between gap-4 flex-wrap">
-                          <div className="flex-1 min-w-[200px]">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className={`w-3 h-3 rounded-full ${statusConfig.color}`}></div>
-                              <h3 className="text-xl font-bold text-gray-900">
+                      <CardContent className="pt-4 pb-4 sm:pt-6 sm:pb-6">
+                        <div className="flex items-start justify-between gap-3 sm:gap-4 flex-wrap">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                              <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${statusConfig.color} flex-shrink-0`}></div>
+                              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate">
                                 {order.title || `Заказ №${order.number}`}
                               </h3>
                             </div>
                             
-                            <div className="space-y-2">
+                            <div className="space-y-1 sm:space-y-2">
                               <div className="flex items-center gap-2 text-gray-600">
-                                <Icon name="Calendar" size={16} />
-                                <span className="text-sm">{formatDate(order.date)}</span>
+                                <Icon name="Calendar" size={14} className="flex-shrink-0 sm:w-4 sm:h-4" />
+                                <span className="text-xs sm:text-sm">{formatDate(order.date)}</span>
                               </div>
                               
                               <div className="flex items-center gap-2 text-gray-600">
-                                <Icon name="Package" size={16} />
-                                <span className="text-sm">Позиций: {order.items_count}</span>
+                                <Icon name="Package" size={14} className="flex-shrink-0 sm:w-4 sm:h-4" />
+                                <span className="text-xs sm:text-sm">Позиций: {order.items_count}</span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex flex-col items-end gap-3">
+                          <div className="flex flex-col items-end gap-2 sm:gap-3 flex-shrink-0">
                             <Badge 
                               variant={statusConfig.variant}
-                              className="text-sm px-3 py-1"
+                              className="text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1"
                             >
-                              <Icon name={statusConfig.icon} size={14} className="mr-1" />
+                              <Icon name={statusConfig.icon} size={12} className="mr-1 sm:w-3.5 sm:h-3.5" />
                               {statusConfig.label}
                             </Badge>
                             
                             <div className="text-right">
-                              <p className="text-sm text-gray-500">Сумма займа</p>
-                              <p className="text-2xl font-bold text-gray-900">
+                              <p className="text-xs sm:text-sm text-gray-500">Сумма займа</p>
+                              <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 whitespace-nowrap">
                                 {formatPrice(order.total)}
                               </p>
                             </div>
@@ -318,10 +320,10 @@ const MegagroupCabinet = () => {
           </CardContent>
         </Card>
 
-        <div className="text-center py-4">
-          <p className="text-sm text-gray-500 flex items-center justify-center gap-2">
-            <Icon name="Shield" size={16} className="text-emerald-600" />
-            Ваши данные защищены и конфиденциальны
+        <div className="text-center py-3 sm:py-4">
+          <p className="text-xs sm:text-sm text-gray-500 flex items-center justify-center gap-1.5 sm:gap-2">
+            <Icon name="Shield" size={14} className="text-emerald-600 flex-shrink-0 sm:w-4 sm:h-4" />
+            <span>Ваши данные защищены и конфиденциальны</span>
           </p>
         </div>
       </div>
