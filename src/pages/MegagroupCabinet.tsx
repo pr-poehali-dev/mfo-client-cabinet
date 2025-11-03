@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 
 interface Client {
@@ -51,8 +52,6 @@ const MegagroupCabinet = () => {
       const url = `https://functions.poehali.dev/44db4f9d-e497-4fac-b36c-64aa9c7edf64?phone=${phone}`;
       const response = await fetch(url);
       const data = await response.json();
-
-      console.log('МегаГрупп response:', data);
 
       if (data.success) {
         setClient(data.client);
@@ -107,98 +106,147 @@ const MegagroupCabinet = () => {
       const date = new Date(dateString);
       return date.toLocaleDateString('ru-RU', {
         day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        month: 'long',
+        year: 'numeric'
       });
     } catch {
       return dateString;
     }
   };
 
+  const getStatusConfig = (status: string) => {
+    const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: string; color: string }> = {
+      'active': { label: 'Активный', variant: 'default', icon: 'CheckCircle2', color: 'bg-emerald-500' },
+      'pending': { label: 'Ожидает', variant: 'secondary', icon: 'Clock', color: 'bg-amber-500' },
+      'approved': { label: 'Одобрен', variant: 'default', icon: 'CheckCircle2', color: 'bg-emerald-500' },
+      'rejected': { label: 'Отклонен', variant: 'destructive', icon: 'XCircle', color: 'bg-red-500' },
+      'completed': { label: 'Завершен', variant: 'outline', icon: 'Check', color: 'bg-gray-400' },
+      'overdue': { label: 'Просрочен', variant: 'destructive', icon: 'AlertTriangle', color: 'bg-red-500' },
+    };
+    
+    return statusMap[status.toLowerCase()] || { label: status, variant: 'secondary', icon: 'HelpCircle', color: 'bg-gray-400' };
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center">
+        <div className="text-center">
+          <Icon name="Loader2" size={48} className="animate-spin text-emerald-500 mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">Загружаем данные...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] p-4">
-      <div className="max-w-6xl mx-auto space-y-6 py-8">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-                  <Icon name="User" size={32} className="text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-2xl font-montserrat">
-                    {client?.name || 'Загрузка...'}
-                  </CardTitle>
-                  <CardDescription className="text-lg">
-                    {client ? formatPhone(client.phone) : ''}
-                  </CardDescription>
-                  {client?.email && (
-                    <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                  )}
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-6 shadow-lg">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Icon name="User" size={32} className="text-white" />
               </div>
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                className="border-border/50"
-              >
-                <Icon name="LogOut" size={18} className="mr-2" />
-                Выйти
-              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">
+                  {client?.name || 'Загрузка...'}
+                </h1>
+                <p className="text-emerald-100">
+                  {client ? formatPhone(client.phone) : ''}
+                </p>
+              </div>
             </div>
-          </CardHeader>
-        </Card>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+            >
+              <Icon name="LogOut" size={18} className="mr-2" />
+              Выйти
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        {error && (
+          <Alert className="bg-red-50 border-red-200">
+            <Icon name="AlertCircle" size={18} className="text-red-600" />
+            <AlertDescription className="text-red-700 font-medium">
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {client && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardDescription>Баланс</CardDescription>
-                <CardTitle className="text-3xl">
-                  {formatPrice(client.balance)}
-                </CardTitle>
-              </CardHeader>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                    <Icon name="Wallet" size={28} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500 font-medium">Баланс счета</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                      {formatPrice(client.balance)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
-            
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardDescription>Бонусы</CardDescription>
-                <CardTitle className="text-3xl">
-                  {formatPrice(client.bonus_balance)}
-                </CardTitle>
-              </CardHeader>
+
+            <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
+                    <Icon name="Star" size={28} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500 font-medium">Бонусы</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                      {formatPrice(client.bonus_balance)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
-            
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardDescription>Скидка</CardDescription>
-                <CardTitle className="text-3xl">
-                  {client.discount}%
-                </CardTitle>
-              </CardHeader>
+
+            <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                    <Icon name="Percent" size={28} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500 font-medium">Скидка</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                      {client.discount}%
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </div>
         )}
 
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <Card className="border-gray-200 bg-white shadow-lg">
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <CardTitle className="text-2xl font-montserrat flex items-center gap-2">
-                  <Icon name="ShoppingCart" size={28} />
-                  Мои заказы
+                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                  <Icon name="CreditCard" size={28} className="text-emerald-500" />
+                  Мои займы
                 </CardTitle>
-                <CardDescription>
-                  {loading ? 'Загрузка...' : `Всего заказов: ${orders.length}`}
+                <CardDescription className="text-base mt-1">
+                  Всего займов: {orders.length}
                 </CardDescription>
               </div>
               <Button
                 onClick={handleRefresh}
                 disabled={loading}
                 variant="outline"
-                className="border-border/50"
+                className="border-gray-300"
               >
                 <Icon name="RefreshCw" size={18} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Обновить
@@ -206,59 +254,76 @@ const MegagroupCabinet = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-4">
-                <Icon name="Loader2" size={40} className="animate-spin text-primary" />
-                <p className="text-muted-foreground">Загружаем ваши заказы...</p>
-              </div>
-            ) : error ? (
-              <Alert className="bg-red-500/10 border-red-500/30">
-                <Icon name="AlertCircle" size={18} className="text-red-500" />
-                <AlertDescription className="text-red-500">
-                  {error}
-                </AlertDescription>
-              </Alert>
-            ) : orders.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Icon name="Inbox" size={48} className="mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">У вас пока нет заказов</p>
-                <p className="text-sm mt-2">Заказы появятся здесь после их создания</p>
+            {orders.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
+                  <Icon name="Inbox" size={40} className="text-gray-400" />
+                </div>
+                <p className="text-xl font-semibold text-gray-900 mb-2">Нет активных займов</p>
+                <p className="text-gray-500">Ваши займы появятся здесь</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {orders.map((order) => (
-                  <Card key={order.id} className="border-border/30 bg-background/30 hover:bg-background/50 transition-colors">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between gap-4 flex-wrap">
-                        <div className="flex-1">
-                          <h3 className="text-xl font-semibold mb-2">
-                            {order.title || `Заказ №${order.number}`}
-                          </h3>
-                          <div className="space-y-2 text-sm text-muted-foreground">
-                            <p className="flex items-center gap-2">
-                              <Icon name="Calendar" size={16} />
-                              {formatDate(order.date)}
-                            </p>
-                            <p className="flex items-center gap-2">
-                              <Icon name="Tag" size={16} />
-                              Статус: {order.status}
-                            </p>
-                            {order.total > 0 && (
-                              <p className="flex items-center gap-2">
-                                <Icon name="Ruble" size={16} />
+                {orders.map((order) => {
+                  const statusConfig = getStatusConfig(order.status);
+                  
+                  return (
+                    <Card key={order.id} className="border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:shadow-md transition-all">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div className="flex-1 min-w-[200px]">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className={`w-3 h-3 rounded-full ${statusConfig.color}`}></div>
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {order.title || `Заказ №${order.number}`}
+                              </h3>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Icon name="Calendar" size={16} />
+                                <span className="text-sm">{formatDate(order.date)}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Icon name="Package" size={16} />
+                                <span className="text-sm">Позиций: {order.items_count}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-3">
+                            <Badge 
+                              variant={statusConfig.variant}
+                              className="text-sm px-3 py-1"
+                            >
+                              <Icon name={statusConfig.icon} size={14} className="mr-1" />
+                              {statusConfig.label}
+                            </Badge>
+                            
+                            <div className="text-right">
+                              <p className="text-sm text-gray-500">Сумма займа</p>
+                              <p className="text-2xl font-bold text-gray-900">
                                 {formatPrice(order.total)}
                               </p>
-                            )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
+
+        <div className="text-center py-4">
+          <p className="text-sm text-gray-500 flex items-center justify-center gap-2">
+            <Icon name="Shield" size={16} className="text-emerald-600" />
+            Ваши данные защищены и конфиденциальны
+          </p>
+        </div>
       </div>
     </div>
   );

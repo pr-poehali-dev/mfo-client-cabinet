@@ -78,40 +78,47 @@ const MegagroupLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-            <Icon name="ShoppingBag" size={40} className="text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-2xl shadow-emerald-500/30 mb-6">
+            <Icon name="Wallet" size={48} className="text-white" />
           </div>
-          <CardTitle className="text-3xl font-montserrat">МегаГрупп</CardTitle>
-          <CardDescription className="text-base">
-            Войдите в личный кабинет
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Микрозаймы</h1>
+          <p className="text-gray-600 text-lg">Войдите в личный кабинет</p>
+        </div>
+        
+      <Card className="border-gray-200 bg-white shadow-xl">
+        <CardContent className="pt-8 pb-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Номер телефона</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+7 (___) ___-__-__"
-                value={phone}
-                onChange={handlePhoneChange}
-                className="text-lg"
-                autoFocus
-                disabled={loading}
-              />
-              <p className="text-xs text-muted-foreground">
-                Введите номер телефона, указанный при регистрации
+            <div className="space-y-3">
+              <Label htmlFor="phone" className="text-base font-semibold text-gray-700">
+                Номер телефона
+              </Label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="Phone" size={20} />
+                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+7 (___) ___-__-__"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  className="text-lg h-14 pl-12 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+                  autoFocus
+                  disabled={loading}
+                />
+              </div>
+              <p className="text-sm text-gray-500">
+                Введите номер телефона для входа
               </p>
             </div>
 
             {error && (
-              <Alert className="bg-red-500/10 border-red-500/30">
-                <Icon name="AlertCircle" size={18} className="text-red-500" />
-                <AlertDescription className="text-red-500">
+              <Alert className="bg-red-50 border-red-200">
+                <Icon name="AlertCircle" size={18} className="text-red-600" />
+                <AlertDescription className="text-red-700 font-medium">
                   {error}
                 </AlertDescription>
               </Alert>
@@ -119,28 +126,32 @@ const MegagroupLogin = () => {
 
             <Button
               type="submit"
-              className="w-full text-lg h-12"
+              className="w-full text-lg h-14 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/30 transition-all"
               disabled={loading || phone.replace(/\D/g, '').length !== 11}
             >
               {loading ? (
                 <>
-                  <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                  <Icon name="Loader2" size={22} className="mr-2 animate-spin" />
                   Проверяем...
                 </>
               ) : (
                 <>
-                  <Icon name="LogIn" size={20} className="mr-2" />
-                  Войти
+                  <Icon name="Lock" size={22} className="mr-2" />
+                  Войти в кабинет
                 </>
               )}
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Нет аккаунта? Обратитесь к администратору</p>
+          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+            <div className="flex items-center justify-center gap-2 text-gray-600">
+              <Icon name="Shield" size={18} className="text-emerald-600" />
+              <p className="text-sm">Защищенное соединение</p>
+            </div>
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
