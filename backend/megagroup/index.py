@@ -97,6 +97,7 @@ def get_client_by_phone(api_key: str, phone: str) -> Optional[Dict[str, Any]]:
     import hashlib
     
     clean_phone = ''.join(filter(str.isdigit, phone))
+    print(f'[DEBUG] Searching for phone: {clean_phone}')
     
     method = 'GET'
     path = '/v1/clients'
@@ -107,6 +108,7 @@ def get_client_by_phone(api_key: str, phone: str) -> Optional[Dict[str, Any]]:
     signature = hashlib.sha256(signature_string.encode()).hexdigest()
     
     account_id = api_key.split('-')[0] if '-' in api_key else api_key[:8]
+    print(f'[DEBUG] Account ID: {account_id}')
     
     headers = {
         'X-MegaCrm-ApiAccount': account_id,
@@ -115,12 +117,16 @@ def get_client_by_phone(api_key: str, phone: str) -> Optional[Dict[str, Any]]:
     }
     
     url = f'https://api.megacrm.ru{path}?{params}'
+    print(f'[DEBUG] API URL: {url}')
     
     response = requests.get(url, headers=headers, timeout=10)
+    print(f'[DEBUG] Response status: {response.status_code}')
+    print(f'[DEBUG] Response body: {response.text[:500]}')
     
     if response.status_code == 200:
         data = response.json()
         result = data.get('result', [])
+        print(f'[DEBUG] Result count: {len(result)}')
         if result and len(result) > 0:
             client = result[0]
             full_name = f"{client.get('name', '')} {client.get('last_name', '')}".strip()
