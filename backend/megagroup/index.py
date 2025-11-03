@@ -106,11 +106,11 @@ def get_client_by_phone(api_key: str, account_id: str, phone: str) -> Optional[D
     query_string = f'query={clean_phone}'
     body = ''
     
-    signature_string = f'{method}{path}{query_string}{body}{api_key}'
+    signature_string = f'{method}{path}?{query_string}{body}{api_key}'
     signature = hashlib.sha256(signature_string.encode()).hexdigest()
     
     print(f'[DEBUG] Account ID: {account_id}')
-    print(f'[DEBUG] Signature string: {method}{path}{query_string}{body}***')
+    print(f'[DEBUG] Signature string: {method}{path}?{query_string}{body}***')
     print(f'[DEBUG] Signature: {signature}')
     
     headers = {
@@ -153,7 +153,7 @@ def get_client_orders(api_key: str, account_id: str, client_id: str) -> List[Dic
     query_string = f'client_id={client_id}'
     body = ''
     
-    signature_string = f'{method}{path}{query_string}{body}{api_key}'
+    signature_string = f'{method}{path}?{query_string}{body}{api_key}'
     signature = hashlib.sha256(signature_string.encode()).hexdigest()
     
     headers = {
