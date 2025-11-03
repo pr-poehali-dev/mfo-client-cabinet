@@ -103,14 +103,15 @@ def get_client_by_phone(api_key: str, account_id: str, phone: str) -> Optional[D
     
     method = 'GET'
     path = '/v1/clients'
-    params = f'query={clean_phone}'
+    query_string = f'query={clean_phone}'
     body = ''
     
-    signature_string = f'{method}:{path}:{params}:{body}:{api_key}'
+    signature_string = f'{method}{path}{query_string}{body}{api_key}'
     signature = hashlib.sha256(signature_string.encode()).hexdigest()
     
     print(f'[DEBUG] Account ID: {account_id}')
-    print(f'[DEBUG] Signature: {signature[:20]}...')
+    print(f'[DEBUG] Signature string: {method}{path}{query_string}{body}***')
+    print(f'[DEBUG] Signature: {signature}')
     
     headers = {
         'X-MegaCrm-ApiAccount': account_id,
@@ -118,7 +119,7 @@ def get_client_by_phone(api_key: str, account_id: str, phone: str) -> Optional[D
         'Content-Type': 'application/json'
     }
     
-    url = f'https://api.megacrm.ru{path}?{params}'
+    url = f'https://api.megacrm.ru{path}?{query_string}'
     print(f'[DEBUG] API URL: {url}')
     
     response = requests.get(url, headers=headers, timeout=10)
@@ -149,10 +150,10 @@ def get_client_orders(api_key: str, account_id: str, client_id: str) -> List[Dic
     
     method = 'GET'
     path = '/v1/deals'
-    params = f'client_id={client_id}'
+    query_string = f'client_id={client_id}'
     body = ''
     
-    signature_string = f'{method}:{path}:{params}:{body}:{api_key}'
+    signature_string = f'{method}{path}{query_string}{body}{api_key}'
     signature = hashlib.sha256(signature_string.encode()).hexdigest()
     
     headers = {
@@ -161,7 +162,7 @@ def get_client_orders(api_key: str, account_id: str, client_id: str) -> List[Dic
         'Content-Type': 'application/json'
     }
     
-    url = f'https://api.megacrm.ru{path}?{params}'
+    url = f'https://api.megacrm.ru{path}?{query_string}'
     
     response = requests.get(url, headers=headers, timeout=10)
     
