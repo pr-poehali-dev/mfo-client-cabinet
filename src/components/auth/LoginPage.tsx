@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 
 interface LoginPageProps {
-  onLogin: (phone: string, clientName?: string) => void;
+  onLogin: (phone: string, clientName?: string) => Promise<boolean>;
 }
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
@@ -109,7 +109,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         if (finalName) {
           localStorage.setItem('clientName', finalName);
         }
-        onLogin(digits, finalName);
+        const success = await onLogin(digits, finalName);
+        if (!success) {
+          setError('Ошибка входа');
+        }
       } else {
         setError(data.error || 'Неверный код');
       }
@@ -152,7 +155,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       const data = await response.json();
 
       if (data.success && data.client) {
-        onLogin(digits, data.client.full_name);
+        const success = await onLogin(digits, data.client.full_name);
+        if (!success) {
+          setError('Ошибка входа');
+        }
       } else {
         setError(data.error || 'Неверный телефон или пароль');
       }
@@ -329,15 +335,11 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                   )}
                 </Button>
 
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => window.location.href = '/login'}
-                    className="text-primary hover:text-primary/80"
-                  >
-                    Нет аккаунта? Зарегистрироваться
-                  </Button>
+                <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
+                  <Icon name="Info" size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    Используйте номер телефона и пароль из личного кабинета
+                  </p>
                 </div>
               </form>
             </TabsContent>
@@ -383,15 +385,11 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                   )}
                 </Button>
 
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => window.location.href = '/login'}
-                    className="text-primary hover:text-primary/80"
-                  >
-                    Нет аккаунта? Зарегистрироваться
-                  </Button>
+                <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg flex items-start gap-2">
+                  <Icon name="Info" size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    Используйте номер телефона, указанный при оформлении займа
+                  </p>
                 </div>
               </form>
             </TabsContent>

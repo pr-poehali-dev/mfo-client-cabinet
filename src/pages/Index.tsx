@@ -1,127 +1,176 @@
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import Icon from '@/components/ui/icon';
+import { useState, useEffect } from 'react';
+import Header from '@/components/dashboard/Header';
+import LoginPage from '@/components/auth/LoginPage';
+import WelcomeBanner from '@/components/dashboard/WelcomeBanner';
+import ErrorBanner from '@/components/dashboard/ErrorBanner';
+import LoadingBanner from '@/components/dashboard/LoadingBanner';
+import DashboardTabs from '@/components/dashboard/DashboardTabs';
+import { useAuth } from '@/hooks/useAuth';
+import { useAmoCRM } from '@/hooks/useAmoCRM';
+import { Loan, Payment, AppNotification, Deal } from '@/components/dashboard/types';
 
 const Index = () => {
-  const navigate = useNavigate();
+  const { 
+    isAuthenticated, 
+    userPhone, 
+    clientName: authClientName, 
+    login, 
+    logout: authLogout,
+    checkNewRegistration,
+    clearNewRegistration
+  } = useAuth();
+
+  const { loading, error, getDeals } = useAmoCRM();
+
+  const [activeTab, setActiveTab] = useState('applications');
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [clientName, setClientName] = useState('');
+  const [clientFirstName, setClientFirstName] = useState('');
+  const [clientLastName, setClientLastName] = useState('');
+  const [clientMiddleName, setClientMiddleName] = useState('');
+  const [clientGender, setClientGender] = useState<'male' | 'female'>('male');
+  const [clientPhone, setClientPhone] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [contactId, setContactId] = useState('');
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  useEffect(() => {
+    if (activeTab === 'support') {
+      setUnreadMessagesCount(0);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (isAuthenticated && userPhone) {
+      if (authClientName) {
+        setClientName(authClientName);
+      }
+
+      if (checkNewRegistration()) {
+        setNotifications([{
+          id: 'welcome-' + Date.now(),
+          title: '🎉 Добро пожаловать!',
+          message: 'Ваша заявка успешно принята в обработку. Мы свяжемся с вами в ближайшее время.',
+          date: new Date().toLocaleDateString('ru-RU'),
+          read: false,
+          type: 'success'
+        }]);
+        clearNewRegistration();
+      }
+
+      loadData(userPhone);
+    }
+  }, [isAuthenticated, userPhone]);
+
+  const loadData = async (phone: string) => {
+    // Очистка данных
+    setLoans([]);
+    setPayments([]);
+    setDeals([]);
+    setClientName('');
+    setClientFirstName('');
+    setClientLastName('');
+    setClientMiddleName('');
+    setClientPhone('');
+    setClientEmail('');
+    setContactId('');
+    
+    const result = await getDeals(phone);
+    
+    if (result) {
+      setClientName(result.client.name);
+      setClientFirstName(result.client.first_name);
+      setClientLastName(result.client.last_name);
+      setClientPhone(result.client.phone);
+      setClientEmail(result.client.email);
+      setContactId(result.client.id);
+      
+      const mappedDeals = result.deals.map(deal => ({
+        id: deal.id,
+        name: deal.name,
+        amount: deal.price,
+        status: 'pending' as const,
+        status_name: 'В обработке',
+        date: new Date(deal.created_at * 1000).toLocaleDateString('ru-RU'),
+        description: deal.name
+      }));
+      
+      setDeals(mappedDeals);
+      setLoans(mappedDeals);
+      setLastUpdate(new Date());
+    }
+  };
+
+  const handleLogin = (phone: string, name?: string) => {
+    login(phone, name);
+  };
+
+  const handleLogout = () => {
+    authLogout();
+    setLoans([]);
+    setPayments([]);
+    setNotifications([]);
+    setDeals([]);
+    setClientName('');
+    setClientFirstName('');
+    setClientLastName('');
+    setClientMiddleName('');
+    setClientGender('male');
+    setClientPhone('');
+    setClientEmail('');
+    setContactId('');
+    setLastUpdate(null);
+  };
+
+  const refreshData = async () => {
+    if (!userPhone) return;
+    await loadData(userPhone);
+  };
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center p-3 sm:p-4 md:p-6">
-      <div className="w-full max-w-2xl">
-        <Card className="border-gray-200 bg-white shadow-xl">
-          <CardContent className="pt-8 pb-6 px-4 sm:pt-10 sm:pb-8 sm:px-6 md:pt-12 md:pb-10 md:px-8">
-            <div className="text-center mb-6 sm:mb-8">
-              <div className="inline-flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-2xl shadow-emerald-500/30 mb-4 sm:mb-6">
-                <Icon name="Home" size={48} className="text-white sm:w-14 sm:h-14 md:w-16 md:h-16" />
-              </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-2 sm:mb-3">Деньги в дом</h1>
-              <p className="text-gray-600 text-base sm:text-lg md:text-xl">
-                Микрозаймы для вашего комфорта
-              </p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419]">
+      <Header 
+        lastUpdate={lastUpdate}
+        loading={loading}
+        notifications={notifications}
+        onRefresh={refreshData}
+        onLogout={handleLogout}
+      />
 
-            <Button
-              onClick={() => navigate('/megagroup-login')}
-              className="w-full text-base sm:text-lg md:text-xl h-12 sm:h-14 md:h-16 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/30 transition-all mb-6 sm:mb-8"
-            >
-              <Icon name="Lock" size={20} className="mr-2 sm:mr-3 sm:w-6 sm:h-6" />
-              Вход в личный кабинет
-            </Button>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8 md:mt-10 mb-6 sm:mb-8 md:mb-10">
-              <div className="text-center p-4 sm:p-5">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
-                  <Icon name="CheckCircle2" size={28} className="text-emerald-600 sm:w-8 sm:h-8" />
-                </div>
-                <h3 className="font-bold text-gray-900 mb-1 sm:mb-2 text-base sm:text-lg">Быстро</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Деньги на карту за 15 минут</p>
-              </div>
-
-              <div className="text-center p-4 sm:p-5">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center">
-                  <Icon name="Shield" size={28} className="text-teal-600 sm:w-8 sm:h-8" />
-                </div>
-                <h3 className="font-bold text-gray-900 mb-1 sm:mb-2 text-base sm:text-lg">Надежно</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Конфиденциальность гарантирована</p>
-              </div>
-
-              <div className="text-center p-4 sm:p-5">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
-                  <Icon name="Percent" size={28} className="text-amber-600 sm:w-8 sm:h-8" />
-                </div>
-                <h3 className="font-bold text-gray-900 mb-1 sm:mb-2 text-base sm:text-lg">Выгодно</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Низкие процентные ставки</p>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 pt-6 sm:pt-8 mt-6 sm:mt-8">
-              <h2 className="text-center text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Служба поддержки</h2>
-              
-              <div className="space-y-3 sm:space-y-4">
-                <a 
-                  href="tel:+78005553535"
-                  className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 transition-colors group"
-                >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
-                    <Icon name="Phone" size={20} className="text-white sm:w-6 sm:h-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm text-gray-600 mb-0.5 sm:mb-1">Горячая линия</p>
-                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
-                      8 (800) 555-35-35
-                    </p>
-                  </div>
-                  <Icon name="ChevronRight" size={20} className="text-gray-400 group-hover:text-emerald-500 transition-colors flex-shrink-0 sm:w-6 sm:h-6" />
-                </a>
-
-                <a 
-                  href="https://wa.me/78005553535"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors group"
-                >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0">
-                    <Icon name="MessageCircle" size={20} className="text-white sm:w-6 sm:h-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm text-gray-600 mb-0.5 sm:mb-1">WhatsApp</p>
-                    <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900 group-hover:text-green-600 transition-colors truncate">
-                      Написать в WhatsApp
-                    </p>
-                  </div>
-                  <Icon name="ChevronRight" size={20} className="text-gray-400 group-hover:text-green-500 transition-colors flex-shrink-0 sm:w-6 sm:h-6" />
-                </a>
-
-                <a 
-                  href="mailto:support@dengivdom.ru"
-                  className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors group"
-                >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center flex-shrink-0">
-                    <Icon name="Mail" size={20} className="text-white sm:w-6 sm:h-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm text-gray-600 mb-0.5 sm:mb-1">Email</p>
-                    <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                      support@dengivdom.ru
-                    </p>
-                  </div>
-                  <Icon name="ChevronRight" size={20} className="text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0 sm:w-6 sm:h-6" />
-                </a>
-              </div>
-
-              <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-gray-500">
-                <p>Работаем ежедневно с 9:00 до 21:00</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="text-center mt-4 sm:mt-6 px-4">
-          <p className="text-xs sm:text-sm text-gray-500">
-            © 2025 Деньги в дом. Все права защищены.
-          </p>
-        </div>
+      <div className="container mx-auto px-4 py-8">
+        <WelcomeBanner clientName={clientName} />
+        <ErrorBanner error={error} />
+        <LoadingBanner loading={loading} />
+        
+        <DashboardTabs
+          key={userPhone}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          unreadMessagesCount={unreadMessagesCount}
+          deals={deals}
+          clientPhone={clientPhone}
+          contactId={contactId}
+          clientName={clientName}
+          clientFirstName={clientFirstName}
+          clientLastName={clientLastName}
+          clientMiddleName={clientMiddleName}
+          clientGender={clientGender}
+          clientEmail={clientEmail}
+          onApplicationSubmit={() => loadData(userPhone)}
+          onMessagesUpdate={(count) => {
+            if (activeTab !== 'support') {
+              setUnreadMessagesCount(prev => prev + count);
+            }
+          }}
+        />
       </div>
     </div>
   );

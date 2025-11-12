@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Get token with code",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "code": "test_code"
+      },
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
+    }
+  ]
+}

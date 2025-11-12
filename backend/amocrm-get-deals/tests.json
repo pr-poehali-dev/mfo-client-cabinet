@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Get deals by phone",
+      "method": "GET",
+      "path": "/?phone=79991234567",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "client": "object",
+        "deals": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
