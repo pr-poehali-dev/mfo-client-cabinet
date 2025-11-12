@@ -119,13 +119,16 @@ const MegagroupLogin = () => {
               <h1 className="text-3xl sm:text-4xl font-bold text-black mb-8 sm:mb-12">зарегистрируйтесь</h1>
 
               <form onSubmit={handlePhoneSubmit} className="space-y-5 sm:space-y-6">
-                <div>
+                <div className="relative">
+                  <div className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-base sm:text-lg text-gray-900 font-medium pointer-events-none z-10">
+                    +7
+                  </div>
                   <Input
                     type="tel"
-                    placeholder="Мобильный телефон"
+                    placeholder="(___) ___-__-__"
                     value={phone}
                     onChange={handlePhoneChange}
-                    className="w-full h-14 sm:h-16 px-4 sm:px-5 text-base sm:text-lg bg-white border-2 border-[#DC3545] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#DC3545] focus:ring-offset-2 transition-all placeholder:text-gray-400 shadow-sm"
+                    className="w-full h-14 sm:h-16 pl-12 sm:pl-14 pr-4 sm:pr-5 text-base sm:text-lg bg-white border-2 border-[#DC3545] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#DC3545] focus:ring-offset-2 transition-all placeholder:text-gray-400 shadow-sm"
                     autoFocus
                     disabled={loading}
                   />
