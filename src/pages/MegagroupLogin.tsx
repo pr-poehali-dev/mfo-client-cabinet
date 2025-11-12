@@ -105,13 +105,10 @@ const MegagroupLogin = () => {
       {/* Mobile & Desktop Container */}
       <div className="w-full min-h-screen lg:min-h-0 lg:max-w-md lg:rounded-2xl lg:shadow-2xl bg-[#F5F5F5] flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between lg:rounded-t-2xl">
-          <div className="flex items-center gap-2">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#FFD500] flex items-center justify-center flex-shrink-0">
-              <span className="text-black font-bold text-xs sm:text-sm leading-tight text-center">ТВОИ<br/>ЗАЙМЫ</span>
-            </div>
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-center lg:rounded-t-2xl">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#FFD500] flex items-center justify-center flex-shrink-0">
+            <span className="text-black font-bold text-xs sm:text-sm leading-tight text-center">ТВОИ<br/>ЗАЙМЫ</span>
           </div>
-          <Icon name="Edit" size={20} className="text-[#9B6FFF] sm:w-6 sm:h-6" />
         </header>
 
         {/* Main Content */}
