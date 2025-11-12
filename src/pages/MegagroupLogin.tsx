@@ -125,7 +125,7 @@ const MegagroupLogin = () => {
                     placeholder="Мобильный телефон"
                     value={phone}
                     onChange={handlePhoneChange}
-                    className="w-full h-12 sm:h-14 px-3 sm:px-4 text-base sm:text-lg bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+                    className="w-full h-14 sm:h-16 px-4 sm:px-5 text-base sm:text-lg bg-white border-2 border-[#DC3545] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#DC3545] focus:ring-offset-2 transition-all placeholder:text-gray-400 shadow-sm"
                     autoFocus
                     disabled={loading}
                   />
@@ -133,14 +133,14 @@ const MegagroupLogin = () => {
 
                 <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                   Нажимая на кнопку «Продолжить» и вводя код в специальное поле, я соглашаюсь с{' '}
-                  <a href="#" className="text-blue-600 underline">условиями обработки персональных данных</a>
+                  <a href="#" className="text-blue-600 underline hover:text-blue-800 transition-colors">условиями обработки персональных данных</a>
                   , а также даю{' '}
-                  <a href="#" className="text-blue-600 underline">согласие на обработку персональных данных</a>
+                  <a href="#" className="text-blue-600 underline hover:text-blue-800 transition-colors">согласие на обработку персональных данных</a>
                 </p>
 
                 <Button
                   type="submit"
-                  className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium bg-gray-300 hover:bg-gray-400 text-gray-500 rounded-full transition-colors disabled:opacity-50"
+                  className="w-full h-14 sm:h-16 text-base sm:text-lg font-semibold bg-[#E8E8E8] hover:bg-[#D8D8D8] text-gray-400 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   disabled={loading || phone.replace(/\D/g, '').length !== 11}
                 >
                   {loading ? 'Отправка...' : 'Продолжить'}
@@ -171,7 +171,7 @@ const MegagroupLogin = () => {
                     placeholder="_ _ _ _"
                     value={code}
                     onChange={handleCodeChange}
-                    className="w-full h-12 sm:h-14 px-3 sm:px-4 text-2xl sm:text-3xl text-center tracking-widest bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+                    className="w-full h-16 sm:h-20 px-4 sm:px-5 text-3xl sm:text-4xl text-center tracking-[0.5em] bg-white border-2 border-[#DC3545] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#DC3545] focus:ring-offset-2 transition-all placeholder:text-gray-300 shadow-sm"
                     autoFocus
                     disabled={loading}
                     maxLength={4}
@@ -186,7 +186,7 @@ const MegagroupLogin = () => {
                   <button
                     type="button"
                     onClick={handleResendCode}
-                    className="text-xs sm:text-sm text-blue-600 underline w-full text-center hover:text-blue-800 transition-colors"
+                    className="text-xs sm:text-sm text-blue-600 underline w-full text-center hover:text-blue-800 transition-colors font-medium"
                   >
                     Отправить код повторно
                   </button>
@@ -194,7 +194,7 @@ const MegagroupLogin = () => {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium bg-gray-300 hover:bg-gray-400 text-gray-500 rounded-full transition-colors disabled:opacity-50"
+                  className="w-full h-14 sm:h-16 text-base sm:text-lg font-semibold bg-[#E8E8E8] hover:bg-[#D8D8D8] text-gray-400 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   disabled={loading || code.length !== 4}
                 >
                   {loading ? 'Проверка...' : 'Подтвердить'}
