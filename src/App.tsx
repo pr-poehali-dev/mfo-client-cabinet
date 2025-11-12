@@ -10,6 +10,7 @@ import AmoCRMSetup from "./pages/AmoCRMSetup";
 import CleanupDeals from "./pages/CleanupDeals";
 import AdminCleanup from "./pages/AdminCleanup";
 import ClientLogin from "./pages/ClientLogin";
+import ClientRegister from "./pages/ClientRegister";
 import ClientCabinet from "./pages/ClientCabinet";
 import DealsDistribution from "./pages/DealsDistribution";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/cleanup-deals" element={<CleanupDeals />} />
           <Route path="/admin-cleanup" element={<AdminCleanup />} />
           <Route path="/login" element={<ClientLogin />} />
+          <Route path="/register" element={<ClientRegister />} />
           <Route path="/cabinet" element={<ClientCabinet />} />
           <Route path="/distribution" element={<DealsDistribution />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
