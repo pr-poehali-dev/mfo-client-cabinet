@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import Icon from '@/components/ui/icon';
 
 const MegagroupLogin = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [error, setError] = useState('');
 
   const formatPhoneInput = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -39,41 +40,20 @@ const MegagroupLogin = () => {
     setPhone(formatted);
   };
 
-  useEffect(() => {
-    if (step === 'code' && countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [step, countdown]);
-
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     const digits = phone.replace(/\D/g, '');
     
-    if (digits.length !== 11) return;
-
-    setLoading(true);
-
-    try {
-      // TODO: Send SMS code API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setStep('code');
-      setCountdown(60);
-    } catch (err) {
-      console.error('SMS send error:', err);
-    } finally {
-      setLoading(false);
+    if (digits.length !== 11) {
+      setError('Введите корректный номер телефона');
+      return;
     }
-  };
-
-  const handleCodeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (code.length !== 4) return;
 
     setLoading(true);
 
     try {
-      const digits = phone.replace(/\D/g, '');
       const url = `https://functions.poehali.dev/44db4f9d-e497-4fac-b36c-64aa9c7edf64?phone=${digits}`;
       const response = await fetch(url);
       const data = await response.json();
@@ -82,147 +62,95 @@ const MegagroupLogin = () => {
         localStorage.setItem('megagroupPhone', digits);
         localStorage.setItem('megagroupClient', JSON.stringify(data.client));
         navigate('/megagroup-cabinet');
+      } else {
+        if (data.not_found) {
+          setError('Клиент с таким номером не найден в системе МегаГрупп');
+        } else {
+          setError(data.error || 'Ошибка авторизации');
+        }
       }
     } catch (err) {
       console.error('Login error:', err);
+      setError('Ошибка подключения к серверу');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResendCode = () => {
-    setCountdown(60);
-    // TODO: Resend SMS code
-  };
-
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-    setCode(value);
-  };
-
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center lg:p-6">
-      {/* Mobile & Desktop Container */}
-      <div className="w-full min-h-screen lg:min-h-0 lg:max-w-md lg:rounded-2xl lg:shadow-2xl bg-[#F5F5F5] flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-center lg:rounded-t-2xl">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#FFD500] flex items-center justify-center flex-shrink-0">
-            <span className="text-black font-bold text-xs sm:text-sm leading-tight text-center">ТВОИ<br/>ЗАЙМЫ</span>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center p-3 sm:p-4 md:p-6">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-2xl shadow-emerald-500/30 mb-4 sm:mb-6">
+            <Icon name="Wallet" size={40} className="text-white sm:w-12 sm:h-12" />
           </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 px-4 sm:px-6 pt-10 sm:pt-16 pb-6 sm:pb-8">
-          {step === 'phone' ? (
-            <>
-              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-1 sm:mb-2">Войдите или</h1>
-              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-8 sm:mb-12">зарегистрируйтесь</h1>
-
-              <form onSubmit={handlePhoneSubmit} className="space-y-5 sm:space-y-6">
-                <div className="relative">
-                  <div className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-base sm:text-lg text-gray-900 font-medium pointer-events-none z-10">
-                    +7
-                  </div>
-                  <Input
-                    type="tel"
-                    placeholder="(___) ___-__-__"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    className="w-full h-14 sm:h-16 pl-12 sm:pl-14 pr-4 sm:pr-5 text-base sm:text-lg bg-white border-2 border-[#DC3545] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#DC3545] focus:ring-offset-2 transition-all placeholder:text-gray-400 shadow-sm"
-                    autoFocus
-                    disabled={loading}
-                  />
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-2">Микрозаймы</h1>
+          <p className="text-gray-600 text-base sm:text-lg">Войдите в личный кабинет</p>
+        </div>
+        
+      <Card className="border-gray-200 bg-white shadow-xl">
+        <CardContent className="pt-6 pb-6 px-4 sm:pt-8 sm:pb-8 sm:px-6">
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+            <div className="space-y-2 sm:space-y-3">
+              <Label htmlFor="phone" className="text-sm sm:text-base font-semibold text-gray-700">
+                Номер телефона
+              </Label>
+              <div className="relative">
+                <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="Phone" size={18} className="sm:w-5 sm:h-5" />
                 </div>
-
-                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                  Нажимая на кнопку «Продолжить» и вводя код в специальное поле, я соглашаюсь с{' '}
-                  <a href="#" className="text-blue-600 underline hover:text-blue-800 transition-colors">условиями обработки персональных данных</a>
-                  , а также даю{' '}
-                  <a href="#" className="text-blue-600 underline hover:text-blue-800 transition-colors">согласие на обработку персональных данных</a>
-                </p>
-
-                <Button
-                  type="submit"
-                  className="w-full h-14 sm:h-16 text-base sm:text-lg font-semibold bg-[#E8E8E8] hover:bg-[#D8D8D8] text-gray-400 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                  disabled={loading || phone.replace(/\D/g, '').length !== 11}
-                >
-                  {loading ? 'Отправка...' : 'Продолжить'}
-                </Button>
-              </form>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setStep('phone')}
-                className="flex items-center gap-2 text-gray-600 mb-6 sm:mb-8 hover:text-gray-900 transition-colors"
-              >
-                <Icon name="ArrowLeft" size={20} className="sm:w-5 sm:h-5" />
-                <span className="text-sm sm:text-base">Назад</span>
-              </button>
-
-              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3 sm:mb-4">Введите код</h1>
-              <p className="text-sm sm:text-base text-gray-600 mb-8 sm:mb-12">
-                Мы отправили SMS с кодом на номер<br />
-                <span className="font-medium text-black">{phone}</span>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+7 (___) ___-__-__"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  className="text-base sm:text-lg h-12 sm:h-14 pl-10 sm:pl-12 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+                  autoFocus
+                  disabled={loading}
+                />
+              </div>
+              <p className="text-xs sm:text-sm text-gray-500">
+                Введите номер телефона для входа
               </p>
-
-              <form onSubmit={handleCodeSubmit} className="space-y-5 sm:space-y-6">
-                <div>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="_ _ _ _"
-                    value={code}
-                    onChange={handleCodeChange}
-                    className="w-full h-16 sm:h-20 px-4 sm:px-5 text-3xl sm:text-4xl text-center tracking-[0.5em] bg-white border-2 border-[#DC3545] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#DC3545] focus:ring-offset-2 transition-all placeholder:text-gray-300 shadow-sm"
-                    autoFocus
-                    disabled={loading}
-                    maxLength={4}
-                  />
-                </div>
-
-                {countdown > 0 ? (
-                  <p className="text-xs sm:text-sm text-gray-600 text-center">
-                    Отправить код повторно через {countdown} сек
-                  </p>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleResendCode}
-                    className="text-xs sm:text-sm text-blue-600 underline w-full text-center hover:text-blue-800 transition-colors font-medium"
-                  >
-                    Отправить код повторно
-                  </button>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full h-14 sm:h-16 text-base sm:text-lg font-semibold bg-[#E8E8E8] hover:bg-[#D8D8D8] text-gray-400 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                  disabled={loading || code.length !== 4}
-                >
-                  {loading ? 'Проверка...' : 'Подтвердить'}
-                </Button>
-              </form>
-            </>
-          )}
-        </main>
-
-        {/* Footer */}
-        <footer className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-3 sm:space-y-4 lg:rounded-b-2xl">
-          <a href="mailto:help@tvoizaymy.ru" className="flex items-center gap-3 text-gray-700 hover:text-gray-900 transition-colors">
-            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg border border-gray-200 flex-shrink-0">
-              <Icon name="Mail" size={20} className="text-[#9B6FFF] sm:w-6 sm:h-6" />
             </div>
-            <span className="text-sm sm:text-base">help@tvoizaymy.ru</span>
-          </a>
 
-          <a href="#" className="flex items-center gap-3 text-gray-700 hover:text-gray-900 transition-colors">
-            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg border border-gray-200 flex-shrink-0">
-              <Icon name="MessageCircle" size={20} className="text-[#9B6FFF] sm:w-6 sm:h-6" />
+            {error && (
+              <Alert className="bg-red-50 border-red-200">
+                <Icon name="AlertCircle" size={18} className="text-red-600" />
+                <AlertDescription className="text-red-700 font-medium">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full text-base sm:text-lg h-12 sm:h-14 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/30 transition-all"
+              disabled={loading || phone.replace(/\D/g, '').length !== 11}
+            >
+              {loading ? (
+                <>
+                  <Icon name="Loader2" size={20} className="mr-2 animate-spin sm:w-5 sm:h-5" />
+                  Проверяем...
+                </>
+              ) : (
+                <>
+                  <Icon name="Lock" size={20} className="mr-2 sm:w-5 sm:h-5" />
+                  Войти в кабинет
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200 text-center">
+            <div className="flex items-center justify-center gap-2 text-gray-600">
+              <Icon name="Shield" size={16} className="text-emerald-600 sm:w-4 sm:h-4" />
+              <p className="text-xs sm:text-sm">Защищенное соединение</p>
             </div>
-            <span className="text-sm sm:text-base">Онлайн чат</span>
-          </a>
-        </footer>
+          </div>
+        </CardContent>
+      </Card>
       </div>
     </div>
   );
