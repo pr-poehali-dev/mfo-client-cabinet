@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Missing parameters",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 400,
+      "expectedBody": {
+        "success": false
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Invalid code",
+      "method": "GET",
+      "path": "/?phone=79991234567&code=0000",
+      "expectedStatus": 404,
+      "expectedBody": {
+        "success": false
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

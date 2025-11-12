@@ -1,299 +1,237 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import Icon from '@/components/ui/icon';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ClientLogin = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [countdown, setCountdown] = useState(60);
 
-  const formatPhone = (value: string) => {
+  const formatPhoneInput = (value: string) => {
     const digits = value.replace(/\D/g, '');
-    if (digits.length === 0) return '';
-    if (digits.length <= 1) return `+${digits}`;
-    if (digits.length <= 4) return `+${digits[0]} (${digits.slice(1)}`;
-    if (digits.length <= 7) return `+${digits[0]} (${digits.slice(1, 4)}) ${digits.slice(4)}`;
-    if (digits.length <= 9) return `+${digits[0]} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
-    return `+${digits[0]} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9, 11)}`;
+    
+    if (!digits) return '';
+    
+    let formatted = '';
+    if (digits.length > 0) {
+      formatted = '(' + digits.substring(0, 3);
+    }
+    if (digits.length >= 4) {
+      formatted += ') ' + digits.substring(3, 6);
+    }
+    if (digits.length >= 7) {
+      formatted += '-' + digits.substring(6, 8);
+    }
+    if (digits.length >= 9) {
+      formatted += '-' + digits.substring(8, 10);
+    }
+    
+    return formatted;
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value);
+    const formatted = formatPhoneInput(e.target.value);
     setPhone(formatted);
-    setError('');
-    setSuccess('');
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  useEffect(() => {
+    if (step === 'code' && countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [step, countdown]);
 
-    const cleanPhone = phone.replace(/\D/g, '');
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const digits = phone.replace(/\D/g, '');
+    
+    if (digits.length !== 10) return;
+
+    setLoading(true);
 
     try {
-      const response = await fetch('https://functions.poehali.dev/3ef6f7cb-856a-4e15-bcf8-124143d9c136', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: cleanPhone,
-          password: password
-        })
-      });
-      const data = await response.json();
-
-      if (data.success && data.client) {
-        localStorage.setItem('clientPhone', data.client.phone);
-        localStorage.setItem('clientName', data.client.full_name);
-        navigate('/cabinet');
-      } else {
-        setError(data.error || 'Ошибка входа');
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Ошибка подключения к серверу');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    const cleanPhone = phone.replace(/\D/g, '');
-
-    if (password.length < 4) {
-      setError('Пароль должен быть минимум 4 символа');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch('https://functions.poehali.dev/9f6f96b6-4717-4745-b49d-f5e4683a8911', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: cleanPhone,
-          password: password,
-          full_name: fullName,
-          email: email
-        })
-      });
+      const fullPhone = '7' + digits;
+      const response = await fetch(`https://functions.poehali.dev/8d06286b-b17d-431a-a73d-70ed8e8e18e6?phone=${fullPhone}`);
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Регистрация успешна! Теперь войдите в систему.');
-        setTimeout(() => {
-          setPhone('');
-          setPassword('');
-          setFullName('');
-          setEmail('');
-          setSuccess('');
-        }, 2000);
-      } else {
-        setError(data.error || 'Ошибка регистрации');
+        setStep('code');
+        setCountdown(60);
       }
     } catch (err) {
-      console.error('Register error:', err);
-      setError('Ошибка подключения к серверу');
+      console.error('SMS send error:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.length !== 4) return;
+
+    setLoading(true);
+
+    try {
+      const digits = '7' + phone.replace(/\D/g, '');
+      const response = await fetch(`https://functions.poehali.dev/5f4d3d46-b20d-49b2-b603-52e2238e6c77?phone=${digits}&code=${code}`);
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.needsRegistration) {
+          localStorage.setItem('tempPhone', digits);
+          navigate('/register');
+        } else {
+          localStorage.setItem('clientData', JSON.stringify(data.client));
+          navigate('/cabinet');
+        }
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    const digits = '7' + phone.replace(/\D/g, '');
+    const response = await fetch(`https://functions.poehali.dev/8d06286b-b17d-431a-a73d-70ed8e8e18e6?phone=${digits}`);
+    const data = await response.json();
+    
+    if (data.success) {
+      setCountdown(60);
+    }
+  };
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCode(value);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f1419] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-            <Icon name="User" size={32} className="text-white" />
+    <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center lg:p-6">
+      <div className="w-full min-h-screen lg:min-h-0 lg:max-w-md lg:rounded-2xl lg:shadow-2xl bg-[#F5F5F5] flex flex-col overflow-hidden">
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-center lg:rounded-t-2xl">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#FFD500] flex items-center justify-center flex-shrink-0">
+            <span className="text-black font-bold text-xs sm:text-sm leading-tight text-center">ТВОИ<br/>ЗАЙМЫ</span>
           </div>
-          <CardTitle className="text-3xl font-montserrat">
-            Личный кабинет
-          </CardTitle>
-          <CardDescription>
-            Войдите или зарегистрируйтесь для доступа
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Вход</TabsTrigger>
-              <TabsTrigger value="register">Регистрация</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-phone">Номер телефона</Label>
+        </header>
+
+        <main className="flex-1 px-4 sm:px-6 pt-10 sm:pt-16 pb-6 sm:pb-8">
+          {step === 'phone' ? (
+            <>
+              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-1 sm:mb-2">Войдите или</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-8 sm:mb-12">зарегистрируйтесь</h1>
+
+              <form onSubmit={handlePhoneSubmit} className="space-y-5 sm:space-y-6">
+                <div className="relative">
+                  <div className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-base sm:text-lg text-gray-900 font-medium pointer-events-none z-10">
+                    +7
+                  </div>
                   <Input
-                    id="login-phone"
                     type="tel"
-                    placeholder="+7 (999) 999-99-99"
+                    placeholder="(___) ___-__-__"
                     value={phone}
                     onChange={handlePhoneChange}
-                    maxLength={18}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Пароль</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="Введите пароль"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError('');
-                    }}
-                    required
+                    className="w-full h-14 sm:h-16 pl-12 sm:pl-14 pr-4 sm:pr-5 text-base sm:text-lg bg-white border-2 border-[#DC3545] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#DC3545] focus:ring-offset-2 transition-all placeholder:text-gray-400 shadow-sm"
+                    autoFocus
+                    disabled={loading}
                   />
                 </div>
 
-                {error && (
-                  <Alert className="bg-red-500/10 border-red-500/30">
-                    <Icon name="AlertCircle" size={18} className="text-red-500" />
-                    <AlertDescription className="text-red-500">
-                      {error}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                  Нажимая на кнопку «Продолжить» и вводя код в специальное поле, я соглашаюсь с{' '}
+                  <a href="#" className="text-blue-600 underline hover:text-blue-800 transition-colors">условиями обработки персональных данных</a>
+                  , а также даю{' '}
+                  <a href="#" className="text-blue-600 underline hover:text-blue-800 transition-colors">согласие на обработку персональных данных</a>
+                </p>
 
                 <Button
                   type="submit"
-                  disabled={loading || phone.length < 18 || !password}
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                  className="w-full h-14 sm:h-16 text-base sm:text-lg font-semibold bg-[#E8E8E8] hover:bg-[#D8D8D8] text-gray-400 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  disabled={loading || phone.replace(/\D/g, '').length !== 10}
                 >
-                  {loading ? (
-                    <>
-                      <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                      Вход...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="LogIn" size={20} className="mr-2" />
-                      Войти
-                    </>
-                  )}
+                  {loading ? 'Отправка...' : 'Продолжить'}
                 </Button>
               </form>
-            </TabsContent>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setStep('phone')}
+                className="flex items-center gap-2 text-gray-600 mb-6 sm:mb-8 hover:text-gray-900 transition-colors"
+              >
+                <Icon name="ArrowLeft" size={20} className="sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Назад</span>
+              </button>
 
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="register-name">ФИО</Label>
+              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3 sm:mb-4">Введите код</h1>
+              <p className="text-sm sm:text-base text-gray-600 mb-8 sm:mb-12">
+                Мы отправили SMS с кодом на номер<br />
+                <span className="font-medium text-black">+7 {phone}</span>
+              </p>
+
+              <form onSubmit={handleCodeSubmit} className="space-y-5 sm:space-y-6">
+                <div>
                   <Input
-                    id="register-name"
                     type="text"
-                    placeholder="Иван Иванов"
-                    value={fullName}
-                    onChange={(e) => {
-                      setFullName(e.target.value);
-                      setError('');
-                    }}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="register-phone">Номер телефона</Label>
-                  <Input
-                    id="register-phone"
-                    type="tel"
-                    placeholder="+7 (999) 999-99-99"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    maxLength={18}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="register-password">Пароль</Label>
-                  <Input
-                    id="register-password"
-                    type="password"
-                    placeholder="Минимум 4 символа"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError('');
-                    }}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="register-email">Email (необязательно)</Label>
-                  <Input
-                    id="register-email"
-                    type="email"
-                    placeholder="example@mail.ru"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setError('');
-                    }}
+                    inputMode="numeric"
+                    placeholder="_ _ _ _"
+                    value={code}
+                    onChange={handleCodeChange}
+                    className="w-full h-16 sm:h-20 px-4 sm:px-5 text-3xl sm:text-4xl text-center tracking-[0.5em] bg-white border-2 border-[#DC3545] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#DC3545] focus:ring-offset-2 transition-all placeholder:text-gray-300 shadow-sm"
+                    autoFocus
+                    disabled={loading}
+                    maxLength={4}
                   />
                 </div>
 
-                {error && (
-                  <Alert className="bg-red-500/10 border-red-500/30">
-                    <Icon name="AlertCircle" size={18} className="text-red-500" />
-                    <AlertDescription className="text-red-500">
-                      {error}
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                {success && (
-                  <Alert className="bg-green-500/10 border-green-500/30">
-                    <Icon name="CheckCircle" size={18} className="text-green-500" />
-                    <AlertDescription className="text-green-500">
-                      {success}
-                    </AlertDescription>
-                  </Alert>
+                {countdown > 0 ? (
+                  <p className="text-xs sm:text-sm text-gray-600 text-center">
+                    Отправить код повторно через {countdown} сек
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    className="text-xs sm:text-sm text-blue-600 underline w-full text-center hover:text-blue-800 transition-colors font-medium"
+                  >
+                    Отправить код повторно
+                  </button>
                 )}
 
                 <Button
                   type="submit"
-                  disabled={loading || phone.length < 18 || !password || !fullName}
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                  className="w-full h-14 sm:h-16 text-base sm:text-lg font-semibold bg-[#E8E8E8] hover:bg-[#D8D8D8] text-gray-400 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  disabled={loading || code.length !== 4}
                 >
-                  {loading ? (
-                    <>
-                      <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                      Регистрация...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="UserPlus" size={20} className="mr-2" />
-                      Зарегистрироваться
-                    </>
-                  )}
+                  {loading ? 'Проверка...' : 'Подтвердить'}
                 </Button>
               </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+            </>
+          )}
+        </main>
+
+        <footer className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-3 sm:space-y-4 lg:rounded-b-2xl">
+          <a href="mailto:help@tvoizaymy.ru" className="flex items-center gap-3 text-gray-700 hover:text-gray-900 transition-colors">
+            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg border border-gray-200 flex-shrink-0">
+              <Icon name="Mail" size={20} className="text-[#9B6FFF] sm:w-6 sm:h-6" />
+            </div>
+            <span className="text-sm sm:text-base">help@tvoizaymy.ru</span>
+          </a>
+
+          <a href="#" className="flex items-center gap-3 text-gray-700 hover:text-gray-900 transition-colors">
+            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg border border-gray-200 flex-shrink-0">
+              <Icon name="MessageCircle" size={20} className="text-[#9B6FFF] sm:w-6 sm:h-6" />
+            </div>
+            <span className="text-sm sm:text-base">Онлайн чат</span>
+          </a>
+        </footer>
+      </div>
     </div>
   );
 };
