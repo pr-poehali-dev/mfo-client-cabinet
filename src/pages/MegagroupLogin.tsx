@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,10 @@ import Icon from '@/components/ui/icon';
 const MegagroupLogin = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [loading, setLoading] = useState(false);
+  const [countdown, setCountdown] = useState(60);
 
   const formatPhoneInput = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -36,7 +39,14 @@ const MegagroupLogin = () => {
     setPhone(formatted);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (step === 'code' && countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [step, countdown]);
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const digits = phone.replace(/\D/g, '');
     
@@ -45,6 +55,25 @@ const MegagroupLogin = () => {
     setLoading(true);
 
     try {
+      // TODO: Send SMS code API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setStep('code');
+      setCountdown(60);
+    } catch (err) {
+      console.error('SMS send error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.length !== 4) return;
+
+    setLoading(true);
+
+    try {
+      const digits = phone.replace(/\D/g, '');
       const url = `https://functions.poehali.dev/44db4f9d-e497-4fac-b36c-64aa9c7edf64?phone=${digits}`;
       const response = await fetch(url);
       const data = await response.json();
@@ -59,6 +88,16 @@ const MegagroupLogin = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResendCode = () => {
+    setCountdown(60);
+    // TODO: Resend SMS code
+  };
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCode(value);
   };
 
   return (
@@ -77,37 +116,95 @@ const MegagroupLogin = () => {
 
         {/* Main Content */}
         <main className="flex-1 px-4 sm:px-6 pt-10 sm:pt-16 pb-6 sm:pb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-black mb-1 sm:mb-2">Войдите или</h1>
-          <h1 className="text-3xl sm:text-4xl font-bold text-black mb-8 sm:mb-12">зарегистрируйтесь</h1>
+          {step === 'phone' ? (
+            <>
+              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-1 sm:mb-2">Войдите или</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-8 sm:mb-12">зарегистрируйтесь</h1>
 
-          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
-            <div>
-              <Input
-                type="tel"
-                placeholder="Мобильный телефон"
-                value={phone}
-                onChange={handlePhoneChange}
-                className="w-full h-12 sm:h-14 px-3 sm:px-4 text-base sm:text-lg bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
-                autoFocus
-                disabled={loading}
-              />
-            </div>
+              <form onSubmit={handlePhoneSubmit} className="space-y-5 sm:space-y-6">
+                <div>
+                  <Input
+                    type="tel"
+                    placeholder="Мобильный телефон"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    className="w-full h-12 sm:h-14 px-3 sm:px-4 text-base sm:text-lg bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+                    autoFocus
+                    disabled={loading}
+                  />
+                </div>
 
-            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Нажимая на кнопку «Продолжить» и вводя код в специальное поле, я соглашаюсь с{' '}
-              <a href="#" className="text-blue-600 underline">условиями обработки персональных данных</a>
-              , а также даю{' '}
-              <a href="#" className="text-blue-600 underline">согласие на обработку персональных данных</a>
-            </p>
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                  Нажимая на кнопку «Продолжить» и вводя код в специальное поле, я соглашаюсь с{' '}
+                  <a href="#" className="text-blue-600 underline">условиями обработки персональных данных</a>
+                  , а также даю{' '}
+                  <a href="#" className="text-blue-600 underline">согласие на обработку персональных данных</a>
+                </p>
 
-            <Button
-              type="submit"
-              className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium bg-gray-300 hover:bg-gray-400 text-gray-500 rounded-full transition-colors disabled:opacity-50"
-              disabled={loading || phone.replace(/\D/g, '').length !== 11}
-            >
-              {loading ? 'Отправка...' : 'Продолжить'}
-            </Button>
-          </form>
+                <Button
+                  type="submit"
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium bg-gray-300 hover:bg-gray-400 text-gray-500 rounded-full transition-colors disabled:opacity-50"
+                  disabled={loading || phone.replace(/\D/g, '').length !== 11}
+                >
+                  {loading ? 'Отправка...' : 'Продолжить'}
+                </Button>
+              </form>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setStep('phone')}
+                className="flex items-center gap-2 text-gray-600 mb-6 sm:mb-8 hover:text-gray-900 transition-colors"
+              >
+                <Icon name="ArrowLeft" size={20} className="sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Назад</span>
+              </button>
+
+              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3 sm:mb-4">Введите код</h1>
+              <p className="text-sm sm:text-base text-gray-600 mb-8 sm:mb-12">
+                Мы отправили SMS с кодом на номер<br />
+                <span className="font-medium text-black">{phone}</span>
+              </p>
+
+              <form onSubmit={handleCodeSubmit} className="space-y-5 sm:space-y-6">
+                <div>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="_ _ _ _"
+                    value={code}
+                    onChange={handleCodeChange}
+                    className="w-full h-12 sm:h-14 px-3 sm:px-4 text-2xl sm:text-3xl text-center tracking-widest bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+                    autoFocus
+                    disabled={loading}
+                    maxLength={4}
+                  />
+                </div>
+
+                {countdown > 0 ? (
+                  <p className="text-xs sm:text-sm text-gray-600 text-center">
+                    Отправить код повторно через {countdown} сек
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    className="text-xs sm:text-sm text-blue-600 underline w-full text-center hover:text-blue-800 transition-colors"
+                  >
+                    Отправить код повторно
+                  </button>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium bg-gray-300 hover:bg-gray-400 text-gray-500 rounded-full transition-colors disabled:opacity-50"
+                  disabled={loading || code.length !== 4}
+                >
+                  {loading ? 'Проверка...' : 'Подтвердить'}
+                </Button>
+              </form>
+            </>
+          )}
         </main>
 
         {/* Footer */}
